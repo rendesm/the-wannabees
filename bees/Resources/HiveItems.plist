@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>item1</key>
+	<dict>
+		<key>Owned</key>
+		<false/>
+		<key>Unlocked</key>
+		<true/>
+		<key>Price</key>
+		<integer>1</integer>
+		<key>Value</key>
+		<integer>1</integer>
+		<key>SlotType</key>
+		<integer>2</integer>
+		<key>Type</key>
+		<integer>2</integer>
+		<key>Name</key>
+		<string>To Decide</string>
+	</dict>
+	<key>New item - 2</key>
+	<dict>
+		<key>Owned</key>
+		<false/>
+		<key>Unlocked</key>
+		<true/>
+		<key>Price</key>
+		<integer>1</integer>
+		<key>Value</key>
+		<integer>1</integer>
+		<key>SlotType</key>
+		<integer>2</integer>
+		<key>Type</key>
+		<integer>1</integer>
+		<key>Name</key>
+		<string>To Decide</string>
+	</dict>
+	<key>New item - 3</key>
+	<dict>
+		<key>Owned</key>
+		<false/>
+		<key>Unlocked</key>
+		<true/>
+		<key>Price</key>
+		<integer>1</integer>
+		<key>Value</key>
+		<integer>1</integer>
+		<key>SlotType</key>
+		<integer>2</integer>
+		<key>Type</key>
+		<integer>0</integer>
+		<key>Name</key>
+		<string>To Decide</string>
+	</dict>
+	<key>New item - 4</key>
+	<dict>
+		<key>Owned</key>
+		<false/>
+		<key>Unlocked</key>
+		<true/>
+		<key>Price</key>
+		<integer>1</integer>
+		<key>Value</key>
+		<integer>1</integer>
+		<key>SlotType</key>
+		<integer>0</integer>
+		<key>Type</key>
+		<integer>2</integer>
+		<key>Name</key>
+		<string>Ghost</string>
+	</dict>
+	<key>New item - 5</key>
+	<dict>
+		<key>Owned</key>
+		<false/>
+		<key>Unlocked</key>
+		<true/>
+		<key>Price</key>
+		<integer>1</integer>
+		<key>Value</key>
+		<integer>1</integer>
+		<key>SlotType</key>
+		<integer>0</integer>
+		<key>Type</key>
+		<integer>1</integer>
+		<key>Name</key>
+		<string>Nitro</string>
+	</dict>
+	<key>New item - 6</key>
+	<dict>
+		<key>Owned</key>
+		<false/>
+		<key>Unlocked</key>
+		<true/>
+		<key>Price</key>
+		<integer>1</integer>
+		<key>Value</key>
+		<integer>1</integer>
+		<key>SlotType</key>
+		<integer>1</integer>
+		<key>Type</key>
+		<integer>2</integer>
+		<key>Name</key>
+		<string>Team Spirit</string>
+	</dict>
+	<key>New item - 7</key>
+	<dict>
+		<key>Owned</key>
+		<false/>
+		<key>Unlocked</key>
+		<true/>
+		<key>Price</key>
+		<integer>1</integer>
+		<key>Value</key>
+		<integer>1</integer>
+		<key>SlotType</key>
+		<integer>1</integer>
+		<key>Type</key>
+		<integer>1</integer>
+		<key>Name</key>
+		<string>Lightning Reflexes</string>
+	</dict>
+	<key>New item - 8</key>
+	<dict>
+		<key>Owned</key>
+		<true/>
+		<key>Unlocked</key>
+		<true/>
+		<key>Price</key>
+		<integer>1</integer>
+		<key>Value</key>
+		<integer>1</integer>
+		<key>SlotType</key>
+		<integer>1</integer>
+		<key>Type</key>
+		<integer>0</integer>
+		<key>Name</key>
+		<string>Sprinters</string>
+	</dict>
+	<key>New item - 9</key>
+	<dict>
+		<key>Owned</key>
+		<true/>
+		<key>Unlocked</key>
+		<true/>
+		<key>Price</key>
+		<integer>1</integer>
+		<key>Value</key>
+		<integer>1</integer>
+		<key>SlotType</key>
+		<integer>0</integer>
+		<key>Type</key>
+		<integer>0</integer>
+		<key>Name</key>
+		<string>Bomb</string>
+	</dict>
+</dict>
+</plist>
