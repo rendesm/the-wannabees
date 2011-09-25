@@ -10,4 +10,7 @@
 
 @protocol GameScene <NSObject>
 
+-(void) startGame;
+-(void) switchPause;
+
 @end

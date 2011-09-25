@@ -30,14 +30,23 @@
 @synthesize level = _level;
 @synthesize comboFinisher = _comboFinisher;
 @synthesize comboFinishers = _comboFinishers;
+@synthesize hudLayer = _hudLayer;
+@synthesize pauseLayer = _pauseLayer;
 
 
 +(id)scene{
 	// 'scene' is an autorelease object.
 	CCScene *scene = [CCScene node];
 	
+	HUDLayer *hud = [HUDLayer node];
+    [scene addChild:hud z:1];
+    
+    PauseLayer* pauseLayer = [PauseLayer node];
+    [scene addChild:pauseLayer z:2];
+	
+	
 	// 'layer' is an autorelease object.
-	CaveScene *layer = [CaveScene node];
+	CaveScene *layer =  [[[CaveScene alloc] initWithLayers:hud pause:pauseLayer] autorelease];
 	
 	// add layer as a child to scene
 	[scene addChild: layer];
@@ -45,7 +54,6 @@
 	// return the scene
 	return scene;
 }
-
 
 -(void) optionsButtonTapped:(id)sender{
 	
@@ -82,7 +90,6 @@
 	
 	_pausedMenu.position =  ccp( _player.position.x, _player.position.y);
 	[_pausedMenu alignItemsVerticallyWithPadding:20];
-	_pausedMenu.opacity =0;
 	[_pausedMenu runAction:[CCFadeIn actionWithDuration:0.3]];
 }
 
@@ -256,7 +263,7 @@
 	
 	float rnd = randRange(1, 1.5);
 	float rndY = randRange(1, 3);
-	point.sprite.position = ccp(_lastComboFinisher.x + _playerAcceleration.x * 60 * 5 * rnd * type + 1, 
+	point.sprite.position = ccp(_lastComboFinisher.x + _playerAcceleration.x * 60 * 20 * rnd * type + 1, 
 								rndY * screenSize.height/4);
 	_lastComboFinisher = point.sprite.position;
 	
@@ -323,59 +330,12 @@
 }
 
 -(void) updateLabels{
-	//_resetButton.position = ccpAdd(_resetButton.position, _playerAcceleration);
-	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x, _pauseButton.position.y);
-	_ornament1.position = ccp(_ornament1.position.x + _playerAcceleration.x, _ornament1.position.y);
-	_ornament2.position = ccp(_ornament2.position.x + _playerAcceleration.x, _ornament2.position.y);
-	_ornament3.position = ccp(_ornament3.position.x + _playerAcceleration.x, _ornament3.position.y);
-	
-	_slot1.position = ccp(_slot1.position.x + _playerAcceleration.x, _slot1.position.y);
-	_slot2.position = ccp(_slot2.position.x + _playerAcceleration.x, _slot2.position.y);
-	_slot3.position = ccp(_slot3.position.x + _playerAcceleration.x, _slot3.position.y);
-	
-	_item1.position = _slot1.position;
-	_item2.position = _slot2.position;
-	_item3.position = _slot3.position;
-	
-	_rightOrnament.position = ccp(_rightOrnament.position.x + _playerAcceleration.x, _rightOrnament.position.y);
-	_pointsSprite.position = ccp(_pointsSprite.position.x + _playerAcceleration.x, _pointsSprite.position.y);
-	[_pointsLabel setString:[NSString stringWithFormat:@"%i", _pointsGathered]];
-	_pointsLabel.position = _pointsSprite.position;
-	
-	_loadingScreen.position = ccp(_player.position.x, _loadingScreen.position.y);
-	
-	//goals section
-	
-	_goal1Slot.position = ccp(_goal1Slot.position.x + _playerAcceleration.x, _goal1Slot.position.y);
-	_goal2Slot.position = ccp(_goal2Slot.position.x + _playerAcceleration.x, _goal2Slot.position.y);
-	_goal3Slot.position = ccp(_goal3Slot.position.x + _playerAcceleration.x, _goal3Slot.position.y);
-	if (_goal1Sprite){
-		_goal1Sprite.position = _goal1Slot.position;
-	}
-	if (_goal2Sprite){
-		_goal2Sprite.position = _goal2Slot.position;
-	}
-	if (_goal3Sprite){
-		_goal3Sprite.position = _goal3Slot.position;
-	}
-	
+	_backGround.position = ccpAdd(_backGround.position, _playerAcceleration);
+	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x, _pauseButton.position.y);	
 	_distanceLeft.position = ccpAdd(_distanceLeft.position, _playerAcceleration);
 	_distanceLeft.percentage = (float)_goalTimeLeft/(float)_goalTimeMax * 100;
 	[_distanceLeft updateRadial];
-	
-//	_goalTimer.position = ccpAdd(_goalTimer.position, _playerAcceleration);
-	
-	/*
-	[_distanceLabel setString:[NSString stringWithFormat:@"%i meters", _distanceTravelled]];
-	_distanceLabel.position = ccp(_player.position.x, _distanceLabel.position.y);
-		_upperOverlay.position = ccp(_upperOverlay.position.x + _playerAcceleration.x, _upperOverlay.position.y);
-	if (_attackBoostSprite != nil){
-		_attackBoostSprite.position = ccp(_attackBoostSprite.position.x + _playerAcceleration.x, _attackBoostSprite.position.y);
-	}
-	if (_evadeBoostSprite != nil){
-		_evadeBoostSprite.position = ccp(_evadeBoostSprite.position.x + _playerAcceleration.x, _evadeBoostSprite.position.y);
-	}*/
-	_backGround.position = _player.position;
+    [self.hudLayer updatePoints:_pointsGathered];
 }
 
 -(void)resetButtonTapped:(id)sender{
@@ -386,108 +346,21 @@
  
 
 -(void) initLabels{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	
-	// _resetButton = [CCMenuItemImage itemFromNormalImage:@"avoidButton.png" selectedImage:@"avoidButton.png"
-	//															  target:self selector:@selector(resetButtonTapped:)];
-	
-	//_resetButton.scale = 0.5;
-	//CCMenu* resetMenu = [CCMenu menuWithItems:_resetButton, nil];
-	//resetMenu.position = ccp(_resetButton.contentSize.width * _resetButton.scale, _resetButton.contentSize.height* _resetButton.scale);
-	//[self addChild:resetMenu z:100 tag:100];
-	
-	_pauseButton = [CCMenuItemImage		itemFromNormalImage:@"pauseButton.png" selectedImage:@"pauseButton.png" 
-												  target:self selector:@selector(switchPause:)];
-	
-
-	CCMenu* _pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
-	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height);
-	[self addChild:_pauseMenu z:101 tag:100];	
-	
-	float ornamentWidth;
-	float slotWidth;
-	
-	_ornament1 = [CCSprite spriteWithSpriteFrameName:@"leftOrnament.png"];
-	_ornament2 = [CCSprite spriteWithSpriteFrameName:@"leftOrnament.png"];
-	_ornament3 = [CCSprite spriteWithSpriteFrameName:@"leftOrnament.png"];
-	_slot1 = [CCSprite spriteWithSpriteFrameName:@"emptySlot.png"];
-	_slot2 = [CCSprite spriteWithSpriteFrameName:@"emptySlot.png"];
-	_slot3 = [CCSprite spriteWithSpriteFrameName:@"emptySlot.png"]; 
-	
-	ornamentWidth = _ornament1.contentSize.width;
-	slotWidth = _slot1.contentSize.width;
-		
-	_ornament1.position = ccp(ornamentWidth/2 * _ornament1.scale, 
-							  screenSize.height - _slot1.contentSize.height * _slot1.scale);
-	_slot1.position = ccp(_ornament1.position.x + ornamentWidth/2 * _ornament1.scale + slotWidth/2 * _slot1.scale,
-						  screenSize.height - _slot1.contentSize.height * _slot1.scale);
-	
-
-	_ornament2.position = ccp(_ornament1.position.x + ornamentWidth * _ornament1.scale +slotWidth/2 * _slot1.scale,
-							  _slot1.position.y);
-	
-	_slot2.position = ccp(_ornament2.position.x + ornamentWidth/2 * _ornament2.scale + slotWidth/2 * _slot2.scale, 
-							_slot1.position.y);
-
-	_ornament3.position = ccp(_ornament2.position.x + ornamentWidth * _ornament2.scale +slotWidth/2 * _slot2.scale,
-							  _slot2.position.y);
-	
-	_slot3.position = ccp(_ornament3.position.x + ornamentWidth/2 * _ornament3.scale + slotWidth/2 * _slot3.scale, 
-						  _slot1.position.y);
-	
-	
-	[_batchNode addChild:_ornament1 z:100 tag:100];
-	[_batchNode addChild:_ornament2 z:100 tag:100];
-	[_batchNode addChild:_ornament3 z:100 tag:100];
-	
-	[_batchNode addChild:_slot1 z:100 tag:100];
-	[_batchNode addChild:_slot2 z:100 tag:100];
-	[_batchNode addChild:_slot3 z:100 tag:100];
-	
-	
-	_rightOrnament = [CCSprite spriteWithSpriteFrameName:@"leftOrnament.png"];
-	_rightOrnament.rotation = 180;
-	_rightOrnament.position = ccp(screenSize.width - _rightOrnament.contentSize.width/2, _ornament1.position.y);
-	[self addChild:_rightOrnament];
-	
-	_pointsSprite = [CCSprite spriteWithSpriteFrameName:@"emptySlot.png"];
-//	_pointsSprite.scale = 0.5;
-	_pointsSprite.position = ccp(_rightOrnament.position.x - _rightOrnament.contentSize.width/2 - _pointsSprite.contentSize.width/2 * _pointsSprite.scale,
-								_rightOrnament.position.y);
-	
-	[self addChild:_pointsSprite z:100 tag:100];
-	
-	_pointsLabel = [CCLabelTTF labelWithString:@"0" fontName:@"Marker Felt" fontSize:12];
-	_pointsLabel.position = _pointsSprite.position;
-	_pointsLabel.color = ccWHITE;
-	[self addChild:_pointsLabel z: 300 tag:301];
-	
-	//goals section	
-	_goal1Slot = [CCSprite spriteWithSpriteFrameName:@"emptySlot.png"];
-	_goal2Slot = [CCSprite spriteWithSpriteFrameName:@"emptySlot.png"];
-	_goal3Slot = [CCSprite spriteWithSpriteFrameName:@"emptySlot.png"];
-	
-	_goal1Slot.scale = 0.6;
-	_goal2Slot.scale = 0.6;
-	_goal3Slot.scale = 0.6;
-	
-	_goal1Slot.position = ccp(_slot3.position.x + _slot3.contentSize.width*_slot3.scale*2, _slot3.position.y);
-	_goal2Slot.position = ccp(_goal1Slot.position.x + _goal1Slot.contentSize.width * _goal1Slot.scale, _slot3.position.y);
-	_goal3Slot.position = ccp(_goal2Slot.position.x + _goal2Slot.contentSize.width * _goal2Slot.scale, _slot3.position.y);
-	[_batchNode addChild:_goal1Slot z:101 tag:101];
-	[_batchNode addChild:_goal2Slot z:101 tag:101];
-	[_batchNode addChild:_goal3Slot z:101 tag:101];
-	
+	CGSize screenSize = [[CCDirector sharedDirector] winSize];	
 	_distanceLeft = [CCProgressTimer progressWithFile:@"emptySlot.png"];
 	_distanceLeft.scale = 0.4;
 	[_distanceLeft setType:kCCProgressTimerTypeRadialCW];
 	[_distanceLeft setPercentage:0.0f];
-	_distanceLeft.position = ccpAdd(_goal2Slot.position, ccp(0, _goal2Slot.contentSize.height/2 * _goal2Slot.scale + _distanceLeft.contentSize.height/2 * _distanceLeft.scale));
-	[self addChild:_distanceLeft z:201 tag:500];
+	_distanceLeft.position = ccpAdd(_player.position, ccp(0, screenSize.height/2 - _distanceLeft.contentSize.height/2 * _distanceLeft.scale));
+	[self addChild:_distanceLeft z:101 tag:500];
+	[self.hudLayer initLabels];
+    _pauseButton = [CCMenuItemImage		itemFromNormalImage:@"pauseButton.png" selectedImage:@"pauseButton.png" 
+												  target:self selector:@selector(switchPause:)];
 	
-//	_goalTimer = [CCLabelBMFont labelWithString:@"0" fntFile:@"MarkerFelt.fnt"];
-//	_goalTimer.position = ccp(_goal2Slot.position.x, _goal2Slot.position.y - _goal2Slot.contentSize.height * _goal2Slot.scale - _goalTimer.contentSize.height/2);
-//	[self addChild:_goalTimer z:101 tag:101];
+	
+	CCMenu* _pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
+	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height);
+	[self addChild:_pauseMenu z:100 tag:100];	
 }
 
 -(bool) isOnScreen:(CCSprite*) sprite{
@@ -631,18 +504,7 @@
 }
 
 -(void) clearItems{
-	if (_item1) {
-		[_batchNode removeChild:_item1 cleanup:YES];
-		_item1 = nil;
-	}
-	if (_item2){
-		[_batchNode removeChild:_item2 cleanup:YES];
-		_item2 = nil;
-	}
-	if (_item3){
-		[_batchNode removeChild:_item3 cleanup:YES];
-		 _item3 = nil;
-	}
+	[self.hudLayer clearItems];
 	[self clearItemValues];
 }
 
@@ -658,28 +520,14 @@
 	}
 }
 
+
 -(void) clearGoals{
-	[_batchNode removeChild:_goal1Sprite cleanup:YES];
-	_goal1Sprite = nil;
-	[_batchNode removeChild:_goal2Sprite cleanup:YES];
-	_goal2Sprite = nil;
-	[_batchNode removeChild:_goal3Sprite cleanup:YES];
-	_goal3Sprite = nil;
+	[self.hudLayer clearGoals];
 	_goal1 = 0;
 	_goal2 = 0;
 	_goal3 = 0;
 }
 
--(CCSprite*)createGoalSprite:(CCSprite*) sprite forGoal:(int)goal{
-	if (goal == RED_SLOT){
-		sprite = [CCSprite spriteWithSpriteFrameName:@"redFlower.png"];
-	}else if (goal == BLUE_SLOT) {
-		sprite = [CCSprite spriteWithSpriteFrameName:@"blueFlower.png"];
-	}else if (goal == YELLOW_SLOT) {
-		sprite = [CCSprite spriteWithSpriteFrameName:@"yellowFlower.png"];
-	}
-	return sprite;
-}
 
 -(bool) checkGoals{
 	if (_item1Value == _goal1 && _item2Value == _goal2 && _item3Value == _goal3) {
@@ -715,21 +563,12 @@
 	_goal2 = ceil(randRange(0, maxNumber));
 	_goal3 = ceil(randRange(0, maxNumber));
 	
-	_goal1Sprite = [self createGoalSprite:_goal1Sprite forGoal:_goal1];
-	_goal2Sprite = [self createGoalSprite:_goal2Sprite forGoal:_goal2];
-	_goal3Sprite = [self createGoalSprite:_goal3Sprite forGoal:_goal3];
-	
-	_goal1Sprite.scale = 0.6;
-	_goal2Sprite.scale = 0.6;
-	_goal3Sprite.scale = 0.6;
-
-	_goal1Sprite.position = _goal1Slot.position;
-	_goal2Sprite.position = _goal2Slot.position;
-	_goal3Sprite.position = _goal3Slot.position;
-	
-	[_batchNode addChild:_goal1Sprite z:101 tag:101];
-	[_batchNode addChild:_goal2Sprite z:101 tag:101];
-	[_batchNode addChild:_goal3Sprite z:101 tag:101];
+    NSMutableArray* goalsForHud = [[[NSMutableArray alloc] init] autorelease];
+	[goalsForHud addObject:[NSNumber numberWithInt:_goal1]];
+	[goalsForHud addObject:[NSNumber numberWithInt:_goal2]];
+	[goalsForHud addObject:[NSNumber numberWithInt:_goal3]];
+	self.hudLayer.goals = goalsForHud;
+	[self.hudLayer createGoalSpritesForGoals];
 }
 				
 
@@ -782,22 +621,6 @@
 	}
 }	
 
--(void)addItem:(NSString*)item{
-	if (_item1 == nil) {
-		_item1 = [CCSprite spriteWithSpriteFrameName:item];
-		_item1.position = _slot1.position;
-		[_batchNode addChild:_item1 z:110 tag:100];
-	}else if(_item2 == nil){
-		_item2 = [CCSprite spriteWithSpriteFrameName:item];
-		_item2.position = _slot2.position;
-		[_batchNode addChild:_item2 z:110 tag:100];
-	}else if(_item3 == nil){
-		_item3 = [CCSprite spriteWithSpriteFrameName:item];
-		_item3.position = _slot3.position;
-		[_batchNode addChild:_item3 z:110 tag:100];
-	}
-}
-
 
 -(void)moveComboToNewPosition:(ComboFinisher*) point{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
@@ -822,10 +645,18 @@
 	}
 	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
+	
+	//check if it collides with a combo 
+	for(ComboFinisher* comboFinisher in _comboFinishers){
+		if (CGRectIntersectsRect(point.sprite.boundingBox, comboFinisher.sprite.boundingBox)){
+			_lastPointLocation = comboFinisher.sprite.position;
+			[self movePointToNewPosition:point];
+		}
+	}
+    
 	_lastPointLocation = point.sprite.position;
 	point.taken = YES;
 }
-
 -(void) moveBatToNewPosition:(Bat*) bat{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	float rnd = randRange(1, 4);
@@ -858,19 +689,19 @@
 		}
 		if (point.type == ATTACK_BOOST){
 			if (goodForCombo) {
-				[self addItem:@"redFlower.png"];
+				[self.hudLayer addItem:@"redFlower.png"];
 				[_alchemy addItem:RED_SLOT];
 			}
 			deadSprite = [CCSprite spriteWithSpriteFrameName:@"redFlower.png"];
 		}else if (point.type == GOLD){
 			if (goodForCombo) {
-				[self addItem:@"yellowFlower.png"];
+				[self.hudLayer addItem:@"yellowFlower.png"];
 				[_alchemy addItem:YELLOW_SLOT];
 			}
 			deadSprite = [CCSprite spriteWithSpriteFrameName:@"yellowFlower.png"];
 		}else if (point.type == EVADE_BOOST){
 			if (goodForCombo){
-				[self addItem:@"blueFlower.png"];
+				[self.hudLayer addItem:@"blueFlower.png"];
 				[_alchemy addItem:BLUE_SLOT];
 			}
 			deadSprite = [CCSprite spriteWithSpriteFrameName:@"blueFlower.png"];			
@@ -1153,11 +984,6 @@
 	[[[CCDirector sharedDirector] openGLView] setMultipleTouchEnabled:NO];
 	self.isTouchEnabled = YES;
 	
-	_effectSprite = [CCSprite spriteWithFile:@"darkenCornersFlowersEffect.png"];
-	_effectSprite.position = ccp(screenSize.width/2, screenSize.height/2);
-	_effectSprite.scale = 0.5;
-	//_effectSprite.opacity = 0;
-	[self addChild:_effectSprite z:600 tag:999];
 	_batchNode = [CCSpriteBatchNode batchNodeWithFile:@"caveWorld.png"]; // 1
 	[self addChild:_batchNode z:500 tag:500]; // 2
 	[[CCSpriteFrameCache sharedSpriteFrameCache] addSpriteFramesWithFile:@"caveWorld.plist"];
@@ -1248,12 +1074,17 @@
 		boid.startMaxSpeed = 0;
 		if (_level.difficulty == EASY){
 			[boid setSpeedMax:2.5f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f  withRandomRangeOf:0.25f];
+			_boidCurrentSpeed = 2.5f;
+			_boidCurrentTurn = 1.8f;
 		}else if (_level.difficulty == NORMAL){
 			[boid setSpeedMax:3.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+			_boidCurrentSpeed = 3.0f;
+			_boidCurrentTurn = 2.7f;
 		}else if (_level.difficulty == HARD) {
 			[boid setSpeedMax:4.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-		} 
-		
+			_boidCurrentSpeed = 4.0f;
+			_boidCurrentTurn = 2.7f;
+		} 		
 
 		[boid setWanderingRadius: 20.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.3f];
 		[boid setEdgeBehavior: EDGE_WRAP];
@@ -1408,60 +1239,38 @@
 	[self schedule:@selector(loadingDone)];
 }
 
+
 -(void) loadingDone{
 	[self unschedule:@selector(loadingDone)];
-	_item1 = nil;
-	_item2 = nil;
-	_item3 = nil;
+    [self.pauseLayer loadingFinished];
 	_gameIsReady = YES;
-
-	_tapToStartSprite = [CCSprite spriteWithFile:@"tapToStart.png"];
-	_tapToStartSprite.scale = 0.5;
-	_tapToStartSprite.position = _loadingSprite.position;
-	[self removeChild:_loadingSprite cleanup:YES];
-	[self addChild:_tapToStartSprite z:5002 tag:1001];
-	[_activity removeFromSuperview];
 	//add some tap to start
 	_alchemy = [[[Alchemy alloc]init] retain];
 	_alchemy.world = self;
 }
 
--(id) init{
+-(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer{
 	if ((self = [super init])){
-		self.level = [[LevelManager sharedManager] selectedLevel];
+		self.hudLayer = hudLayer;
+        self.pauseLayer = pauseLayer;
+        pauseLayer.gameScene = self;
+		self.level = (Level*)[[LevelManager sharedManager] selectedLevel];
 		_distanceToGoal = _level.distanceToGoal;
-		if (_level.difficulty == EASY && _distanceToGoal > 0){
+		if (_level.difficulty == EASY && _distanceToGoal != -1){
 			_distanceToGoal = _distanceToGoal/2;
-		}else if (_level.difficulty == NORMAL && _distanceToGoal > 0){
+		}else if (_level.difficulty == NORMAL && _distanceToGoal != -1){
 			_distanceToGoal = _distanceToGoal/3*2;
 		}
-		
 		CGSize screenSize = [[CCDirector sharedDirector] winSize];
 		_gameIsReady = NO;
 		_gameStarted = NO;
 		_paused = NO;
-		_loadingScreen = [CCSprite spriteWithFile:@"curtain1small.png"];
-		_loadingScreen.position = ccp(_loadingScreen.contentSize.width/2, _loadingScreen.contentSize.height/2 - 20);
-
-		
-		// Add the UIActivityIndicatorView (in UIKit universe)
-		_activity = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle: UIActivityIndicatorViewStyleWhiteLarge] autorelease];
-		_activity.center = ccp(240,190);
-		
-		_loadingSprite = [CCSprite spriteWithFile:@"loading.png"];
-		_loadingSprite.scale = 0.5;
-		_loadingSprite.position = ccp(_activity.center.x, _activity.center.y + _loadingSprite.contentSize.height * _loadingSprite.scale);
-		[self addChild:_loadingSprite z:5001 tag:1001];
-		
-		[_activity startAnimating];
-		[[[CCDirector sharedDirector] openGLView] addSubview:_activity];
-	
-		[self addChild:_loadingScreen z:5000 tag:1000];
-		[self schedule: @selector(loadingTextures) interval: 0.25];
+        
+        //pausemenu
+        [self schedule: @selector(loadingTextures) interval: 0.25];
 	}
 	return self;
 }
-
 
 -(void) updateBox2DWorld:(ccTime)dt{
 	_world->Step(dt, 10, 10);
@@ -1705,7 +1514,6 @@
 													 selector:@selector(actionBonusFinished:)];
 	[noBonus runAction:[CCSequence actions: moveInABit, fadeOut, bonusActionDone, nil]];					   
 }
-
 	
 -(void) displayBonus{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
@@ -1778,9 +1586,6 @@
 				[self generateGoals];
 				[self clearItems];
 				[_alchemy clearItems];
-			}else{
-		//		int tmpTime = ceil(_goalTimeLeft);
-		//		[_goalTimer setString:[NSString stringWithFormat:@"%i", tmpTime]];
 			}
 			
 			if (_isGameOver == NO && _isLevelDone == NO){
@@ -1815,6 +1620,8 @@
 						_illnessTimeLeft = 0;;
 					}
 				}
+                
+                [self updateCurrentDifficulty];
 				
 				if (_touchEnded){
 					_currentTouch = ccp(_currentTouch.x + _playerAcceleration.x, _currentTouch.y);
@@ -1834,7 +1641,6 @@
 				}
 				
 				_player.position = ccpAdd(_player.position, _playerAcceleration);
-				_effectSprite.position = _player.position;
 			
 				for (Boid* boid in _bees){
 					if (_slowestBoid == nil){
@@ -2011,26 +1817,18 @@
 }
 
 -(void) switchPause:(id)sender{
-
 	if (_paused == NO){
-		CGSize screenSize = [CCDirector sharedDirector].winSize;
-		CCAction* moveDownward = [[CCMoveTo actionWithDuration:0.5f position:ccp(_player.position.x, screenSize.height/2)] retain];
-		CCAction* moveDone = [CCCallFuncN actionWithTarget:self 
-														 selector:@selector(createPauseMenu)];
-		[_loadingScreen runAction:[CCSequence actions: moveDownward, moveDone, nil]];
 		[self unschedule:@selector(update:)];
+        [self.pauseLayer switchPause];
 		_paused = YES;
 	}else{
 		_paused = NO;
-		CGSize screenSize = [CCDirector sharedDirector].winSize;
-		CCAction* moveUpwards = [[CCMoveTo actionWithDuration:0.5f position:ccp(_player.position.x, screenSize.height + screenSize.height/2 + 30)] retain];
-		[_loadingScreen runAction:moveUpwards];
+        [self.pauseLayer switchPause];
 		[self schedule: @selector(update:)];
-		[_pausedMenu runAction:[CCFadeOut actionWithDuration:0.2]];
-		[self removeChild:_pausedMenu cleanup:YES]; 
-		 _pausedMenu = nil;
+        _pausedMenu = nil;
 	}
 }
+
 
 - (void)onEnter
 {
@@ -2050,26 +1848,20 @@
 {
 	if (_gameIsReady && _gameStarted == NO && _isLevelDone == NO){
 		CGSize screenSize = [CCDirector sharedDirector].winSize;
-		CCAction* moveUpwards = [[CCMoveTo actionWithDuration:1.0f position:ccp(_player.position.x, screenSize.height + screenSize.height/2 + 30)] retain];
-		[_loadingScreen runAction:moveUpwards];
-		_gameStarted = YES;
-		[self removeChild:_tapToStartSprite cleanup:YES];
+        [self.pauseLayer startGame];
+        _gameStarted = YES;
 		[self schedule: @selector(update:)];
 		[self generateGoals];
 	}else if (_gameIsReady && _gameStarted){
 		self.currentTouch = [self convertTouchToNodeSpace: touch];
 		self.currentTouch = ccp(self.currentTouch.x - 10, self.currentTouch.y);
 		if (_isGameOver){
-			/*
-			if (_newHighScore){
+			if (_newHighScore && _distanceToGoal < 0){
 				[self saveLevelPerformance];
 			}
-			 */
 			[[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[MainMenuScene scene] withColor:ccBLACK]];
 		}else if (_isLevelDone) {
-			if (_newHighScore){
-				[self saveLevelPerformance];
-			}
+			[self saveLevelPerformance];
 			[[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[MainMenuScene scene] withColor:ccBLACK]];
 		}
 	}
@@ -2147,6 +1939,50 @@ inline float randRange(float min,float max)
 }
 
 
+-(void) updateCurrentDifficulty{
+	if (_totalTimeElapsed - 10 * _currentDifficulty >= 10) {
+		bool changeWasEnough = NO;
+		//time to increase the difficulty
+		_currentDifficulty++;
+		//increase the playeracceleration if it is not at the maximum
+		if (_normalSpeed.x <= 4.0){
+			_normalSpeed.x += 0.1;
+			_sickSpeed.x += 0.05;
+			_boostSpeed.x += 0.05;
+			
+            //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
+            //		_playerAcceleration.x += 0.05;
+            //	}else {
+			_playerAcceleration.x += 0.1;
+            //	}
+            
+		}
+		
+		//increase the boid speed, if it is not at the maximum
+		if (_boidCurrentSpeed < 5.0f){
+			_boidCurrentSpeed+=0.1;
+			for (Boid* bee in _bees){
+				[bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+                bee.startMaxSpeed = _boidCurrentSpeed;
+			}
+			changeWasEnough = YES;
+		}
+		
+        
+		//increase the predatorSpeed if it is not at the maximum
+		
+        
+		
+		//increase the chance of spore if it is not at the maximum
+		
+		//increase the chance of atka if it is not at the maximum
+		
+		//decrease the distance between the predators if it is not at the minimum
+		
+		
+	}
+}
+
 
 
 -(void) dealloc{	
@@ -2173,32 +2009,17 @@ inline float randRange(float min,float max)
 	_batchNode = nil;
 	_loadingScreen = nil;
 	_tapToStartSprite = nil;
-	_effectSprite = nil;
-	_slot1 = nil;
-	_slot2 = nil;
-	_slot3 = nil;
-	_ornament1 = nil;
-	_ornament2 = nil;
-	_ornament3 = nil;
-	_rightOrnament = nil;
-	_item1 = nil;
-	_item2 = nil;
-	_item3 = nil;
-	_goal1Slot = nil;
-	_goal2Slot = nil;
-	_goal3Slot = nil;
 	_particleNode = nil;
 	_emitter = nil;
 	_slowestBoid = nil;
 	_terrain = nil;
-	_goal1Sprite = nil;
-	_goal2Sprite = nil;
-	_goal3Sprite = nil;
 	_backGround = nil;
 	_backGround2 = nil;
 	_backGround3 = nil;
 	_top1 = nil;
 	_bottom1 = nil;
+    self.pauseLayer = nil;
+    self.hudLayer = nil;
 }	
 
 

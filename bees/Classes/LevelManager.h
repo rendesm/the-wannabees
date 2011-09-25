@@ -16,12 +16,14 @@
 	NSMutableDictionary* _survivalLevels;
 	Level* _selectedLevel;
 	int _selectedLevelType;
+    int _world;
 }
 
 @property (nonatomic, retain) NSMutableDictionary* campaignLevels;
 @property (nonatomic, retain) NSMutableDictionary* timeRaceLevels;
 @property (nonatomic, retain) NSMutableDictionary* survivalLevels;
 @property (nonatomic, retain) Level* selectedLevel;
+@property (nonatomic) int world;
 
 
 -(void) readInLevels;

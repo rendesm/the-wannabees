@@ -345,19 +345,19 @@ static int _type;
 			CGPoint direction = ccpNormalize(ccp(destination.x-_source.x,destination.y-_source.y));
 			if (fabsl(direction.x) >= fabsl(direction.y)) {
 				if (direction.x>=0) {
-					//rotate the planet clockwise
-					self.planetAction = [CCRotateBy actionWithDuration:0.3 angle:90];
+					//rotate the planet clockwise 
+					self.planetAction = [CCEaseSineInOut actionWithAction:[CCRotateBy actionWithDuration:0.5 angle:90]];
 					incrementWorld = -1;
 				}else {
-					self.planetAction = [CCRotateBy actionWithDuration:0.3 angle:-90];
+					self.planetAction = [CCEaseSineInOut actionWithAction:[CCRotateBy actionWithDuration:0.5 angle:-90]];
 					incrementWorld = 1;
 				}
 			}else{
 				if (direction.y >= 0){
-					self.planetAction = [CCRotateBy actionWithDuration:0.3 angle:90];
+					self.planetAction = [CCEaseSineInOut actionWithAction:[CCRotateBy actionWithDuration:0.5 angle:90]];
 					incrementWorld = -1;
 				}else{
-					self.planetAction = [CCRotateBy actionWithDuration:0.3 angle:-90];
+					self.planetAction = [CCEaseSineInOut actionWithAction:[CCRotateBy actionWithDuration:0.5 angle:-90]];
 					incrementWorld = 1;
 				}
 			}

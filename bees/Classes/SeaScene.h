@@ -10,6 +10,8 @@
 
 
 @interface SeaScene : CCLayer {
+    PauseLayer* _pauseLayer;
+    HUDLayer* _hudLayer;
 	Level* _level;
 	bool _updateBox;
 	CCProgressTimer* _distanceLeft;
@@ -25,9 +27,6 @@
 	CCSprite* _backGround;
 	
 	CCLabelBMFont* _goalTimer;
-	CCSprite* _goal1Sprite;
-	CCSprite* _goal2Sprite;
-	CCSprite* _goal3Sprite;
 	ccTime _goalTimeLeft;
 	ccTime _goalTimeMax;
 	int _goal1;
@@ -100,26 +99,10 @@
 	UIActivityIndicatorView* _activity;
 	
 	Alchemy* _alchemy;
-	CCSprite* _effectSprite;
-	
-	CCSprite* _slot1;
-	CCSprite* _slot2;
-	CCSprite* _slot3;
-	CCSprite *_ornament1;
-	CCSprite *_ornament2;
-	CCSprite *_ornament3;
 	
 	int	_item1Value;
 	int _item2Value;
 	int _item3Value;
-	
-	CCSprite *_item1;
-	CCSprite *_item2;
-	CCSprite *_item3;
-	
-	CCSprite* _goal1Slot;
-	CCSprite* _goal2Slot;
-	CCSprite* _goal3Slot;
 	
 	CGPoint _lastPointLocation;
 	CGPoint _lastPredatorLocation;
@@ -145,7 +128,7 @@
 // returns a Scene that contains the HelloWorld as the only child
 +(id) scene;
 
-
+-(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer;
 
 -(void)updateSounds:(ccTime)dt;
 -(void)update:(ccTime)dt;
@@ -166,7 +149,6 @@
 
 -(void)setViewpointCenter:(CGPoint) position;
 -(void)initActions;
--(void) actionScaleFinished:(id)sender;
 -(void)updatePredators:(ccTime)dt;
 
 - (CCSprite *)spriteWithColor:(ccColor4F)bgColor textureSize:(float)textureSize withNoise:(NSString*)inNoise withGradientAlpha:(float)gradientAlpha;
@@ -186,9 +168,7 @@
 -(void) generateGoals;
 -(void) clearGoals;
 -(bool) checkGoals;
--(CCSprite*)createGoalSprite:(CCSprite*) sprite forGoal:(int)goal;
 
--(void)addItem:(NSString*)item;
 -(bool)addItemValue:(int)value;
 
 -(void) removeDeadItems;
@@ -224,6 +204,8 @@
 -(void) generateNextPoint:(int)types;
 -(void) generateNextFinisher:(int) type;
 
+@property(nonatomic, retain)PauseLayer* pauseLayer;
+@property(nonatomic, retain)HUDLayer* hudLayer;
 @property(nonatomic, assign) CGPoint currentTouch;
 @property(nonatomic) bool attackEnabled;
 @property(nonatomic) bool evadeEnabled;

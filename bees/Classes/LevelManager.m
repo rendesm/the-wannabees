@@ -12,6 +12,7 @@
 @implementation LevelManager
 @synthesize campaignLevels = _campaignLevels, timeRaceLevels = _timeRaceLevels, survivalLevels = _survivalLevels;
 @synthesize selectedLevel = _selectedLevel;
+@synthesize world = _world;
 
 static LevelManager *sharedManager = nil;
 
@@ -199,6 +200,13 @@ static LevelManager *sharedManager = nil;
 	self.selectedLevel = [self.survivalLevels objectForKey:name];
 	self.selectedLevel.difficulty = difficulty;
 	_selectedLevelType = SURVIVAL;
+    if ([name isEqualToString:@"DarkCaves"]){
+        self.world = 2;
+    }else if ([name isEqualToString:@"NarrowSea"]){
+        self.world = 3;
+    }else if ([name isEqualToString:@"GreenHills"]){
+        self.world = 1;
+    }
 }
 
 -(void) dealloc{

@@ -96,12 +96,8 @@
 	bool _shrinked;
 	
 	//loadingScreen
-	CCSprite* _loadingScreen;
 	bool _gameIsReady;
 	bool _gameStarted;
-	CCSprite* _loadingSprite;
-	CCSprite* _tapToStartSprite;
-	UIActivityIndicatorView* _activity;
 	
 	Alchemy* _alchemy;
 	
@@ -137,12 +133,14 @@
 	float _fireBallSpeed;
 	
 	HUDLayer* _hudLayer;
+    PauseLayer* _pauseLayer;
 }
 
 // returns a Scene that contains the HelloWorld as the only child
 +(id) scene;
 
--(id) initWithHud:(HUDLayer*) hudLayer;
+-(id) initWithLayers:(HUDLayer*) hudLayer pause:(PauseLayer*) pauseLayer;
+
 
 -(void)updateSounds:(ccTime)dt;
 -(void)update:(ccTime)dt;
@@ -194,7 +192,8 @@
 -(void) ccTouchesEnded:(NSSet *)touches withEvent:(UIEvent *)event;
  */
 
--(void)switchPause:(id)sender;
+-(void) switchPause:(id)sender;
+-(void)startGame;
 
 -(void)continueGame;
 
@@ -228,5 +227,6 @@
 @property(nonatomic, retain) ComboFinisher* comboFinisher;
 @property(nonatomic, retain) NSMutableArray* comboFinishers;
 @property(nonatomic, retain) HUDLayer* hudLayer;
+@property(nonatomic, retain) PauseLayer* pauseLayer;
 @end
 

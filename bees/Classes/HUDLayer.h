@@ -34,6 +34,7 @@
 -(CCSprite*)createGoalSprite:(CCSprite*) sprite forGoal:(int)goal;
 -(void) createGoalSpritesForGoals;
 -(void)addItem:(NSString*)item;
+-(void) updatePoints:(int)pointsGathered;
 
 @property (nonatomic, retain) NSMutableArray* goals;
 

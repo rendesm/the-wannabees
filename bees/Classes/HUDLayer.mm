@@ -198,5 +198,9 @@
 }
 
 
+-(void) updatePoints:(int)pointsGathered{
+ [_pointsLabel setString:[NSString stringWithFormat:@"%i", pointsGathered]];   
+}
+
 
 @end

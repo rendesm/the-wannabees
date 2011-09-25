@@ -34,6 +34,7 @@
 @synthesize comboFinisher = _comboFinisher;
 @synthesize comboFinishers = _comboFinishers;
 @synthesize hudLayer = _hudLayer;
+@synthesize pauseLayer = _pauseLayer;
 
 
 +(id)scene{
@@ -42,10 +43,13 @@
 	
 	HUDLayer *hud = [HUDLayer node];
     [scene addChild:hud z:1];
+    
+    PauseLayer* pauseLayer = [PauseLayer node];
+    [scene addChild:pauseLayer z:2];
 	
 	
 	// 'layer' is an autorelease object.
-	CampaignScene *layer =  [[[CampaignScene alloc] initWithHud:hud] autorelease];
+	CampaignScene *layer =  [[[CampaignScene alloc] initWithLayers:hud pause:pauseLayer] autorelease];
 	
 	// add layer as a child to scene
 	[scene addChild: layer];
@@ -54,101 +58,7 @@
 	return scene;
 }
 
-- (ccColor4F)randomBrightColor {
-    while (true) {
-        float requiredBrightness = 192;
-        ccColor4B randomColor = 
-		ccc4(arc4random() % 255,
-			 arc4random() % 255, 
-			 arc4random() % 255, 
-			 255);
-        if (randomColor.r > requiredBrightness || 
-            randomColor.g > requiredBrightness ||
-            randomColor.b > requiredBrightness) {
-            return ccc4FFromccc4B(randomColor);
-        }        
-    }
-}
 
-- (ccColor4F)randomBlueColor {
-    while (true) {
-        float requiredBrightness = 230;
-		float maxBrightness = 200;
-        ccColor4B randomColor = 
-		ccc4(arc4random() % 255,
-			 arc4random() % 255,
-			 255, 
-			 255);
-        if (randomColor.g > requiredBrightness - 50 &&
-			randomColor.r < maxBrightness) {
-            return ccc4FFromccc4B(randomColor);
-        }        
-    }
-}
-
-- (ccColor4F)randomGreenColor {
-    while (true) {
-        float requiredBrightness = 250;
-		float maxBrightness = 40;
-        ccColor4B randomColor = 
-		ccc4(arc4random() % 255,
-				  arc4random() % 255,
-				  arc4random() % 255, 
-				  255);
-        if (randomColor.r > maxBrightness && 
-            randomColor.b > maxBrightness &&
-            randomColor.g > requiredBrightness) {
-            return ccc4FFromccc4B(randomColor);
-        }        
-    }
-}
-
-
-
--(CCSprite *)spriteWithColor:(ccColor4F)bgColor textureSize:(float)textureSize withNoise:(NSString*)inNoise withGradientAlpha:(float)gradientAlpha{
-    // 1: Create new CCRenderTexture
-    CCRenderTexture *rt = [CCRenderTexture renderTextureWithWidth:textureSize height:textureSize];
-	
-    // 2: Call CCRenderTexture:begin
-    [rt beginWithClear:bgColor.r g:bgColor.g b:bgColor.b a:bgColor.a];
-	
-    // 3: Draw into the texture
-    // We'll add this later
-	CCSprite *noise = [CCSprite spriteWithFile:inNoise];
-//	[noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
-	noise.position = ccp(textureSize/2, textureSize/2);
-	[noise visit];
-	
-	glDisable(GL_TEXTURE_2D);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	 
-	CGPoint vertices[4];
-	ccColor4F colors[4];
-	int nVertices = 0;
-	
-	vertices[nVertices] = CGPointMake(0, 0);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, 0 };
-	vertices[nVertices] = CGPointMake(textureSize, 0);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
-	vertices[nVertices] = CGPointMake(0, textureSize);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
-	vertices[nVertices] = CGPointMake(textureSize, textureSize);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
-	
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)nVertices);
-	
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glEnable(GL_TEXTURE_2D);
-	
-	// 4: Call CCRenderTexture:end
-	[rt end];
-
-
-// 5: Create a new Sprite from the texture
-    return [CCSprite spriteWithTexture:rt.sprite.texture];
-}
 
 -(void) optionsButtonTapped:(id)sender{
 	
@@ -160,33 +70,6 @@
 
 -(void) quitButtonTapped:(id)sender{
 	
-}
-
--(void) createPauseMenu{
-	CGSize screenSize = [CCDirector sharedDirector].winSize;
-	CCMenuItemImage *button1 = [CCMenuItemImage 
-								itemFromNormalImage:@"resume.png" selectedImage:@"resumeTapped.png" 
-								target:self selector:@selector(switchPause:)];
-	
-	CCMenuItemImage *button2 = [CCMenuItemImage 
-								itemFromNormalImage:@"optionsResume.png" selectedImage:@"optionsResumeTapped.png" 
-								target:self selector:@selector(optionsButtonTapped:)];
-	CCMenuItemImage *button3 = [CCMenuItemImage 
-								itemFromNormalImage:@"restart.png" selectedImage:@"restartTapped.png" 
-								target:self selector:@selector(storeButtonTapped:)];
-	
-	CCMenuItemImage *button4 = [CCMenuItemImage
-								itemFromNormalImage:@"quit.png" selectedImage:@"quitTapped.png"
-								target:self selector:@selector(quitButtonTapped:)];
-	
-	
-	_pausedMenu = [CCMenu menuWithItems:button1, button2, button3, button4, nil];
-	[self addChild:_pausedMenu z:5000 tag:2];
-	
-	_pausedMenu.position =  ccp( _player.position.x, _player.position.y);
-	[_pausedMenu alignItemsVerticallyWithPadding:20];
-	_pausedMenu.opacity =0;
-	[_pausedMenu runAction:[CCFadeIn actionWithDuration:0.3]];
 }
 
 - (void)genBackground {
@@ -339,7 +222,7 @@
 	
 	float rnd = randRange(1, 1.5);
 	float rndY = randRange(1, 3);
-	point.sprite.position = ccp(_lastComboFinisher.x + _normalSpeed.x * 60 * 2 * rnd * type + 1, 
+	point.sprite.position = ccp(_lastComboFinisher.x + _normalSpeed.x * 60 * 20 * rnd * type + 1, 
 								rndY * screenSize.height/4);
 	_lastComboFinisher = point.sprite.position;
 	
@@ -380,7 +263,6 @@
 		bool changeWasEnough = NO;
 		//time to increase the difficulty
 		_currentDifficulty++;
-		NSLog(@"currentDifficulty:%i", _currentDifficulty);
 		//increase the playeracceleration if it is not at the maximum
 		if (_normalSpeed.x <= 4.0){
 			_normalSpeed.x += 0.1;
@@ -427,6 +309,7 @@
 	_distanceLeft.position = ccpAdd(_distanceLeft.position, _playerAcceleration);
 	_distanceLeft.percentage = (float)_goalTimeLeft/(float)_goalTimeMax * 100;
 	[_distanceLeft updateRadial];
+    [self.hudLayer updatePoints:_pointsGathered];
 }
 
 -(void)resetButtonTapped:(id)sender{
@@ -436,11 +319,7 @@
  
 
 -(void) initLabels{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	CCMenu* _pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
-	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height);
-	[self addChild:_pauseMenu z:100 tag:100];	
-	
+	CGSize screenSize = [[CCDirector sharedDirector] winSize];	
 	_distanceLeft = [CCProgressTimer progressWithFile:@"emptySlot.png"];
 	_distanceLeft.scale = 0.4;
 	[_distanceLeft setType:kCCProgressTimerTypeRadialCW];
@@ -448,6 +327,13 @@
 	_distanceLeft.position = ccpAdd(_player.position, ccp(0, screenSize.height/2 - _distanceLeft.contentSize.height/2 * _distanceLeft.scale));
 	[self addChild:_distanceLeft z:101 tag:500];
 	[self.hudLayer initLabels];
+    _pauseButton = [CCMenuItemImage		itemFromNormalImage:@"pauseButton.png" selectedImage:@"pauseButton.png" 
+												  target:self selector:@selector(switchPause:)];
+	
+	
+	CCMenu* _pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
+	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height);
+	[self addChild:_pauseMenu z:100 tag:100];	
 }
 
 -(bool) isOnScreen:(CCSprite*) sprite{
@@ -791,7 +677,7 @@
 			deadSprite = [CCSprite spriteWithSpriteFrameName:@"blueFlower.png"];
 		}else if (point.type >= BOMB_SLOT){
 			NSLog(@"combofinisher");
-			self.comboFinisher = point;
+			self.comboFinisher = (ComboFinisher*) point;
 		}
 		
 		[_batchNode addChild:deadSprite z:300 tag:300];
@@ -940,6 +826,7 @@
 				Points* point = (Points*) bodyA->GetUserData();
 				if (point.taken == NO){
 					point.taken = YES;
+                    _pointsGathered += point.value * _bonusCount;
 					[_takenPoints addObject:point];
 				}
 			}
@@ -1266,23 +1153,19 @@
 
 -(void) loadingDone{
 	[self unschedule:@selector(loadingDone)];
+    [self.pauseLayer loadingFinished];
 	_gameIsReady = YES;
-
-	_tapToStartSprite = [CCSprite spriteWithFile:@"tapToStart.png"];
-	_tapToStartSprite.scale = 0.5;
-	_tapToStartSprite.position = _loadingSprite.position;
-	[self removeChild:_loadingSprite cleanup:YES];
-	[self addChild:_tapToStartSprite z:5002 tag:1001];
-	[_activity removeFromSuperview];
 	//add some tap to start
 	_alchemy = [[[Alchemy alloc]init] retain];
 	_alchemy.world = self;
 }
 
--(id) initWithHud:(HUDLayer*) hudLayer{
+-(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer{
 	if ((self = [super init])){
 		self.hudLayer = hudLayer;
-		self.level = [[LevelManager sharedManager] selectedLevel];
+        self.pauseLayer = pauseLayer;
+        pauseLayer.gameScene = self;
+		self.level = (Level*)[[LevelManager sharedManager] selectedLevel];
 		_distanceToGoal = _level.distanceToGoal;
 		if (_level.difficulty == EASY && _distanceToGoal != -1){
 			_distanceToGoal = _distanceToGoal/2;
@@ -1293,24 +1176,9 @@
 		_gameIsReady = NO;
 		_gameStarted = NO;
 		_paused = NO;
-		_loadingScreen = [CCSprite spriteWithFile:@"curtain1small.png"];
-		_loadingScreen.position = ccp(_loadingScreen.contentSize.width/2, _loadingScreen.contentSize.height/2 - 20);
 
-		// Add the UIActivityIndicatorView (in UIKit universe)
-		_activity = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle: UIActivityIndicatorViewStyleWhiteLarge] autorelease];
-		_activity.center = ccp(240,190);
-		
-		_loadingSprite = [CCSprite spriteWithFile:@"loading.png"];
-		_loadingSprite.scale = 0.5;
-		_loadingSprite.position = ccp(_activity.center.x, _activity.center.y + _loadingSprite.contentSize.height * _loadingSprite.scale);
-
-		[self addChild:_loadingSprite z:5001 tag:1001];
-		
-		[_activity startAnimating];
-		[[[CCDirector sharedDirector] openGLView] addSubview:_activity];
-	
-		[self addChild:_loadingScreen z:5000 tag:1000];
-		[self schedule: @selector(loadingTextures) interval: 0.25];
+        //pausemenu
+        [self schedule: @selector(loadingTextures) interval: 0.25];
 	}
 	return self;
 }
@@ -1495,7 +1363,7 @@
 	//gameOverLabel.opacity = 0;
 	
 	CCLabelTTF* scoreLabel = [[CCLabelTTF alloc] initWithString:[NSString stringWithFormat:@"Points:  %i", _pointsGathered] fontName:@"Marker Felt" fontSize:14];	
-	if (_newHighScore && _isLevelDone) {
+	if (_newHighScore) {
 		_level.highScorePoints = _pointsGathered;
 	}
 
@@ -1883,23 +1751,14 @@
 }
 
 -(void) switchPause:(id)sender{
-
 	if (_paused == NO){
-		CGSize screenSize = [CCDirector sharedDirector].winSize;
-		CCAction* moveDownward = [[CCMoveTo actionWithDuration:0.5f position:ccp(_player.position.x, screenSize.height/2)] retain];
-		CCAction* moveDone = [CCCallFuncN actionWithTarget:self 
-														 selector:@selector(createPauseMenu)];
-		[_loadingScreen runAction:[CCSequence actions: moveDownward, moveDone, nil]];
 		[self unschedule:@selector(update:)];
+        [self.pauseLayer switchPause];
 		_paused = YES;
 	}else{
 		_paused = NO;
-		CGSize screenSize = [CCDirector sharedDirector].winSize;
-		CCAction* moveUpwards = [[CCMoveTo actionWithDuration:0.5f position:ccp(_player.position.x, screenSize.height + screenSize.height/2 + 30)] retain];
-		[_loadingScreen runAction:moveUpwards];
+        [self.pauseLayer switchPause];
 		[self schedule: @selector(update:)];
-		[_pausedMenu runAction:[CCFadeOut actionWithDuration:0.2]];
-		[self removeChild:_pausedMenu cleanup:YES]; 
 		 _pausedMenu = nil;
 	}
 }
@@ -1921,10 +1780,8 @@
 {
 	if (_gameIsReady && _gameStarted == NO && _isLevelDone == NO){
 		CGSize screenSize = [CCDirector sharedDirector].winSize;
-		CCAction* moveUpwards = [[CCMoveTo actionWithDuration:1.0f position:ccp(_player.position.x, screenSize.height + screenSize.height/2 + 30)] retain];
-		[_loadingScreen runAction:moveUpwards];
-		_gameStarted = YES;
-		[self removeChild:_tapToStartSprite cleanup:YES];
+        [self.pauseLayer startGame];
+        _gameStarted = YES;
 		[self schedule: @selector(update:)];
 		[self generateGoals];
 	}else if (_gameIsReady && _gameStarted){
@@ -2041,9 +1898,6 @@ inline float randRange(float min,float max)
 	_tree = nil;
 	_tree2 = nil;
 	_batchNode = nil;
-	_loadingScreen = nil;
-	_tapToStartSprite = nil;
-	_rightOrnament = nil;
 
 	_particleNode = nil;
 	_emitter = nil;

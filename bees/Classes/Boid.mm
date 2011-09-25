@@ -130,7 +130,6 @@
     [self
      setSpeedMax:randRange(speed - speedRange, speed + speedRange) 
      andSteeringForceMax:randRange(force - forceRange, force + forceRange)];
-	
 }
 
 -(void) setWanderingRadius:(float)radius lookAheadDistance:(float)distance andMaxTurningAngle:(float)turningAngle

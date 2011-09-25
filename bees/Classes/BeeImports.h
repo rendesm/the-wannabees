@@ -29,3 +29,5 @@
 #import "ComboFinisher.h"
 #import "Sea.h"
 #import "HUDLayer.h"
+#import "PauseLayer.h"
+#import "GameScene.h"

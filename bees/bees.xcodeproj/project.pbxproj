@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 45;
+	objectVersion = 46;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,7 +14,6 @@
 		02327E0614290FB3000A8C09 /* beeSprites2.plist in Resources */ = {isa = PBXBuildFile; fileRef = 02327E0414290FB3000A8C09 /* beeSprites2.plist */; };
 		02327E0714290FB3000A8C09 /* beeSprites2.png in Resources */ = {isa = PBXBuildFile; fileRef = 02327E0514290FB3000A8C09 /* beeSprites2.png */; };
 		02327E9114292CCA000A8C09 /* ComboFinisher.mm in Sources */ = {isa = PBXBuildFile; fileRef = 02327E9014292CCA000A8C09 /* ComboFinisher.mm */; };
-		0236ECE713DA0CFD0052DEA2 /* atka.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0236ECE613DA0CFD0052DEA2 /* atka.plist */; };
 		0236ED4A13DA151E0052DEA2 /* atka2.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0236ED4913DA151E0052DEA2 /* atka2.plist */; };
 		023979B713E74D33003D58FB /* gameOverOverlay.png in Resources */ = {isa = PBXBuildFile; fileRef = 023979B413E74D33003D58FB /* gameOverOverlay.png */; };
 		02656BE213F5C2D600BF63DF /* bg4small.png in Resources */ = {isa = PBXBuildFile; fileRef = 02656BE113F5C2D600BF63DF /* bg4small.png */; };
@@ -47,7 +46,6 @@
 		02A489E6142BB52A009DD0AB /* watersplash.plist in Resources */ = {isa = PBXBuildFile; fileRef = 02A489E5142BB52A009DD0AB /* watersplash.plist */; };
 		02A489E9142BB568009DD0AB /* seaWorld.plist in Resources */ = {isa = PBXBuildFile; fileRef = 02A489E7142BB568009DD0AB /* seaWorld.plist */; };
 		02A489EA142BB568009DD0AB /* seaWorld.png in Resources */ = {isa = PBXBuildFile; fileRef = 02A489E8142BB568009DD0AB /* seaWorld.png */; };
-		02A4EBA213F87FD500E9E582 /* leafParticle.plist in Resources */ = {isa = PBXBuildFile; fileRef = 02A4EBA113F87FD500E9E582 /* leafParticle.plist */; };
 		02A4EBA513F87FFB00E9E582 /* fallingDown.plist in Resources */ = {isa = PBXBuildFile; fileRef = 02A4EBA413F87FFB00E9E582 /* fallingDown.plist */; };
 		02A761AF13D607980036C73F /* cloudsmall.png in Resources */ = {isa = PBXBuildFile; fileRef = 02A761AE13D607980036C73F /* cloudsmall.png */; };
 		02A7AB9F13D73FA5002B2BC4 /* Predator.mm in Sources */ = {isa = PBXBuildFile; fileRef = 02A7AB9E13D73FA5002B2BC4 /* Predator.mm */; };
@@ -548,7 +546,6 @@
 		02327E0514290FB3000A8C09 /* beeSprites2.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = beeSprites2.png; sourceTree = "<group>"; };
 		02327E8F14292CCA000A8C09 /* ComboFinisher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ComboFinisher.h; sourceTree = "<group>"; };
 		02327E9014292CCA000A8C09 /* ComboFinisher.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = ComboFinisher.mm; sourceTree = "<group>"; };
-		0236ECE613DA0CFD0052DEA2 /* atka.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = atka.plist; path = ../bee/Resources/atka.plist; sourceTree = SOURCE_ROOT; };
 		0236ED4913DA151E0052DEA2 /* atka2.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = atka2.plist; sourceTree = "<group>"; };
 		023979B413E74D33003D58FB /* gameOverOverlay.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = gameOverOverlay.png; sourceTree = "<group>"; };
 		0245AE3713DDD9F8007CFED7 /* BeeImports.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BeeImports.h; sourceTree = "<group>"; };
@@ -587,7 +584,6 @@
 		02A489E5142BB52A009DD0AB /* watersplash.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = watersplash.plist; sourceTree = "<group>"; };
 		02A489E7142BB568009DD0AB /* seaWorld.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = seaWorld.plist; sourceTree = "<group>"; };
 		02A489E8142BB568009DD0AB /* seaWorld.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = seaWorld.png; sourceTree = "<group>"; };
-		02A4EBA113F87FD500E9E582 /* leafParticle.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = leafParticle.plist; path = ../../Downloads/send/backgrounds/leafParticle.plist; sourceTree = SOURCE_ROOT; };
 		02A4EBA413F87FFB00E9E582 /* fallingDown.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = fallingDown.plist; sourceTree = "<group>"; };
 		02A761AE13D607980036C73F /* cloudsmall.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cloudsmall.png; sourceTree = "<group>"; };
 		02A7AB9D13D73FA5002B2BC4 /* Predator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Predator.h; sourceTree = "<group>"; };
@@ -916,6 +912,7 @@
 		50F4144510692EE7002A0D5E /* fps_images.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = fps_images.png; sourceTree = "<group>"; };
 		50F4144610692EE7002A0D5E /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
 		50F4144710692EE7002A0D5E /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		81C45821142E2184007ADA64 /* GameScene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GameScene.h; sourceTree = "<group>"; };
 		DC6640020F83B3EA000B3E49 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		DC6640040F83B3EA000B3E49 /* OpenAL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenAL.framework; path = System/Library/Frameworks/OpenAL.framework; sourceTree = SDKROOT; };
 		DCCBF1B60F6022AE0040855A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -1143,7 +1140,6 @@
 				029E16ED14012F880073B336 /* hills1.png */,
 				02A4EBA413F87FFB00E9E582 /* fallingDown.plist */,
 				02D1130013FEDD92008F623A /* emptySlot.png */,
-				02A4EBA113F87FD500E9E582 /* leafParticle.plist */,
 				02C13E7313FAFA2800491E70 /* loadingLabel.png */,
 				02C13E7413FAFA2800491E70 /* pauseButton.png */,
 				02C13E7513FAFA2800491E70 /* tapLabel.png */,
@@ -1405,6 +1401,7 @@
 				02AA38DE1424F8F80084AF3E /* LevelSelectCaves.mm */,
 				029CFDDE142A6BFD0069B48D /* SeaScene.h */,
 				029CFDDF142A6BFD0069B48D /* SeaScene.mm */,
+				81C45821142E2184007ADA64 /* GameScene.h */,
 			);
 			name = Scenes;
 			sourceTree = "<group>";
@@ -1515,7 +1512,6 @@
 				E0C5506C11FA3ABC00B9E4CB /* LICENSE.box2d */,
 				506EDAA3102F461B00A389B3 /* cocos2d Sources */,
 				2D500B1D0D5A766B00DBA0E3 /* Classes */,
-				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				50F4144210692EE7002A0D5E /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
@@ -1537,6 +1533,7 @@
 				29B97316FDCFA39411CA2CEA /* main.m */,
 			);
 			name = "Other Sources";
+			path = ..;
 			sourceTree = "<group>";
 		};
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
@@ -1562,11 +1559,11 @@
 				02DC4512141E9452002973D5 /* Collision */,
 				02DC44F0141E93FA002973D5 /* Actions */,
 				02DC44EF141E93D5002973D5 /* Singletons */,
-				02DC44EE141E9346002973D5 /* Items */,
 				02DC44ED141E9300002973D5 /* Scenes */,
 				02AA558013D49BAE00A01DDC /* CCParallaxNode-Extras.h */,
 				02AA558113D49BAE00A01DDC /* CCParallaxNode-Extras.m */,
 				E0F81061120A17DF005866B8 /* GameConfig.h */,
+				02DC44EE141E9346002973D5 /* Items */,
 				50F4143710692D7D002A0D5E /* GLES-Render.h */,
 				50F4143810692D7D002A0D5E /* GLES-Render.mm */,
 				506EDC2F102F528A00A389B3 /* HelloWorldScene.h */,
@@ -1577,6 +1574,7 @@
 				1F3B9A2B0EF2145700286867 /* beesAppDelegate.mm */,
 				02A7AD8C13D77701002B2BC4 /* TypeEnums.h */,
 				0245AE3713DDD9F8007CFED7 /* BeeImports.h */,
+				29B97315FDCFA39411CA2CEA /* Other Sources */,
 			);
 			path = Classes;
 			sourceTree = "<group>";
@@ -1834,7 +1832,6 @@
 				02C20A2113E3123600B6D301 /* bee.png */,
 				E02BB53E126CA5DA006E46A2 /* Icon@2x.png */,
 				E02BB53F126CA5DA006E46A2 /* Icon-Small@2x.png */,
-				0236ECE613DA0CFD0052DEA2 /* atka.plist */,
 				02A7AC0B13D751E2002B2BC4 /* grassNoise1.png */,
 				02A7AE1E13D78F1C002B2BC4 /* cloudsbg.png */,
 				02A761AE13D607980036C73F /* cloudsmall.png */,
@@ -2256,8 +2253,11 @@
 /* Begin PBXProject section */
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0410;
+			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "bees" */;
-			compatibilityVersion = "Xcode 3.1";
+			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
@@ -2293,7 +2293,6 @@
 				02A761AF13D607980036C73F /* cloudsmall.png in Resources */,
 				02A7AC1013D751E2002B2BC4 /* grassNoise1.png in Resources */,
 				02A7AE2113D78F1C002B2BC4 /* cloudsbg.png in Resources */,
-				0236ECE713DA0CFD0052DEA2 /* atka.plist in Resources */,
 				0236ED4A13DA151E0052DEA2 /* atka2.plist in Resources */,
 				0215D78113E186D10042D432 /* rain.plist in Resources */,
 				02C20A2213E3123600B6D301 /* bee.png in Resources */,
@@ -2318,7 +2317,6 @@
 				02C9E2D613F868CA000D96A0 /* darkenCornersFlowersEffect.png in Resources */,
 				02C9E2D813F868D8000D96A0 /* darkenCornersEffect.png in Resources */,
 				02C9E2DF13F86917000D96A0 /* tree1.png in Resources */,
-				02A4EBA213F87FD500E9E582 /* leafParticle.plist in Resources */,
 				02A4EBA513F87FFB00E9E582 /* fallingDown.plist in Resources */,
 				02C13E7613FAFA2800491E70 /* loadingLabel.png in Resources */,
 				02C13E7713FAFA2800491E70 /* pauseButton.png in Resources */,
@@ -2671,7 +2669,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = bees_Prefix.pch;
@@ -2682,7 +2679,6 @@
 					"-all_load",
 					"-ObjC",
 				);
-				PREBINDING = NO;
 				PRODUCT_NAME = bees;
 				WARNING_CFLAGS = "-Wall";
 			};
@@ -2694,7 +2690,6 @@
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = bees_Prefix.pch;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
@@ -2704,7 +2699,6 @@
 					"-all_load",
 					"-ObjC",
 				);
-				PREBINDING = NO;
 				PRODUCT_NAME = bees;
 				WARNING_CFLAGS = "-Wall";
 			};
@@ -2719,7 +2713,6 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
 				HEADER_SEARCH_PATHS = libs;
-				PREBINDING = NO;
 				PRODUCT_NAME = "cocos2d libraries";
 			};
 			name = Debug;
@@ -2730,11 +2723,9 @@
 				ALWAYS_SEARCH_USER_PATHS = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_TREAT_WARNINGS_AS_ERRORS = NO;
 				HEADER_SEARCH_PATHS = libs;
 				OTHER_CFLAGS = "-fvisibility=hidden";
-				PREBINDING = NO;
 				PRODUCT_NAME = "cocos2d libraries";
 				ZERO_LINK = NO;
 			};
@@ -2761,7 +2752,6 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = "-fvisibility=hidden";
-				PREBINDING = NO;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -2783,7 +2773,6 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 3.0;
 				OTHER_CFLAGS = "-fvisibility=hidden";
-				PREBINDING = NO;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
