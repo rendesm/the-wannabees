@@ -131,6 +131,9 @@
 	float _boidCurrentTurn;
 	float _predatorCurrentSpeed;
 	float _fireBallSpeed;
+    float _fireBallChance;
+    float _atkaChance;
+    float _minPredatorDistance;
 	
 	HUDLayer* _hudLayer;
     PauseLayer* _pauseLayer;

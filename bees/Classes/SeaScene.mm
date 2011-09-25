@@ -1178,7 +1178,7 @@
 	float randomY = randRange(0.2, 0.5);
 		
 	Boid* boid;
-	float count = 20;
+	float count = 15;
 	for (int i = 0; i < count; i++) 
 	{
 		boid = [Boid spriteWithSpriteFrameName:@"bee4.png"];

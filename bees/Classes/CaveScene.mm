@@ -332,9 +332,6 @@
 -(void) updateLabels{
 	_backGround.position = ccpAdd(_backGround.position, _playerAcceleration);
 	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x, _pauseButton.position.y);	
-	_distanceLeft.position = ccpAdd(_distanceLeft.position, _playerAcceleration);
-	_distanceLeft.percentage = (float)_goalTimeLeft/(float)_goalTimeMax * 100;
-	[_distanceLeft updateRadial];
     [self.hudLayer updatePoints:_pointsGathered];
 }
 
@@ -347,12 +344,6 @@
 
 -(void) initLabels{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];	
-	_distanceLeft = [CCProgressTimer progressWithFile:@"emptySlot.png"];
-	_distanceLeft.scale = 0.4;
-	[_distanceLeft setType:kCCProgressTimerTypeRadialCW];
-	[_distanceLeft setPercentage:0.0f];
-	_distanceLeft.position = ccpAdd(_player.position, ccp(0, screenSize.height/2 - _distanceLeft.contentSize.height/2 * _distanceLeft.scale));
-	[self addChild:_distanceLeft z:101 tag:500];
 	[self.hudLayer initLabels];
     _pauseButton = [CCMenuItemImage		itemFromNormalImage:@"pauseButton.png" selectedImage:@"pauseButton.png" 
 												  target:self selector:@selector(switchPause:)];
@@ -554,11 +545,6 @@
 		maxTime = 15;
 	}
 	
-	_goalTimeLeft = randRange(minTime, maxTime);
-	_goalTimeMax = _goalTimeLeft;
-//	int tmpTime = ceil(_goalTimeLeft);
-//	[_goalTimer setString:[NSString stringWithFormat:@"%i", tmpTime]];
-	
 	_goal1 = ceil(randRange(0, maxNumber));
 	_goal2 = ceil(randRange(0, maxNumber));
 	_goal3 = ceil(randRange(0, maxNumber));
@@ -684,8 +670,12 @@
 		CCSprite* deadSprite = nil;
 		bool goodForCombo = [self addItemValue:point.type];
 		if (!goodForCombo){
-			[self clearItems];
-			[_alchemy clearItems];
+            [_alchemy clearItems];
+            [self clearItems];
+            [self clearGoals];
+            _bonusCount = 1;
+            [self displayNoBonus];				
+            [self generateGoals];
 		}
 		if (point.type == ATTACK_BOOST){
 			if (goodForCombo) {
@@ -1059,7 +1049,7 @@
 	
 	
 	Boid* boid;
-	float count = 20;
+	float count = 15;
 	for (int i = 0; i < count; i++) 
 	{
 		boid = [Boid spriteWithSpriteFrameName:@"bee4.png"];
@@ -1576,18 +1566,7 @@
 			if (_updateBox == NO) {
 				_updateBox = YES;
 			}			
-			_totalTimeElapsed += tickTime;
-			//update goalTime
-			_goalTimeLeft -= tickTime;
-			if (_goalTimeLeft <= 0) {
-				[self clearGoals];
-				_bonusCount = 1;
-				[self displayNoBonus];				
-				[self generateGoals];
-				[self clearItems];
-				[_alchemy clearItems];
-			}
-			
+			_totalTimeElapsed += tickTime;			
 			if (_isGameOver == NO && _isLevelDone == NO){
 				if (_removeRunning == NO){
 					[self removeDeadItems];
@@ -1941,38 +1920,41 @@ inline float randRange(float min,float max)
 
 -(void) updateCurrentDifficulty{
 	if (_totalTimeElapsed - 10 * _currentDifficulty >= 10) {
-		bool changeWasEnough = NO;
-		//time to increase the difficulty
+        CGSize screenSize = [[CCDirector sharedDirector] winSize];
+        float rndChange = randRange(1, 6);
+        int change = floor(rndChange);
+        //time to increase the difficulty
 		_currentDifficulty++;
 		//increase the playeracceleration if it is not at the maximum
-		if (_normalSpeed.x <= 4.0){
-			_normalSpeed.x += 0.1;
-			_sickSpeed.x += 0.05;
-			_boostSpeed.x += 0.05;
-			
-            //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
-            //		_playerAcceleration.x += 0.05;
-            //	}else {
-			_playerAcceleration.x += 0.1;
-            //	}
+        
+        if (change == 1){
+            if (_normalSpeed.x <= 4.0){
+                _normalSpeed.x += 0.1;
+                _sickSpeed.x += 0.05;
+                _boostSpeed.x += 0.2;
+                
+                if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
+                    _level.difficulty = NORMAL;
+                }else if (_normalSpeed.x > 3.0f){
+                    _level.difficulty = HARD;
+                }
+                
+                //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
+                //		_playerAcceleration.x += 0.05;
+                //	}else {
+                _playerAcceleration.x += 0.1;
+                //	}
+            }
             
-		}
-		
-		//increase the boid speed, if it is not at the maximum
-		if (_boidCurrentSpeed < 5.0f){
-			_boidCurrentSpeed+=0.1;
-			for (Boid* bee in _bees){
-				[bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-                bee.startMaxSpeed = _boidCurrentSpeed;
-			}
-			changeWasEnough = YES;
-		}
-		
-        
-		//increase the predatorSpeed if it is not at the maximum
-		
-        
-		
+            //increase the boid speed, if it is not at the maximum
+            if (_boidCurrentSpeed < 5.0f){
+                _boidCurrentSpeed+=0.1;
+                for (Boid* bee in _bees){
+                    [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+                    bee.startMaxSpeed = _boidCurrentSpeed;
+                }
+            }
+        }		
 		//increase the chance of spore if it is not at the maximum
 		
 		//increase the chance of atka if it is not at the maximum
@@ -1982,7 +1964,6 @@ inline float randRange(float min,float max)
 		
 	}
 }
-
 
 
 -(void) dealloc{	

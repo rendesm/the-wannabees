@@ -242,17 +242,19 @@
 	float rndSpore = CCRANDOM_0_1();
 	
 	if (_level.sporeAvailable){
-		if (rndSpore <= 0.0005 && _sporeOutOfScreen == YES){
+		if (rndSpore <= _fireBallChance && _sporeOutOfScreen == YES){
 			_fireBall.sprite.position =  ccp(_player.position.x + screenSize.width/2 + screenSize.width/4, 
 											 _slowestBoid.position.y );
 			_sporeOutOfScreen = NO;
 		}
 	}
 	
+    float rndAtka = randRange(0, 1);
 	if (_level.trapAvailable){
-		if (rndSpore >= 0.0005 &&  rndSpore <= 0.001 && _atkaOutOfScreen == YES){
-			_atka.sprite.position =  ccp(_player.position.x + screenSize.width/2 + screenSize.width/4, 
+		if (rndAtka <= _atkaChance && _atkaOutOfScreen == YES){
+			_atka.sprite.position =  ccp(_player.position.x + screenSize.width, 
 											 rnd * screenSize.height/6 );
+            _atkaOutOfScreen = NO;
 		}
 	}
 }
@@ -260,37 +262,133 @@
 
 -(void) updateCurrentDifficulty{
 	if (_totalTimeElapsed - 10 * _currentDifficulty >= 10) {
-		bool changeWasEnough = NO;
-		//time to increase the difficulty
+        CGSize screenSize = [[CCDirector sharedDirector] winSize];
+        float rndChange = randRange(1, 6);
+        int change = floor(rndChange);
+        bool changeWasEnough = NO;
+        //time to increase the difficulty
 		_currentDifficulty++;
 		//increase the playeracceleration if it is not at the maximum
-		if (_normalSpeed.x <= 4.0){
-			_normalSpeed.x += 0.1;
-			_sickSpeed.x += 0.05;
-			_boostSpeed.x += 0.05;
-			
-		//	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
-		//		_playerAcceleration.x += 0.05;
-		//	}else {
-			_playerAcceleration.x += 0.1;
-		//	}
+				
+        if (change == 1){
+            if (_normalSpeed.x <= 4.0){
+                _normalSpeed.x += 0.1;
+                _sickSpeed.x += 0.05;
+                _boostSpeed.x += 0.2;
+                
+                if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
+                    _level.difficulty = NORMAL;
+                }else if (_normalSpeed.x > 3.0f){
+                    _level.difficulty = HARD;
+                }
+                
+                //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
+                //		_playerAcceleration.x += 0.05;
+                //	}else {
+                _playerAcceleration.x += 0.1;
+                //	}
+            }
 
-		}
-		
-		//increase the boid speed, if it is not at the maximum
-		if (_boidCurrentSpeed < 5.0f){
-			_boidCurrentSpeed+=0.1;
-			for (Boid* bee in _bees){
-				[bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-			}
-			changeWasEnough = YES;
-		}
-		
-		
-
-		//increase the predatorSpeed if it is not at the maximum
-		
-	
+            //increase the boid speed, if it is not at the maximum
+            if (_boidCurrentSpeed < 5.0f){
+                _boidCurrentSpeed+=0.1;
+                for (Boid* bee in _bees){
+                    [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+                    bee.startMaxSpeed = _boidCurrentSpeed;
+                }
+                changeWasEnough = YES;
+            }
+        }
+        if(change == 2 || changeWasEnough == NO){
+            //increase the predatorSpeed if it is not at the maximum
+            if (_minPredatorDistance > screenSize.width/3 ){
+                _minPredatorDistance -= 10;
+                changeWasEnough = YES;
+            }
+        }
+        if (change ==3  || changeWasEnough == NO){
+            if (_predatorCurrentSpeed < 4.0){
+                _predatorCurrentSpeed += 0.05;
+                for (Predator* predator in _predators){
+                    [predator setSpeedMax:_predatorCurrentSpeed andSteeringForceMax:1.0f];     
+                }
+                changeWasEnough = YES;
+            }
+        }
+        if (change == 4  || changeWasEnough == NO){
+            if (_currentDifficulty > 10){
+                //atka time
+                if (_atkaChance < 0.3){
+                    _atkaChance += 0.05;
+                    changeWasEnough = YES;
+                }
+            }else {
+                // increase player difficulty
+                if (_normalSpeed.x <= 4.0){
+                    _normalSpeed.x += 0.1;
+                    _sickSpeed.x += 0.05;
+                    _boostSpeed.x += 0.2;
+                    
+                    if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
+                        _level.difficulty = NORMAL;
+                    }else if (_normalSpeed.x > 3.0f){
+                        _level.difficulty = HARD;
+                    }
+                    
+                    //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
+                    //		_playerAcceleration.x += 0.05;
+                    //	}else {
+                    _playerAcceleration.x += 0.1;
+                    //	}
+                }
+                
+                //increase the boid speed, if it is not at the maximum
+                if (_boidCurrentSpeed < 5.0f){
+                    _boidCurrentSpeed+=0.1;
+                    for (Boid* bee in _bees){
+                        [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+                        bee.startMaxSpeed = _boidCurrentSpeed;
+                    }
+                    changeWasEnough = YES;
+                }
+            }
+        }
+        if (change == 5  || changeWasEnough == NO){
+            if (_currentDifficulty > 20){
+                //spore time
+                if (_fireBallChance < 0.3){
+                    _fireBallChance +=0.05;
+                    changeWasEnough = YES;
+                }
+            }else  {
+                if (_normalSpeed.x <= 4.0){
+                    _normalSpeed.x += 0.1;
+                    _sickSpeed.x += 0.05;
+                    _boostSpeed.x += 0.2;
+                    
+                    if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
+                        _level.difficulty = NORMAL;
+                    }else if (_normalSpeed.x > 3.0f){
+                        _level.difficulty = HARD;
+                    }
+                    
+                    //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
+                    //		_playerAcceleration.x += 0.05;
+                    //	}else {
+                    _playerAcceleration.x += 0.1;
+                    //	}
+                }
+                
+                //increase the boid speed, if it is not at the maximum
+                if (_boidCurrentSpeed < 5.0f){
+                    _boidCurrentSpeed+=0.1;
+                    for (Boid* bee in _bees){
+                        [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+                        bee.startMaxSpeed = _boidCurrentSpeed;
+                    }
+                }
+            }
+        }
 		
 		//increase the chance of spore if it is not at the maximum
 		
@@ -306,9 +404,6 @@
 -(void) updateLabels{
 	_backGround.position = ccpAdd(_backGround.position, _playerAcceleration);
 	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x, _pauseButton.position.y);	
-	_distanceLeft.position = ccpAdd(_distanceLeft.position, _playerAcceleration);
-	_distanceLeft.percentage = (float)_goalTimeLeft/(float)_goalTimeMax * 100;
-	[_distanceLeft updateRadial];
     [self.hudLayer updatePoints:_pointsGathered];
 }
 
@@ -320,12 +415,6 @@
 
 -(void) initLabels{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];	
-	_distanceLeft = [CCProgressTimer progressWithFile:@"emptySlot.png"];
-	_distanceLeft.scale = 0.4;
-	[_distanceLeft setType:kCCProgressTimerTypeRadialCW];
-	[_distanceLeft setPercentage:0.0f];
-	_distanceLeft.position = ccpAdd(_player.position, ccp(0, screenSize.height/2 - _distanceLeft.contentSize.height/2 * _distanceLeft.scale));
-	[self addChild:_distanceLeft z:101 tag:500];
 	[self.hudLayer initLabels];
     _pauseButton = [CCMenuItemImage		itemFromNormalImage:@"pauseButton.png" selectedImage:@"pauseButton.png" 
 												  target:self selector:@selector(switchPause:)];
@@ -530,10 +619,6 @@
 		minTime = 10;
 		maxTime = 15;
 	}
-		_goalTimeLeft = randRange(minTime, maxTime);
-	_goalTimeMax = _goalTimeLeft;
-//	int tmpTime = ceil(_goalTimeLeft);
-//	[_goalTimer setString:[NSString stringWithFormat:@"%i", tmpTime]];
 	
 	_goal1 = ceil(randRange(0, maxNumber));
 	_goal2 = ceil(randRange(0, maxNumber));
@@ -630,7 +715,8 @@
 	if (_lastPredatorLocation.x  < _player.position.x + screenSize.width/2){
 		_lastPredatorLocation = ccp(_player.position.x + screenSize.width/2, 0);
 	}
-	[predator setPos:ccp(_lastPredatorLocation.x + screenSize.width * 0.75 ,rnd * screenSize.height/5 )];	
+    
+	[predator setPos:ccp(_lastPredatorLocation.x + _minPredatorDistance,rnd * screenSize.height/5 )];	
 	_lastPredatorLocation = predator.position;
 	predator.stamina = 800;
 	predator.life = _maxPredatorLife;
@@ -653,8 +739,12 @@
 		CCSprite* deadSprite = nil;
 		bool goodForCombo = [self addItemValue:point.type];
 		if (!goodForCombo){
-			[self clearItems];
-			[_alchemy clearItems];
+            [_alchemy clearItems];
+            [self clearItems];
+            [self clearGoals];
+            _bonusCount = 1;
+            [self displayNoBonus];				
+            [self generateGoals];
 		}
 
 		if (point.type == ATTACK_BOOST){
@@ -923,6 +1013,8 @@
 -(void) loadingTextures{
 	_currentDifficulty = 1;
 	_bonusCount = 1;
+    _fireBallChance = 0;
+    _atkaChance = 0;
 	[self unschedule:@selector(loadingTextures)];
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	[[[CCDirector sharedDirector] openGLView] setMultipleTouchEnabled:NO];
@@ -945,10 +1037,11 @@
 //	_world->SetContactFilter(_contactFilter);
 	
 	_atkaOutOfScreen = YES;
-	_sporeOutOfScreen = NO;
+	_sporeOutOfScreen = YES;
 	
 	//box2d end
 	_maxPredatorLife = 1;
+    _minPredatorDistance =  screenSize.width * 1.25;
 	_beeSick = NO;
 	//set the speeds 
 	
@@ -1008,9 +1101,8 @@
 	if (_level.trapAvailable){
 		_atka = [[[Atka alloc] initForNode:_batchNode] retain];
 		[_atka createBox2dBodyDefinitions:_world];
-		_atka.sprite.position =  ccp(_player.position.x + screenSize.width/2 + screenSize.width/4, 
+		_atka.sprite.position =  ccp(_player.position.x + screenSize.width/2 + screenSize.width * 20, 
 									 randomDist * screenSize.height/5 );
-		//[_batchNode addChild:_atka.sprite z:100 tag:100];
 	}
 	
 	if (_level.sporeAvailable){
@@ -1021,7 +1113,7 @@
 	}
 	
 	Boid* boid;
-	float count = 20;
+	float count = 15;
 	for (int i = 0; i < count; i++) 
 	{
 		boid = [Boid spriteWithSpriteFrameName:@"bee4.png"];
@@ -1533,16 +1625,6 @@
 			}			
 			_totalTimeElapsed += tickTime;
 			[self updateCurrentDifficulty];
-			//update goalTime
-			_goalTimeLeft -= tickTime;
-			if (_goalTimeLeft <= 0) {
-				[_alchemy clearItems];
-				[self clearItems];
-				[self clearGoals];
-				_bonusCount = 1;
-				[self displayNoBonus];				
-				[self generateGoals];
-			}
 			
 			if (_isGameOver == NO && _isLevelDone == NO){
 				if (_removeRunning == NO){
