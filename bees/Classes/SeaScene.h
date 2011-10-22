@@ -6,14 +6,14 @@
 //  Copyright 2011 nincs. All rights reserved.
 //
 #import "BeeImports.h"
-#import "MyContactFilter.h"
+#import <iAd/iAd.h>
+#import "Fish.h"
 
-
-@interface SeaScene : CCLayer {
+@interface SeaScene : CCLayer<ADBannerViewDelegate, GKLeaderboardViewControllerDelegate>{
+        
     PauseLayer* _pauseLayer;
     HUDLayer* _hudLayer;
 	Level* _level;
-	bool _updateBox;
 	CCProgressTimer* _distanceLeft;
 	bool _newHighScore;
 	CCMenuItemImage* _resetButton;
@@ -21,7 +21,6 @@
 	CCParticleSystemQuad *_emitter;
 	b2World *_world;
 	MyContactListener* _contactListener;
-	MyContactFilter* _contactFilter;
 	UITouch* _touch1;
 	NSMutableArray* _clouds;
 	CCSprite* _backGround;
@@ -43,9 +42,10 @@
 	NSMutableArray* _points;
 	NSMutableArray* _takenPoints;
 	
-	NSMutableArray* _predators;
-	NSMutableArray* _deadPredators;
-	NSMutableArray* _outOfScreenPredators;
+	NSMutableArray* _fish;
+	NSMutableArray* _deadFish;
+    
+    NSMutableArray* _birds;
 	
 	NSMutableArray* _takenCombos;
 	CCParallaxNode* _backGroundNode;
@@ -120,15 +120,29 @@
 	
 	int _life;
 	
-	
+	float _minFishDistance;
+    float _fishJumpTime;
 	NSMutableArray* _bottomSea;
 	NSMutableArray* _topSea;
+    MessageLayer* _messageLayer;
+    float _maxFishJump;
+    int _updateBox;
+    int _currentDifficulty;
+    float _boidCurrentSpeed;
+	float _boidCurrentTurn;
+	float _predatorCurrentSpeed;
+    CCSprite* _boat;
+    CCMenu* _pauseMenu;
+    HarvesterLayer* _harvesterLayer;
+    bool _evilAppearDone;
 }
 
 // returns a Scene that contains the HelloWorld as the only child
 +(id) scene;
 
--(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer;
+-(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer message:(MessageLayer *)messageLayer harvester:(HarvesterLayer*)harvesterLayer;
+
+-(id) initWithLayers:(HUDLayer*) hudLayer pause:(PauseLayer*) pauseLayer message:(MessageLayer*) messageLayer;
 
 -(void)updateSounds:(ccTime)dt;
 -(void)update:(ccTime)dt;
@@ -198,13 +212,14 @@
 -(void) respawnTerrain;
 
 -(void) moveToCemetery:(Boid*) sprite;
--(void) movePredatorToNewPosition:(Predator*) predator;
+-(void) movePredatorToNewPosition:(Fish*) predator;
 -(void) movePointToNewPosition:(Points*) point;
 -(void) moveComboToNewPosition:(ComboFinisher*) point;
 -(void) generateNextPoint:(int)types;
 -(void) generateNextFinisher:(int) type;
 
 @property(nonatomic, retain)PauseLayer* pauseLayer;
+@property int updateBox;
 @property(nonatomic, retain)HUDLayer* hudLayer;
 @property(nonatomic, assign) CGPoint currentTouch;
 @property(nonatomic) bool attackEnabled;
@@ -215,4 +230,6 @@
 @property(nonatomic, retain) Level* level;
 @property(nonatomic, retain) ComboFinisher* comboFinisher;
 @property(nonatomic, retain) NSMutableArray* comboFinishers;
+@property(nonatomic, retain) MessageLayer* messageLayer;
+@property(nonatomic, retain) HarvesterLayer* harvesterLayer;
 @end

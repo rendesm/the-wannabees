@@ -19,16 +19,21 @@
     CCAction* _moveDone;
     CCSprite* _loadingScreen;
     UIActivityIndicatorView* _activity;
-    CCSprite* _loadingSprite;
-    CCSprite* _tapToStartSprite;
+    CCSprite* _textSprite;
     
+    CCLabelBMFont* _loadingFont;
+    CCLabelBMFont* _tapToStartFont;
+    CCSpriteBatchNode* _batchnode;
     CCLayer*  _gameScene;
+    int _highScore;
+    int _score;
 }
 
 -(void) loadingFinished;
 -(void) createPauseMenu;
 -(void) switchPause;
 -(void) startGame;
+-(void) gameOver:(int)score withHighScore:(int)highscore;
 
 @property (nonatomic, retain) CCMenu* pausedMenu;
 @property (nonatomic) bool paused;
@@ -36,6 +41,6 @@
 @property (nonatomic,retain) CCAction* moveDownwards;
 @property (nonatomic,retain) CCAction* moveDone;
 @property (nonatomic,retain) CCSprite* loadingScreen;
-@property (nonatomic,retain) CCSprite* tapToStartSprite;
 @property (nonatomic,retain) CCLayer*  gameScene;
+@property (nonatomic, retain) CCSpriteBatchNode* batchnode;
 @end

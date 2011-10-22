@@ -4,6 +4,8 @@
 <dict>
 	<key>Particles</key>
 	<true/>
+	<key>Gfx</key>
+	<integer>3</integer>
 	<key>Music</key>
 	<false/>
 	<key>Sounds</key>

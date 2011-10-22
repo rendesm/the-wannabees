@@ -7,7 +7,7 @@
 //
 
 #import "GameCenterHelper.h"
-
+#import "beesAppDelegate.h"
 
 @implementation GameCenterHelper
 @synthesize gameCenterAvailable = _gameCenterAvailable;
@@ -41,6 +41,7 @@ static GameCenterHelper *sharedHelper = nil;
     if ((self = [super init])) {
         _gameCenterAvailable = [self isGameCenterAvailable];
         if (_gameCenterAvailable) {
+            self.GCViewController = [[UIViewController alloc] init];
             NSNotificationCenter *nc = 
             [NSNotificationCenter defaultCenter];
             [nc addObserver:self 
@@ -57,8 +58,7 @@ static GameCenterHelper *sharedHelper = nil;
 - (void)authenticationChanged {    
     if ([GKLocalPlayer localPlayer].isAuthenticated && !_userAuthenticated) {
 		NSLog(@"Authentication changed: player authenticated.");
-		_userAuthenticated = TRUE;           
-	//	[self showLeaderboardForCategory:@"com.mihalyrendes.thewannabees.21"];
+		_userAuthenticated = TRUE;      
     } else if (![GKLocalPlayer localPlayer].isAuthenticated && _userAuthenticated) {
 		NSLog(@"Authentication changed: player not authenticated");
 		_userAuthenticated = FALSE;
@@ -102,17 +102,44 @@ static GameCenterHelper *sharedHelper = nil;
 	}
 }
 
+- (void)sendScore:(GKScore *)score {
+    [score reportScoreWithCompletionHandler:^(NSError *error) 
+    { dispatch_async(dispatch_get_main_queue(), ^(void) 
+        { if (error == NULL) { 
+            NSLog(@"Successfully sent score!");
+            _score = 0;
+        }else { 
+            [self.unsentScores addObject:score ];
+            NSLog(@"Score failed to send... will try again later. Reason: %@", error.localizedDescription);
+        } 
+        }
+                     ); 
+    }
+     ]; 
+}
+
+- (void)reportScore:(NSString *)identifier score:(int)rawScore{
+    GKScore *score = [[[GKScore alloc] initWithCategory:@"21"] autorelease];
+    score.value = rawScore; 
+    _score = rawScore;
+   // [self save]; 
+    if (!_gameCenterAvailable || !_userAuthenticated) return; 
+    [self sendScore:score];
+}
+
+
 
 - (void)showLeaderboardForCategory:(NSString *)category{
+    
+    beesAppDelegate *delegate = [UIApplication sharedApplication].delegate; 
+    
 	if (_gameCenterAvailable){
 		GKLeaderboardViewController *gkLeaderBoardController = [[GKLeaderboardViewController alloc]init];
 		if (gkLeaderBoardController != nil){
 			gkLeaderBoardController.leaderboardDelegate = self;
-			gkLeaderBoardController.category = category;
+			gkLeaderBoardController.category = @"PointsHills";
 			gkLeaderBoardController.timeScope = GKLeaderboardTimeScopeAllTime;   
-			self.GCViewController  = [[UIViewController alloc] init];
-			[[[CCDirector sharedDirector] openGLView] addSubview:self.GCViewController.view];
-			[self.GCViewController presentModalViewController:gkLeaderBoardController animated:YES];
+            [delegate.window.rootViewController presentModalViewController:gkLeaderBoardController animated:YES];
 		}
 	}
 }

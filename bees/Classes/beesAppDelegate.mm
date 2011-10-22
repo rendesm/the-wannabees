@@ -17,7 +17,7 @@
 #import "GameCenterManager.h"
 @implementation beesAppDelegate
 
-@synthesize window;
+@synthesize window, viewController;
 
 - (void) removeStartupFlicker
 {
@@ -51,8 +51,7 @@
 	// if it fails (SDK < 3.1) use the default director
 	if( ! [CCDirector setDirectorType:kCCDirectorTypeDisplayLink] )
 		[CCDirector setDirectorType:kCCDirectorTypeDefault];
-	
-	
+		
 	CCDirector *director = [CCDirector sharedDirector];
 	
 	// Init the View Controller
@@ -92,9 +91,11 @@
 	[director setDeviceOrientation:kCCDeviceOrientationLandscapeLeft];
 #endif
 	
-	[director setAnimationInterval:1.0/60];
+	[director setAnimationInterval:1.0/40];
 	[director setDisplayFPS:YES];
 	[glView setMultipleTouchEnabled:YES];
+    glView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+
 	
 	// make the OpenGLView a child of the view controller
 	[viewController setView:glView];
@@ -116,6 +117,7 @@
 	
 	//authenticate the local user
 	[[GameCenterHelper sharedInstance] authenticateLocalUser];
+    
 	//[GameCenterManager  loadState];
 	
 	// Run the intro Scene

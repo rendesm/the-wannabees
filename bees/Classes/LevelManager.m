@@ -136,7 +136,7 @@ static LevelManager *sharedManager = nil;
 	[survivalLevels release];
 	survivalLevels = nil;
 	
-	self.timeRaceLevels = [[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[temp objectForKey:@"TimeRace"]];	
+	//self.timeRaceLevels = [[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[temp objectForKey:@"TimeRace"]];	
 }
 
 -(void) saveSelectedLevel{
@@ -157,7 +157,7 @@ static LevelManager *sharedManager = nil;
 	
 	if (_selectedLevelType == CAMPAIGN){
 		NSMutableDictionary *campaignData = [[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[data objectForKey:@"Campaign"]];
-		NSDictionary *levelData = [[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[campaignData objectForKey:_selectedLevel.name]];
+		NSDictionary *levelData = [[[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[campaignData objectForKey:_selectedLevel.name]] autorelease];
 		
 		[levelData setValue:[NSNumber numberWithInt: _selectedLevel.completed]  forKey:@"completed"];
 		[levelData setValue:[NSNumber numberWithInt:self.selectedLevel.highScorePoints] forKey:@"highScorePoints"];
@@ -174,14 +174,14 @@ static LevelManager *sharedManager = nil;
 			Level* nextLevel = [_campaignLevels objectForKey:nextName];
 			nextLevel.unlocked = YES;
 			
-			NSDictionary *nextLevelData = [[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[campaignData objectForKey: nextName]];
+			NSDictionary *nextLevelData = [[[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[campaignData objectForKey: nextName]] autorelease];
 			[nextLevelData setValue:[NSNumber numberWithBool:YES]  forKey:@"unlocked"];
 			[campaignData setValue:nextLevelData forKey:nextName];
 		}
 		[data setObject:campaignData forKey:@"Campaign"];
 	}else if (_selectedLevelType == SURVIVAL){
-		NSMutableDictionary *survivalData = [[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[data objectForKey:@"Survival"]];
-		NSMutableDictionary *levelData = [[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[survivalData objectForKey:_selectedLevel.name]];
+		NSMutableDictionary *survivalData = [[[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[data objectForKey:@"Survival"]] autorelease];
+		NSMutableDictionary *levelData = [[[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[survivalData objectForKey:_selectedLevel.name]] autorelease];
 		[levelData setValue:[NSNumber numberWithInt: self.selectedLevel.highScorePoints] forKey:@"highScorePoints"];
 		[survivalData setValue:levelData forKey:_selectedLevel.name];
 		[data setObject:survivalData forKey:@"Survival"];
@@ -210,12 +210,12 @@ static LevelManager *sharedManager = nil;
 }
 
 -(void) dealloc{
-	[_campaignLevels release];
-	_campaignLevels = nil;
-	[_survivalLevels release];
-	_survivalLevels = nil;
-	[_timeRaceLevels release];
-	_timeRaceLevels = nil;
+	[_campaignLevels removeAllObjects];
+    self.campaignLevels = nil;
+	[_survivalLevels removeAllObjects];
+	self.survivalLevels = nil;
+	[_timeRaceLevels removeAllObjects];
+	self.timeRaceLevels = nil;
 	[super dealloc];
 }
 

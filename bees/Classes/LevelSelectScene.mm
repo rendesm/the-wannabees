@@ -14,6 +14,7 @@
 #import "Level.h"
 #import "LevelSelectHills.h"
 #import "LevelSelectCaves.h"
+#import "DesertScene.h"
 
 @implementation LevelSelectScene
 @synthesize levels = _levels, selectedLevel = _selectedLevel;
@@ -76,7 +77,7 @@ static int _type;
 	self.emitter = 	[CCParticleSystemQuad particleWithFile:@"levelCloudEmitter.plist"];
 	_emitter.position = ccp(size.width - 30 ,  -10);
 	_emitter.rotation  = 180;
-	_emitter.scale = 0.8;
+//	_emitter.scale = 0.8;
 	[self addChild:_emitter z:10 tag:500];
 }
 
@@ -90,13 +91,17 @@ static int _type;
 		[self schedule:@selector(delay:)];
 	//	[[LevelManager sharedManager] readInLevels];
 	//	[self readInLevels];
-		
+        if ([[ConfigManager sharedManager] music]){
+            if (![[SimpleAudioEngine sharedEngine] isBackgroundMusicPlaying]){
+                [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"menuMusic.mp3" loop:YES];
+            }
+        }
 		
 		CGSize size = [[CCDirector sharedDirector] winSize];
 		_selectedLevelTag = 1;
 		_rotateDone = YES;
 		_selectedWorld = 1;
-		
+		/*
 		_easy = [CCMenuItemImage 
 				 itemFromNormalImage:@"easy.png" selectedImage:@"easyTapped.png" 
 				 target:self selector:nil];
@@ -110,22 +115,28 @@ static int _type;
 		
 		CCMenuItemToggle *toggleItem = [CCMenuItemToggle itemWithTarget:self 
 															   selector:@selector(difficultyButtonTapped:) items:_easy, _medium, _hard, nil];
-		
+		*/
+        
+        CCMenuItemImage *startButton = [CCMenuItemImage itemFromNormalImage:@"start.png" selectedImage:@"startTapped.png" target:self selector:@selector(launchButtonTapped:)];
+        
 		CCMenuItemImage *backButton = [CCMenuItemImage 
 									   itemFromNormalImage:@"backLevel.png" selectedImage:@"backLevelTapped.png" 
 									   target:self selector:@selector(backButtonTapped:)];
 		
-		_buttonWidth = _easy.contentSize.width;
-		_difficultyMenu = [CCMenu menuWithItems:toggleItem,backButton, nil];
+		_buttonWidth = startButton.contentSize.width;
+		_difficultyMenu = [CCMenu menuWithItems:startButton,backButton, nil];
 		[_difficultyMenu alignItemsVerticallyWithPadding:20];
+         
 		[self addChild:_difficultyMenu z:200 tag:2];
 		
-		_difficultyMenu.position =  ccp( size.width /4 * 3 + size.width, size.height - _easy.contentSize.height - backButton.contentSize.height);
+		_difficultyMenu.position =  ccp( size.width /4 * 3 + size.width, size.height - startButton.contentSize.height - backButton.contentSize.height);
+        
 		
 		_bgPicture = [CCSprite spriteWithFile:@"levelSelectBg.png"];
 		_bgPicture.position = ccp(size.width/2 , size.height/2);
 		[self addChild:_bgPicture z:0 tag:1];
 		
+        /*
 		CCMenuItemImage *launchButton = [CCMenuItemImage itemFromNormalImage:@"launch.png" selectedImage:@"launchTapped.png"
 																	  target:self selector:@selector(launchButtonTapped:)];
 		
@@ -133,6 +144,7 @@ static int _type;
 		_launchMenu.position = ccp(-launchButton.contentSize.width, launchButton.contentSize.height);
 		_buttonWidth = launchButton.contentSize.width;
 		[self addChild:_launchMenu z:601 tag:601];
+         */
 		
 		[[ConfigManager sharedManager] setDifficulty:EASY];
 				
@@ -156,11 +168,9 @@ static int _type;
 													  position: ccp( size.width - _buttonWidth/2, _difficultyMenu.position.y)];
 	CCAction* actionMoveDone = [CCCallFuncN actionWithTarget:self 
 													selector:@selector(menuMoveFinished:)];
-	CCAction* actionMoveInLeft = [CCMoveTo actionWithDuration:0.5f position:ccp(_buttonWidth/2, _launchMenu.position.y)];
-	[_launchMenu runAction:[CCSequence actions:actionMoveInLeft, actionMoveDone, nil]];
-	[_difficultyMenu runAction:[CCSequence actions:actionMoveInRight, actionMoveDone, nil]];
-	
-	
+	//CCAction* actionMoveInLeft = [CCMoveTo actionWithDuration:0.5f position:ccp(_buttonWidth/2, _launchMenu.position.y)];
+	//[_launchMenu runAction:[CCSequence actions:actionMoveInLeft, actionMoveDone, nil]];
+	[_difficultyMenu runAction:[CCSequence actions:actionMoveInRight, actionMoveDone, nil]];	
 }
 
 
@@ -219,6 +229,9 @@ static int _type;
 			}else if (_selectedWorld == 3){
 				[[LevelManager sharedManager] setSurvivalLevel:@"NarrowSea" withDifficulty:  [[ConfigManager sharedManager] difficulty]];
 				[[CCDirector sharedDirector] replaceScene:[SeaScene scene]];
+			}else if (_selectedWorld == 4){
+				[[LevelManager sharedManager] setSurvivalLevel:@"Desert" withDifficulty:  [[ConfigManager sharedManager] difficulty]];
+				[[CCDirector sharedDirector] replaceScene:[DesertScene scene]];
 			}
 			break;
 		default:
@@ -339,9 +352,9 @@ static int _type;
 	CGPoint destination = [self convertTouchToNodeSpace:touch];
 	int incrementWorld = 0;
 	if (_planetWasTouched && _rotateDone){
-		_rotateDone = NO;
 		float distance = sqrt(pow(destination.x - _source.x, 2) + pow(destination.y - _source.y, 2));
 		if (distance > 5) { //Make sure it's not just a tap
+            _rotateDone = NO;
 			CGPoint direction = ccpNormalize(ccp(destination.x-_source.x,destination.y-_source.y));
 			if (fabsl(direction.x) >= fabsl(direction.y)) {
 				if (direction.x>=0) {

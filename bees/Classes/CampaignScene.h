@@ -9,22 +9,25 @@
 
 // When you import this file, you import all the cocos2d classes
 #import "BeeImports.h"
-#import "MyContactFilter.h"
-
+#import <iAd/iAd.h>
+#import "beesAppDelegate.h"
 
 // HelloWorld Layer
-@interface CampaignScene : CCLayer
+@interface CampaignScene : CCLayer<ADBannerViewDelegate, GKLeaderboardViewControllerDelegate>
 {	
+    GLESDebugDraw *_debugDraw;
+
+    ADBannerView* _bannerView;
 	Level* _level;
+    CCMenu* _pauseMenu;
 	bool _updateBox;
 	CCProgressTimer* _distanceLeft;
 	bool _newHighScore;
 	CCMenuItemImage* _resetButton;
-	bool _removeRunning ;
+	//bool _removeRunning ;
 	CCParticleSystemQuad *_emitter;
 	b2World *_world;
 	MyContactListener* _contactListener;
-	MyContactFilter* _contactFilter;
 	UITouch* _touch1;
 	NSMutableArray* _clouds;
 	NSMutableArray* _forests;
@@ -51,7 +54,6 @@
 	
 	NSMutableArray* _predators;
 	NSMutableArray* _deadPredators;
-	NSMutableArray* _outOfScreenPredators;
 	
 	NSMutableArray* _takenCombos;
 	
@@ -79,7 +81,7 @@
 	float _evadeBoostIntensity;
 	
 	bool _touchEnded;
-	Spore* _fireBall;
+	Fish* _fireBall;
 	Atka* _atka;
 	
 	bool _beeSick;
@@ -108,6 +110,7 @@
 	CCSprite* _tree;
 	CCSprite* _tree2;
 	CCSprite* _tree3;
+    CCSprite* _farSprite;
 	
 	CCSprite* _hills1;
 	CCSprite* _hills2;
@@ -134,19 +137,27 @@
     float _fireBallChance;
     float _atkaChance;
     float _minPredatorDistance;
-	
 	HUDLayer* _hudLayer;
     PauseLayer* _pauseLayer;
+    MessageLayer* _messageLayer;
+    HarvesterLayer* _harvesterLayer;
+    HillsBackgroundLayer* _bgLayer;
+    CCSprite* _backHill1;
+    CCSprite* _backHill2;
+    float _lastFishLocation;
+    float _maxFishJump;
+    NSMutableArray* _fish;
 }
 
 // returns a Scene that contains the HelloWorld as the only child
 +(id) scene;
 
--(id) initWithLayers:(HUDLayer*) hudLayer pause:(PauseLayer*) pauseLayer;
+-(id) initWithLayers:(HUDLayer*) hudLayer pause:(PauseLayer*) pauseLayer message:(MessageLayer*) messageLayer harvester:(HarvesterLayer*)harvesterLayer bgLayer:(HillsBackgroundLayer*)bgLayer;
 
 
 -(void)updateSounds:(ccTime)dt;
 -(void)update:(ccTime)dt;
+-(void) updateLabels:(ccTime)dt;
 
 -(void) saveLevelPerformance;
 -(void) calculateAndApplyBonus;
@@ -156,21 +167,14 @@
 -(void) align:(Boid*)bee withAlignmentDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
 -(void) cohesion:(Boid*)bee withNeighborDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
 
--(void) sortBees;
 -(void) beeDefaultMovement:(Boid*) bee withDt:(ccTime)dt;
 -(void) beeMovement:(ccTime)dt;
 -(void)selectTarget:(Predator*)predator;
 -(void) shrinkEffectDone;
 
 -(void)setViewpointCenter:(CGPoint) position;
--(void)initActions;
--(void) actionScaleFinished:(id)sender;
 -(void)updatePredators:(ccTime)dt;
 
-- (CCSprite *)spriteWithColor:(ccColor4F)bgColor textureSize:(float)textureSize withNoise:(NSString*)inNoise withGradientAlpha:(float)gradientAlpha;
-- (ccColor4F)randomBrightColor;
-- (ccColor4F)randomBlueColor;
-- (ccColor4F)randomGreenColor;
 - (void)genBackground;
 
 
@@ -196,11 +200,6 @@
  */
 
 -(void) switchPause:(id)sender;
--(void)startGame;
-
--(void)continueGame;
-
--(void)generateCollectables;
 
 -(void) updateBox2DWorld:(ccTime)dt;
 
@@ -211,7 +210,7 @@
 
 -(void) playComboSuccessSound;
 -(void) playDeadBeeSound;
-
+-(void) beeMovement:(ccTime)dt;
 
 -(void) moveToCemetery:(Boid*) sprite;
 -(void) movePredatorToNewPosition:(Predator*) predator;
@@ -219,6 +218,7 @@
 -(void) moveComboToNewPosition:(ComboFinisher*) point;
 -(void) generateNextPoint:(int)types;
 -(void) generateNextFinisher:(int) type;
+-(void) presentGameCenter;
 
 @property(nonatomic, assign) CGPoint currentTouch;
 @property(nonatomic) bool attackEnabled;
@@ -231,5 +231,9 @@
 @property(nonatomic, retain) NSMutableArray* comboFinishers;
 @property(nonatomic, retain) HUDLayer* hudLayer;
 @property(nonatomic, retain) PauseLayer* pauseLayer;
+@property(nonatomic, retain) MessageLayer* messageLayer;
+@property(nonatomic, retain) HarvesterLayer* harvesterLayer;
+@property(nonatomic, retain) HillsBackgroundLayer* bgLayer;
+@property(nonatomic, retain) NSMutableArray* fish;
 @end
 

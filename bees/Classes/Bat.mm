@@ -36,7 +36,7 @@
     bodyDef.position.Set(_sprite.position.x/PTM_RATIO, _sprite.position.y/PTM_RATIO);
     bodyDef.userData = self;
 	bodyDef.fixedRotation = true;
-	bodyDef.allowSleep = false;
+	bodyDef.allowSleep = true;
 	bodyDef.awake = true;
 	b2Body* body;
 	body = world->CreateBody(&bodyDef);
@@ -50,7 +50,18 @@
     spriteShapeDef.density = 1.0f;
 	spriteShapeDef.friction = 1.0f;
 	spriteShapeDef.restitution = 1.0f;
-    spriteShapeDef.isSensor = true;
+    spriteShapeDef.isSensor = false;
+    
+    b2Filter filter;
+    
+    enum CollideBits { none = 0, player = 0x0001, predator = 0x0002, harvester = 0x0004, point = 0x0008, bird = 0x0010, bullet = 0x0020 };
+    
+	filter.categoryBits = predator;
+	//filter.maskBits = 0xFFFF ;
+    filter.maskBits = player;
+	filter.groupIndex = 0;
+	
+	spriteShapeDef.filter = filter;
 	
     body->CreateFixture(&spriteShapeDef);
 }

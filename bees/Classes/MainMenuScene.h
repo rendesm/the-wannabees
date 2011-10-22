@@ -15,6 +15,7 @@
 @class HelloWorld;
 @class CampaignScene;
 @class LevelSelectScene;
+@class ConfigManager;
 @interface MainMenuScene : CCLayer {
 	CCMenu* _menu;
 	CGPoint _source;
@@ -36,10 +37,6 @@
 	
 	CCSprite* _effectSprite;
 	
-	bool _soundsEnabled;
-	bool _musicEnabled;
-	bool _particlesEnabled;
-	
 	bool _backGroundMusicStarted;
 	
 	NSMutableDictionary* _campaignLevels;
@@ -47,6 +44,8 @@
 	NSMutableDictionary* _timeRaceLevels;
 	NSString* _selectedLevel;
 	bool _init;
+    ConfigManager* _configManager;
+    
 }
 
 // returns a Scene that contains the HelloWorld as the only child

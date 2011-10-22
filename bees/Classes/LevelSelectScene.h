@@ -48,6 +48,7 @@
 @property (nonatomic, retain) CCAction* planetAction;
 @property (nonatomic, retain) CCParticleSystemQuad *emitter;
 
++(id)scene:(int)type;
 -(void) menuMoveFinished:(id)sender;
 -(void) backButtonTapped:(id)sender;
 -(void) launchButtonTapped:(id)sender;

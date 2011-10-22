@@ -25,7 +25,7 @@
 @property (nonatomic, retain) Level* selectedLevel;
 @property (nonatomic) int world;
 
-
++ (LevelManager*)sharedManager;
 -(void) readInLevels;
 -(void) saveSelectedLevel;
 -(void) setSelectedHillsLevelWithDifficulty:(int)difficulty withNumber:(int)number;

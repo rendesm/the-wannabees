@@ -10,13 +10,13 @@
 // Import the interfaces
 #import "CampaignScene.h"
 #import "LevelManager.h"
-
+#import "Fish.h"
 #define rad2Deg 57.2957795
 
-#define leftEdge 0.0f
-#define bottomEdge 0.0f
-#define topEdge 320.0f
-#define rightEdge 480.0f
+#define leftEdge 10.0f
+#define bottomEdge 32.0f
+#define topEdge 310.0f
+#define rightEdge 465.0f
 
 #define IGNORE 1.0f
 
@@ -35,21 +35,40 @@
 @synthesize comboFinishers = _comboFinishers;
 @synthesize hudLayer = _hudLayer;
 @synthesize pauseLayer = _pauseLayer;
+@synthesize messageLayer = _messageLayer;
+@synthesize harvesterLayer = _harvesterLayer;
+@synthesize bgLayer = _bgLayer;
+@synthesize fish = _fish;
 
+static bool _removeRunning = NO;
+static double UPDATE_INTERVAL = 1/30.0f;
+static double MAX_CYCLES_PER_FRAME = 1;
+static double timeAccumulator = 0;
+static bool _emitterMoving = NO;
+static bool _evilAppearDone = NO;
 
 +(id)scene{
 	// 'scene' is an autorelease object.
 	CCScene *scene = [CCScene node];
 	
 	HUDLayer *hud = [HUDLayer node];
-    [scene addChild:hud z:1];
+    [scene addChild:hud z:3];
     
     PauseLayer* pauseLayer = [PauseLayer node];
-    [scene addChild:pauseLayer z:2];
+    [scene addChild:pauseLayer z:5];
 	
+    MessageLayer* messageLayer = [MessageLayer node];
+    [scene addChild:messageLayer z:6];
+        
+    HillsBackgroundLayer* bgLayer = [HillsBackgroundLayer node];
+    [scene addChild:bgLayer z: 0];
+    
+    HarvesterLayer* harvesterLayer = [HarvesterLayer node];
+    [scene addChild:harvesterLayer z:2];
+
 	
 	// 'layer' is an autorelease object.
-	CampaignScene *layer =  [[[CampaignScene alloc] initWithLayers:hud pause:pauseLayer] autorelease];
+	CampaignScene *layer =  [[[CampaignScene alloc] initWithLayers:hud pause:pauseLayer message:messageLayer harvester:harvesterLayer bgLayer:bgLayer] autorelease];
 	
 	// add layer as a child to scene
 	[scene addChild: layer];
@@ -72,23 +91,88 @@
 	
 }
 
-- (void)genBackground {
-	/*
-	//   [_backGround removeFromParentAndCleanup:YES];
-    ccColor4F bgColor = ccc4FFromccc4B(ccc4(106,254,255,255));  
-	//ccColor4F bgColor = [self randomBlueColor];
+- (ccColor4F)randomBrightColor {
+    
+    while (true) {
+        float requiredBrightness = 192;
+        ccColor4B randomColor = 
+        ccc4(arc4random() % 255,
+             arc4random() % 255, 
+             arc4random() % 255, 
+             255);
+        if (randomColor.r > requiredBrightness || 
+            randomColor.g > requiredBrightness ||
+            randomColor.b > requiredBrightness) {
+            return ccc4FFromccc4B(randomColor);
+        }        
+    }
+    
+}
+-(CCSprite *)spriteWithColor:(ccColor4F)bgColor textureSize:(float)textureSize withNoise:(NSString*)inNoise withGradientAlpha:(float)gradientAlpha{
+    // 1: Create new CCRenderTexture
+    CCRenderTexture *rt = [CCRenderTexture renderTextureWithWidth:textureSize height:textureSize];
 	
-    CGSize winSize = [CCDirector sharedDirector].winSize;
-	_backGround = [self spriteWithColor:bgColor textureSize:512 withNoise:@"noise9.png" withGradientAlpha:0.4f];
-	//_backGround = [self spriteWithColor:bgColor textureSize:512 withNoise:@"noise1.png" withGradientAlpha:0.8f];
-    _backGround.position = ccp(_backGround.contentSize.width/2, _backGround.contentSize.height/2); 
-	ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT};
-	[_backGround.texture setTexParameters:&tp];
-    [self addChild:_backGround z:-1];
-	 */
-	CGSize winSize = [CCDirector sharedDirector].winSize;
-	_backGround = [CCSprite spriteWithFile:_level.backgroundImage];
-	_backGround.position = _player.position;
+    // 2: Call CCRenderTexture:begin
+    [rt beginWithClear:bgColor.r g:bgColor.g b:bgColor.b a:bgColor.a];
+	
+    // 3: Draw into the texture
+    // We'll add this later
+	CCSprite *noise = [CCSprite spriteWithFile:inNoise];
+    //	[noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
+	noise.position = ccp(textureSize/2, textureSize/2);
+	[noise visit];
+	
+	glDisable(GL_TEXTURE_2D);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    
+	CGPoint vertices[4];
+	ccColor4F colors[4];
+	int nVertices = 0;
+	
+	vertices[nVertices] = CGPointMake(0, 0);
+	colors[nVertices++] = (ccColor4F){0, 0, 0, 0 };
+	vertices[nVertices] = CGPointMake(textureSize, 0);
+	colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+	vertices[nVertices] = CGPointMake(0, textureSize);
+	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
+	vertices[nVertices] = CGPointMake(textureSize, textureSize);
+	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
+	
+	glVertexPointer(2, GL_FLOAT, 0, vertices);
+	glColorPointer(4, GL_FLOAT, 0, colors);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)nVertices);
+	
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glEnable(GL_TEXTURE_2D);
+	
+	// 4: Call CCRenderTexture:end
+	[rt end];
+    
+    
+    // 5: Create a new Sprite from the texture
+    return [CCSprite spriteWithTexture:rt.sprite.texture];
+}
+
+
+- (void)genBackground {
+	
+	 //[_backGround removeFromParentAndCleanup:YES];
+    //ccColor4F bgColor = ccc4FFromccc4B(ccc4(106,254,255,255));  
+//	ccColor4F bgColor = [self randomBrightColor];
+	
+//    CGSize winSize = [CCDirector sharedDirector].winSize;
+//	_backGround = [self spriteWithColor:bgColor textureSize:512 withNoise:@"noise9.png" withGradientAlpha:0.8f];
+
+  //  _backGround.position = ccp(_backGround.contentSize.width/2, _backGround.contentSize.height/2); 
+//	ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT};
+//	[_backGround.texture setTexParameters:&tp];
+  //  [self addChild:_backGround z:-1];
+	 
+	//CGSize winSize = [CCDirector sharedDirector].winSize;
+//    _backGround = [self spriteWithColor:bgColor textureSize:512 withNoise:@"bg1.png" withGradientAlpha:0.8f];
+     
+//	_backGround = [CCSprite spriteWithFile:_level.backgroundImage];
+//	_backGround.position = _player.position;
 //	[_backGroundNode addChild:_backGround z:-2 parallaxRatio:ccp(0.01,0) positionOffset:ccp(_backGround.contentSize.width/2, winSize.height/2)];
 	
 //	_backGround2 = [CCSprite spriteWithFile:@"bg2.png"];
@@ -98,7 +182,7 @@
 //	_backGround3 = [CCSprite spriteWithFile:@"bg3.png"];
 //	[_backGroundNode addChild:_backGround3 z:-2 parallaxRatio:ccp(0.01,0) positionOffset:ccp(_backGround2.position.x + _backGround2.contentSize.width/2 + _backGround3.contentSize.width/2 - _backGroundNode.position.x * 0.01 - 2,
 //																							winSize.height/2)];
-	[self addChild:_backGround z:-1 tag:1];
+//	[self addChild:_backGround z:-2 tag:1];
 }
 
 
@@ -115,7 +199,11 @@
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	for (Points* point in _points){
 		if (point.sprite.position.x + point.sprite.contentSize.width/2 * point.sprite.scale < _player.position.x - screenSize.width/2){
-				[self movePointToNewPosition:point];
+            [point.sprite stopAllActions];
+            [self movePointToNewPosition:point];
+            [point startRotate];
+            point.moveDone = NO;
+            point.moving = NO;
 		}
 	}
 }
@@ -143,10 +231,8 @@
 }
 
 -(void) removeOutOfScreenItems{
-	[self removeOutOfScreenSpore];
-	[self removeOutOfScreenAtka];
 	[self removeOutOfScreenPoints];
-	[self removeOutOfScreenCombos];
+//	[self removeOutOfScreenCombos];
 }
 
 #pragma mark speeds
@@ -241,14 +327,6 @@
 	//determine a random possibility for spore, now I use 0.2;
 	float rndSpore = CCRANDOM_0_1();
 	
-	if (_level.sporeAvailable){
-		if (rndSpore <= _fireBallChance && _sporeOutOfScreen == YES){
-			_fireBall.sprite.position =  ccp(_player.position.x + screenSize.width/2 + screenSize.width/4, 
-											 _slowestBoid.position.y );
-			_sporeOutOfScreen = NO;
-		}
-	}
-	
     float rndAtka = randRange(0, 1);
 	if (_level.trapAvailable){
 		if (rndAtka <= _atkaChance && _atkaOutOfScreen == YES){
@@ -263,147 +341,75 @@
 -(void) updateCurrentDifficulty{
 	if (_totalTimeElapsed - 10 * _currentDifficulty >= 10) {
         CGSize screenSize = [[CCDirector sharedDirector] winSize];
-        float rndChange = randRange(1, 6);
-        int change = floor(rndChange);
-        bool changeWasEnough = NO;
         //time to increase the difficulty
 		_currentDifficulty++;
 		//increase the playeracceleration if it is not at the maximum
 				
-        if (change == 1){
-            if (_normalSpeed.x <= 4.0){
-                _normalSpeed.x += 0.1;
-                _sickSpeed.x += 0.05;
-                _boostSpeed.x += 0.2;
-                
-                if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
-                    _level.difficulty = NORMAL;
-                }else if (_normalSpeed.x > 3.0f){
-                    _level.difficulty = HARD;
-                }
-                
-                //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
-                //		_playerAcceleration.x += 0.05;
-                //	}else {
-                _playerAcceleration.x += 0.1;
-                //	}
+        if (_normalSpeed.x <= 3.0){
+            _normalSpeed.x += 0.05;
+            _sickSpeed.x += 0.025;
+            _boostSpeed.x += 0.1;
+            _playerAcceleration.x += 0.05;
+            self.bgLayer.forSpeed = -_playerAcceleration.x;
+        }
+        
+        //increase the boid speed, if it is not at the maximum
+        if (_boidCurrentSpeed < 4.0f){
+            _boidCurrentSpeed+=0.05;
+            for (Boid* bee in _bees){
+                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:(_boidCurrentSpeed / 2.5) * 1.8f * 1.5f withRandomRangeOf:0.25f];
+                bee.startMaxSpeed = _boidCurrentSpeed;
             }
+        }
+        
+        if (_predatorCurrentSpeed < 3.0){
+            _predatorCurrentSpeed += 0.025;
+            for (Predator* predator in _predators){
+                [predator setSpeedMax:_predatorCurrentSpeed andSteeringForceMax:1.0f];     
+            }
+        }
 
-            //increase the boid speed, if it is not at the maximum
-            if (_boidCurrentSpeed < 5.0f){
-                _boidCurrentSpeed+=0.1;
-                for (Boid* bee in _bees){
-                    [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-                    bee.startMaxSpeed = _boidCurrentSpeed;
-                }
-                changeWasEnough = YES;
+    
+        //increase the predatorSpeed if it is not at the maximum
+        if (_minPredatorDistance > screenSize.width/3 ){
+            _minPredatorDistance -= 10;
+        }
+        
+        if (_currentDifficulty > 15){
+            if (self.bgLayer.maxFishJump < screenSize.width * 0.7){
+                self.bgLayer.maxFishJump += 4;
+            }
+            
+            if (self.bgLayer.minFishDistance >= screenSize.width/2){
+                self.bgLayer.minFishDistance -= 10;
+            }
+            
+            if (self.bgLayer.jumpSpeed >= 1.2){
+                self.bgLayer.jumpSpeed -= 0.025;
+            }
+        }  
+        
+        /*
+        if (_currentDifficulty > 20){
+            if (self.harvesterLayer.timeTillShoot > 1){
+                self.harvesterLayer.timeTillShoot -= 1;
+            }
+            
+            if (self.harvesterLayer.comboToFinish < 3){
+                self.harvesterLayer.comboToFinish++;
+            }
+            
+            if (self.harvesterLayer.timeLeftTillNextAppearance >= 5){
+                self.harvesterLayer.timeLeftTillNextAppearance -= 5;
             }
         }
-        if(change == 2 || changeWasEnough == NO){
-            //increase the predatorSpeed if it is not at the maximum
-            if (_minPredatorDistance > screenSize.width/3 ){
-                _minPredatorDistance -= 10;
-                changeWasEnough = YES;
-            }
-        }
-        if (change ==3  || changeWasEnough == NO){
-            if (_predatorCurrentSpeed < 4.0){
-                _predatorCurrentSpeed += 0.05;
-                for (Predator* predator in _predators){
-                    [predator setSpeedMax:_predatorCurrentSpeed andSteeringForceMax:1.0f];     
-                }
-                changeWasEnough = YES;
-            }
-        }
-        if (change == 4  || changeWasEnough == NO){
-            if (_currentDifficulty > 10){
-                //atka time
-                if (_atkaChance < 0.3){
-                    _atkaChance += 0.05;
-                    changeWasEnough = YES;
-                }
-            }else {
-                // increase player difficulty
-                if (_normalSpeed.x <= 4.0){
-                    _normalSpeed.x += 0.1;
-                    _sickSpeed.x += 0.05;
-                    _boostSpeed.x += 0.2;
-                    
-                    if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
-                        _level.difficulty = NORMAL;
-                    }else if (_normalSpeed.x > 3.0f){
-                        _level.difficulty = HARD;
-                    }
-                    
-                    //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
-                    //		_playerAcceleration.x += 0.05;
-                    //	}else {
-                    _playerAcceleration.x += 0.1;
-                    //	}
-                }
-                
-                //increase the boid speed, if it is not at the maximum
-                if (_boidCurrentSpeed < 5.0f){
-                    _boidCurrentSpeed+=0.1;
-                    for (Boid* bee in _bees){
-                        [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-                        bee.startMaxSpeed = _boidCurrentSpeed;
-                    }
-                    changeWasEnough = YES;
-                }
-            }
-        }
-        if (change == 5  || changeWasEnough == NO){
-            if (_currentDifficulty > 20){
-                //spore time
-                if (_fireBallChance < 0.3){
-                    _fireBallChance +=0.05;
-                    changeWasEnough = YES;
-                }
-            }else  {
-                if (_normalSpeed.x <= 4.0){
-                    _normalSpeed.x += 0.1;
-                    _sickSpeed.x += 0.05;
-                    _boostSpeed.x += 0.2;
-                    
-                    if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
-                        _level.difficulty = NORMAL;
-                    }else if (_normalSpeed.x > 3.0f){
-                        _level.difficulty = HARD;
-                    }
-                    
-                    //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
-                    //		_playerAcceleration.x += 0.05;
-                    //	}else {
-                    _playerAcceleration.x += 0.1;
-                    //	}
-                }
-                
-                //increase the boid speed, if it is not at the maximum
-                if (_boidCurrentSpeed < 5.0f){
-                    _boidCurrentSpeed+=0.1;
-                    for (Boid* bee in _bees){
-                        [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-                        bee.startMaxSpeed = _boidCurrentSpeed;
-                    }
-                }
-            }
-        }
-		
-		//increase the chance of spore if it is not at the maximum
-		
-		//increase the chance of atka if it is not at the maximum
-		
-		//decrease the distance between the predators if it is not at the minimum
-		
-		
+         */
 	}
 }
 
 
--(void) updateLabels{
-	_backGround.position = ccpAdd(_backGround.position, _playerAcceleration);
-	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x, _pauseButton.position.y);	
+-(void) updateLabels:(ccTime)dt{
+	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x * dt * 60, _pauseButton.position.y);	
     [self.hudLayer updatePoints:_pointsGathered];
 }
 
@@ -420,8 +426,8 @@
 												  target:self selector:@selector(switchPause:)];
 	
 	
-	CCMenu* _pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
-	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height);
+	_pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
+	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height + 32);
 	[self addChild:_pauseMenu z:100 tag:100];	
 }
 
@@ -478,7 +484,7 @@
 -(void) diseaseEffect{
 	if (_illnessTimeLeft == 0){
 		for (Boid* bee in _bees){
-			[bee boost:0.5 withForce:0.7];
+			[bee boost:0.5 withForce:1.0];
 		}	
 	}
 	_illnessTimeLeft += EVADE_BOOST_TIME;
@@ -506,25 +512,9 @@
 
 -(void) calculateAndApplyBonus{
 	//*16 is the maximum bonus
-	switch (_level.difficulty) {
-		case EASY:
-			if (_bonusCount <=2){
+    if (_bonusCount <=8){
 				_bonusCount *=2;
-			}
-			break;
-		case NORMAL:
-			if (_bonusCount <=4){
-				_bonusCount *=2;
-			}
-			break;
-		case HARD:
-			if (_bonusCount <=8){
-				_bonusCount *=2;
-			}
-			break;
-		default:
-			break;
-	}
+    }
 	//show a label for the current bonus
 	[self displayBonus];
 }
@@ -534,6 +524,10 @@
 	if ([self checkGoals]){
 		[self playComboSuccessSound];
 		[self calculateAndApplyBonus];
+        //self.harvesterLayer.comboToFinish++;
+        if (self.harvesterLayer.isIn){
+            [self.harvesterLayer sendItBack];
+        }
 		[self clearGoals];
 		[self generateGoals];
 	}
@@ -608,17 +602,8 @@
 	float maxNumber = 3;
 	float minTime = 0;
 	float maxTime = 0;
-
-	if (_level.difficulty == EASY){
-		minTime = 25;
-		maxTime = 30;
-	}else if (_level.difficulty == NORMAL){
-		minTime = 15;
-		maxTime = 20;
-	}else if (_level.difficulty == HARD){
-		minTime = 10;
-		maxTime = 15;
-	}
+    minTime = 15;
+    maxTime = 20;
 	
 	_goal1 = ceil(randRange(0, maxNumber));
 	_goal2 = ceil(randRange(0, maxNumber));
@@ -635,14 +620,6 @@
 
 
 #pragma mark out of screen stuff
-
--(void) removeOutOfScreenSpore{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	if (_fireBall != nil && _fireBall.sprite.position.x < _player.position.x - screenSize.width/2 - _fireBall.sprite.contentSize.width &&
-		_sporeOutOfScreen == NO){
-		_sporeOutOfScreen = YES;
-	}
-}
 
 
 -(void) removeOutOfScreenAtka{
@@ -697,13 +674,14 @@
 	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
 	
+    /*
 	//check if it collides with a combo 
 	for(ComboFinisher* comboFinisher in _comboFinishers){
 		if (CGRectIntersectsRect(point.sprite.boundingBox, comboFinisher.sprite.boundingBox)){
 			_lastPointLocation = comboFinisher.sprite.position;
 			[self movePointToNewPosition:point];
 		}
-	}
+	}*/
 			
 	_lastPointLocation = point.sprite.position;
 	point.taken = YES;
@@ -722,6 +700,8 @@
 	predator.life = _maxPredatorLife;
 }
 
+
+
 -(void) moveToCemetery:(Boid *)sprite{	
 	sprite.position = ccp(_player.position.x - 500, _player.position.y-500);
 	[_cemeteryBees addObject:sprite];
@@ -730,7 +710,7 @@
 }
 
 -(void) removeDeadItems{
-	_removeRunning = YES;
+	_removeRunning = NO;
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	for (Points* point in _takenPoints){
 		PointTaken* actionMoveUp = [PointTaken actionWithDuration:0.4 moveTo:ccp(point.sprite.position.x - _playerAcceleration.x * 5,
@@ -739,6 +719,9 @@
 		CCSprite* deadSprite = nil;
 		bool goodForCombo = [self addItemValue:point.type];
 		if (!goodForCombo){
+            if (!self.harvesterLayer.isIn && !self.harvesterLayer.moveOutParticle && !self.harvesterLayer.moveInParticle){
+                self.harvesterLayer.timeElapsed += 10;
+            }
             [_alchemy clearItems];
             [self clearItems];
             [self clearGoals];
@@ -766,15 +749,19 @@
 			}
 			deadSprite = [CCSprite spriteWithSpriteFrameName:@"blueFlower.png"];
 		}else if (point.type >= BOMB_SLOT){
-			NSLog(@"combofinisher");
 			self.comboFinisher = (ComboFinisher*) point;
 		}
-		
+        
 		[_batchNode addChild:deadSprite z:300 tag:300];
 		deadSprite.position = point.sprite.position;
 		deadSprite.scale = 0.1;
 		[deadSprite runAction:[CCSequence actions:actionMoveUp, actionMoveDone, nil]];
-
+        if (point.moving){
+            [point.sprite stopAllActions];
+            point.moving = NO;
+            point.moveDone = NO;
+            [point startRotate];
+        }
 		[self movePointToNewPosition:point];			
 	}
 	[_takenPoints removeAllObjects];
@@ -937,57 +924,94 @@
 				}
 			}
 			//SPORE
-			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Spore class]]
+			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Fish class]]
 					 && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
 				Boid *boid = (Boid *) bodyB->GetUserData();
 				[self playDeadBeeSound];
 				[_deadBees addObject:boid];
 		//		toDestroy.push_back(bodyB);
 			}
-			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Spore class]]
+			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Fish class]]
 					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
 				Boid *boid = (Boid *) bodyA->GetUserData();
 				[self playDeadBeeSound];
 				[_deadBees addObject:boid];
 		//		toDestroy.push_back(bodyA);
 			}
-			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[Spore class]]) {
+			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[Fish class]]) {
 				Predator *predator = (Predator *) bodyA->GetUserData();
 				if ([self isOnScreen:predator]){
+                    NSLog(@"deadPredator");
 					[_deadPredators addObject:predator];
 				}
 			//	toDestroy.push_back(bodyA);
 			}
-			else if ([bodyB->GetUserData() isKindOfClass:[Predator class]] && [bodyA->GetUserData() isKindOfClass:[Spore class]]) {
+			else if ([bodyB->GetUserData() isKindOfClass:[Predator class]] && [bodyA->GetUserData() isKindOfClass:[Fish class]]) {
 				Predator *predator = (Predator *) bodyB->GetUserData();
 				if ([self isOnScreen:predator]){
+                    NSLog(@"deadPredator");
 					[_deadPredators addObject:predator];
 				}
 			//	toDestroy.push_back(bodyB);
 			}
-						
-			//ATKA
-			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Atka class]]
+            //Harvester
+			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[NSString class]]
 					 && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
-				Boid *boid = (Predator *) bodyB->GetUserData();
-				[boid makeSick:0.5 withForce:0.5];
-				_illnessTimeLeft = 2.0f;
-				[self setSickSpeed];
+				Boid *boid = (Boid *) bodyB->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                //		toDestroy.push_back(bodyB);
 			}
-			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Atka class]]
+			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[NSString class]]
 					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
-				Boid *boid = (Predator *) bodyA->GetUserData();
-				[boid  makeSick:0.5 withForce:0.5];
-				_illnessTimeLeft = 2.0f;
-				[self setSickSpeed];
+				Boid *boid = (Boid *) bodyA->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                //		toDestroy.push_back(bodyA);
 			}
-			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[Atka class]]) {
+			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[NSString class]]) {
 				Predator *predator = (Predator *) bodyA->GetUserData();
-				[predator makeSick:0.5 withForce:0.5];
+				if ([self isOnScreen:predator]){
+					[_deadPredators addObject:predator];
+				}
+                //	toDestroy.push_back(bodyA);
 			}
-			else if ([bodyB->GetUserData() isKindOfClass:[Predator class]] && [bodyA->GetUserData() isKindOfClass:[Atka class]]) {
+			else if ([bodyB->GetUserData() isKindOfClass:[Predator class]] && [bodyA->GetUserData() isKindOfClass:[NSString class]]) {
 				Predator *predator = (Predator *) bodyB->GetUserData();
-				[predator makeSick:0.5 withForce:0.5];
+				if ([self isOnScreen:predator]){
+					[_deadPredators addObject:predator];
+				}
+                //	toDestroy.push_back(bodyB);
+			}
+            
+            //Bullet
+			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Bullet class]]
+					 && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+				Boid *boid = (Boid *) bodyB->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                //		toDestroy.push_back(bodyB);
+			}
+			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Bullet class]]
+					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+				Boid *boid = (Boid *) bodyA->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                //		toDestroy.push_back(bodyA);
+			}
+			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[Bullet class]]) {
+				Predator *predator = (Predator *) bodyA->GetUserData();
+				if ([self isOnScreen:predator]){
+					[_deadPredators addObject:predator];
+				}
+                //	toDestroy.push_back(bodyA);
+			}
+			else if ([bodyB->GetUserData() isKindOfClass:[Predator class]] && [bodyA->GetUserData() isKindOfClass:[Bullet class]]) {
+				Predator *predator = (Predator *) bodyB->GetUserData();
+				if ([self isOnScreen:predator]){
+					[_deadPredators addObject:predator];
+				}
+                //	toDestroy.push_back(bodyB);
 			}
 		}   
 	}
@@ -1005,30 +1029,28 @@
 	[_batchNode removeChild:(CCSprite*)sender cleanup:YES];
 }
 
-
--(void) actionBonusFinished:(id)sender{
-	[self removeChild:(CCLabelTTF*)sender cleanup:YES];
-}
-
 -(void) loadingTextures{
-	_currentDifficulty = 1;
+    //first stop all the music and load some ambience
+    [self unschedule:@selector(loadingTextures)];
+    [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+    [[CCTextureCache sharedTextureCache] removeUnusedTextures];
+
+	_currentDifficulty = 0;
 	_bonusCount = 1;
-    _fireBallChance = 0;
-    _atkaChance = 0;
-	[self unschedule:@selector(loadingTextures)];
+
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	[[[CCDirector sharedDirector] openGLView] setMultipleTouchEnabled:NO];
 	self.isTouchEnabled = YES;
 	
-	_batchNode = [CCSpriteBatchNode batchNodeWithFile:@"beeSprites2.png"]; // 1
+	_batchNode = [CCSpriteBatchNode batchNodeWithFile:@"beeSprites2_high.pvr.ccz"]; // 1
 	[self addChild:_batchNode z:500 tag:500]; // 2
-	[[CCSpriteFrameCache sharedSpriteFrameCache] addSpriteFramesWithFile:@"beeSprites2.plist"];
-
+	[[CCSpriteFrameCache sharedSpriteFrameCache] addSpriteFramesWithFile:@"beeSprites2_high.plist" textureFile:@"beeSprites2_high.pvr.ccz"];
+    
 	//init the box2d world
 	b2Vec2 gravity = b2Vec2(0.0f, 0.0f);
 	bool doSleep = true;
 	_world = new b2World(gravity, doSleep);
-	
+
 	_contactListener = new MyContactListener();
 	//set the contactListener for the world
 	_world->SetContactListener(_contactListener);
@@ -1038,6 +1060,7 @@
 	
 	_atkaOutOfScreen = YES;
 	_sporeOutOfScreen = YES;
+    
 	
 	//box2d end
 	_maxPredatorLife = 1;
@@ -1045,20 +1068,10 @@
 	_beeSick = NO;
 	//set the speeds 
 	
-	if (_level.difficulty == EASY){
-		_normalSpeed = ccp(1.5,0);	
-		_boostSpeed = ccp(2.0,0);
-		_sickSpeed = ccp(1.0,0);
-	}else if (_level.difficulty == NORMAL){
-		_normalSpeed = ccp(2.0,0);
-		_boostSpeed = ccp(3.0,0);
-		_sickSpeed = ccp(1.5,0);
-	}else if (_level.difficulty == HARD){
-		_normalSpeed = ccp(3,0);
-		_boostSpeed = ccp(4.5,0);
-		_sickSpeed = ccp(1.5,0);
-	}
-	_fireBallSpeed =  -1;
+    _normalSpeed = ccp(1.5,0);	
+    _boostSpeed = ccp(2.0,0);
+    _sickSpeed = ccp(1.0,0);
+
 	_playerAcceleration = _normalSpeed;
 	_pointsGathered = 0;
 	_boostTimeLeft = 0;
@@ -1089,28 +1102,14 @@
 	_player = [[CCSprite alloc] init];
 	_player.position = ccp(screenSize.width/2 , screenSize.height/2);
 	_player.opacity = 0;
-	
-	_currentTouch = _player.position;
+
 	
 	[self addChild:_player z:110 tag:2];
 	[self setViewpointCenter:_player.position];
 	
 	float randomDist = randRange(1, 4);
 	float randomY = randRange(0.2, 0.5);
-	
-	if (_level.trapAvailable){
-		_atka = [[[Atka alloc] initForNode:_batchNode] retain];
-		[_atka createBox2dBodyDefinitions:_world];
-		_atka.sprite.position =  ccp(_player.position.x + screenSize.width/2 + screenSize.width * 20, 
-									 randomDist * screenSize.height/5 );
-	}
-	
-	if (_level.sporeAvailable){
-		_fireBall = [[[Spore alloc] initForNode:_batchNode] retain];
-		_fireBall.sprite.position = ccpAdd(_player.position, ccp(screenSize.width * randomDist, screenSize.height/2 * randomY));
-		[_fireBall createBox2dBodyDefinitions:_world];
-		//[_batchNode addChild:_fireBall.sprite z:100 tag:100];
-	}
+	    
 	
 	Boid* boid;
 	float count = 15;
@@ -1126,20 +1125,10 @@
 		// You want the flock to behavior basically the same, but have a TINY variation among members
 		boid.startMaxForce = 0;
 		boid.startMaxSpeed = 0;
-		
-		if (_level.difficulty == EASY){
-			[boid setSpeedMax:2.5f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f  withRandomRangeOf:0.25f];
-			_boidCurrentSpeed = 2.5f;
-			_boidCurrentTurn = 1.8f;
-		}else if (_level.difficulty == NORMAL){
-			[boid setSpeedMax:3.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-			_boidCurrentSpeed = 3.0f;
-			_boidCurrentTurn = 2.7f;
-		}else if (_level.difficulty == HARD) {
-			[boid setSpeedMax:4.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-			_boidCurrentSpeed = 4.0f;
-			_boidCurrentTurn = 2.7f;
-		} 
+        [boid setSpeedMax:2.5f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f  withRandomRangeOf:0.25f];
+        _boidCurrentSpeed = 2.5f;
+        _boidCurrentTurn = 1.8f;
+
 		
 		[boid setWanderingRadius: 20.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.3f];
 		[boid setEdgeBehavior: EDGE_WRAP];
@@ -1152,7 +1141,7 @@
 			}
 		}
 		[boid setScale: randRange(0.3,0.5)];
-		[boid setPos: ccp( CCRANDOM_0_1() * screenSize.width/3,  screenSize.height / 2)];
+		[boid setPos: ccp( randRange(0.5, 1.0) * screenSize.width/3,  screenSize.height / 2)];
 		// Color
 		[boid setOpacity:220];
 		[boid createBox2dBodyDefinitions:_world];
@@ -1166,54 +1155,16 @@
 	for (int i = 0; i < 12; i++) {
 		[self generateNextPoint: (i % 3)+1];
 	}
-	
+	/*
 	if (_level.distanceToGoal < 0){
 		self.comboFinishers = [[NSMutableArray alloc] init];
 		for (int i = 0; i < 3; i++){
 			[self generateNextFinisher:i];
 		}
-	}
-	
-	//init the array for clouds
-	_clouds = [[NSMutableArray alloc] init];
-	//init the clouds
-	CCSprite* bgCloud;
-	for (int i= 0; i <6; i++){
-		bgCloud = [CCSprite spriteWithSpriteFrameName:@"cloudsmall.png"];
-		bgCloud.scale = randRange(0.4, 0.8);
-		bgCloud.opacity = 220;
-		[_clouds addObject:bgCloud];
-	}
-	
-	// init the parallax node 
-	_backGroundNode = [CCParallaxNode node];
-	[self addChild:_backGroundNode z:2];
-	CGPoint bgSpeed = ccp(0.1, 0.0);
-	_backGroundNode.position = _player.position;
-	
-	// init the background
-	[self genBackground];
-	
-	for (CCSprite* cloud in _clouds) {
-		float rnd = randRange(0.1, 1.0);
-		float rndOffset = randRange(400, 1000);
-		CGPoint positionOffsetForCloud = ccp(screenSize.width - cloud.contentSize.width * cloud.scale + rndOffset, 
-											 screenSize.height - cloud.contentSize.height * cloud.scale);
-		[_backGroundNode addChild:cloud z:2 parallaxRatio:ccp(rnd*0.5/4,0) positionOffset:positionOffsetForCloud];
-	}
-	
-	
-	_tree = [CCSprite spriteWithSpriteFrameName:@"tree1.png"];
-	[_backGroundNode addChild:_tree z:59 parallaxRatio:ccp(0.05, 0.0) positionOffset:ccp(screenSize.width * 3/2, _tree.contentSize.height/2 *_tree.scale )];
-	
-	_tree2 = [CCSprite spriteWithSpriteFrameName:@"tree2.png"];
-	[_backGroundNode addChild:_tree2 z:59 parallaxRatio:ccp(0.05, 0.0) positionOffset:ccp(screenSize.width * 3, _tree2.contentSize.height/2 *_tree2.scale)];
-	
-	_tree3 = _tree = [CCSprite spriteWithSpriteFrameName:@"tree1.png"];
-	[_backGroundNode addChild:_tree z:59 parallaxRatio:ccp(0.05, 0.0) positionOffset:ccp(screenSize.width/2, _tree.contentSize.height/2 *_tree.scale )];
+	}*/
 	
 	[self initLabels];
-	
+    
 	[self schedule:@selector(loadingTerrain)];
 }
 
@@ -1222,13 +1173,14 @@
 
 -(void) loadingTerrain{
 	[self unschedule:@selector(loadingTerrain)];
-	
-	_hills1 = [CCSprite spriteWithFile:@"hills1.png"];
-	_hills2 = [CCSprite spriteWithFile:@"hills1.png"];
-	
-	[_backGroundNode addChild:_hills1 z:61 parallaxRatio:ccp(0.15, 0.0) positionOffset:ccp(_hills1.contentSize.width/2 - 30, _hills1.contentSize.height/2)];
-    [_backGroundNode addChild:_hills2 z:60 parallaxRatio:ccp(0.15, 0.0) positionOffset:ccp(_hills1.contentSize.width + _hills1.contentSize.width/2 -60, _hills2.contentSize.height/2) ];
+    [self.harvesterLayer initWithWorld:_world];
 
+    [self.bgLayer genBackground];
+    [self.bgLayer createBackground];
+    for (Fish* fish in self.bgLayer.fish){
+        [fish createBox2dBodyDefinitions:_world];
+    }
+    self.bgLayer.forSpeed = -_playerAcceleration.x;
 	[self schedule:@selector(loadingSounds)];
 }
 
@@ -1240,22 +1192,29 @@
 		[[SimpleAudioEngine sharedEngine] preloadEffect:@"au.wav"];
 		[[SimpleAudioEngine sharedEngine] preloadEffect:@"woohoo.wav"];
 	}
+    if (sharedManager.music){
+        [[SimpleAudioEngine sharedEngine] preloadBackgroundMusic:@"komaromi.mp3"];
+    }
 	[self schedule:@selector(loadingDone)];
 }
 
 -(void) loadingDone{
-	[self unschedule:@selector(loadingDone)];
+    [self unschedule:@selector(loadingDone)];
     [self.pauseLayer loadingFinished];
-	_gameIsReady = YES;
-	//add some tap to start
-	_alchemy = [[[Alchemy alloc]init] retain];
-	_alchemy.world = self;
+    _gameIsReady = YES;
+    //add some tap to start
+    _alchemy = [[[Alchemy alloc]init] retain];
+    _alchemy.world = self;
 }
 
--(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer{
+-(id) initWithLayers:(HUDLayer*) hudLayer pause:(PauseLayer*) pauseLayer message:(MessageLayer*) messageLayer harvester:(HarvesterLayer*)harvesterLayer bgLayer:(HillsBackgroundLayer *)bgLayer{ 
 	if ((self = [super init])){
+        _currentDifficulty = 1;
 		self.hudLayer = hudLayer;
         self.pauseLayer = pauseLayer;
+        self.messageLayer = messageLayer;
+        self.harvesterLayer = harvesterLayer;
+        self.bgLayer = bgLayer;
         pauseLayer.gameScene = self;
 		self.level = (Level*)[[LevelManager sharedManager] selectedLevel];
 		_distanceToGoal = _level.distanceToGoal;
@@ -1277,40 +1236,73 @@
 
 
 -(void) updateBox2DWorld:(ccTime)dt{
-	_world->Step(dt, 10, 10);
-    for(b2Body *b = _world->GetBodyList(); b; b=b->GetNext()) {
-       if ([b->GetUserData() isKindOfClass:[Spore class]]){
-			Spore *spore = (Spore *)b->GetUserData();
-            b2Vec2 b2Position = b2Vec2(spore.sprite.position.x/PTM_RATIO,
-                                       spore.sprite.position.y/PTM_RATIO);
-            float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(spore.sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-		}else if ([b->GetUserData() isKindOfClass:[Atka class]]){
-			Atka *atka = (Atka *)b->GetUserData();
-            b2Vec2 b2Position = b2Vec2(atka.sprite.position.x/PTM_RATIO,
-                                       atka.sprite.position.y/PTM_RATIO);
-            float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(atka.sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-		}else if ([b->GetUserData() isKindOfClass:[Points class]]){
-			Points *point = (Points *)b->GetUserData();
-            b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
-                                       point.sprite.position.y/PTM_RATIO);
-            float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-		}else if ([b->GetUserData() isKindOfClass:[ComboFinisher class]]){
-			ComboFinisher *point = (ComboFinisher *)b->GetUserData();
-            b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
-                                       point.sprite.position.y/PTM_RATIO);
-            float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-		}else{
-            CCSprite *sprite = (CCSprite *)b->GetUserData();
-			b2Vec2 b2Position = b2Vec2(sprite.position.x/PTM_RATIO,
-									   sprite.position.y/PTM_RATIO);
-			float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-        }
-    }	
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    timeAccumulator+=dt;
+    if (timeAccumulator > (MAX_CYCLES_PER_FRAME * UPDATE_INTERVAL)){
+        timeAccumulator = UPDATE_INTERVAL;
+    }
+    
+    while (timeAccumulator >= UPDATE_INTERVAL){
+            timeAccumulator -= UPDATE_INTERVAL;
+            for(b2Body *b = _world->GetBodyList(); b; b=b->GetNext()) {
+               if ([b->GetUserData() isKindOfClass:[Fish class]]){
+                    Fish *spore = (Fish *)b->GetUserData();                        
+                    CGPoint fishLocation =  [self convertToNodeSpace:spore.sprite.position ];
+                    if (fishLocation.x + spore.sprite.contentSize.width/2 * spore.sprite.scale < _player.position.x + screenSize.width/2){
+                       b->SetAwake(true);
+                    }else{
+                       b->SetAwake(false);
+                    }
+                    b2Vec2 b2Position = b2Vec2(fishLocation.x/PTM_RATIO,
+                                               fishLocation.y/PTM_RATIO);
+                    float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(spore.sprite.rotation);
+                    b->SetTransform(b2Position, b2Angle);
+                }else if ([b->GetUserData() isKindOfClass:[Points class]]){                    
+                    Points *point = (Points *)b->GetUserData();
+                    b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
+                                               point.sprite.position.y/PTM_RATIO);
+                    float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
+                    b->SetTransform(b2Position, b2Angle);
+                }else if ([b->GetUserData() isKindOfClass:[ComboFinisher class]]){
+                    ComboFinisher *point = (ComboFinisher *)b->GetUserData();
+                    b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
+                                               point.sprite.position.y/PTM_RATIO);
+                    float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
+                    b->SetTransform(b2Position, b2Angle);
+                }else if ([b->GetUserData() isKindOfClass:[Bullet class]]){
+                    Bullet *bullet = (Bullet *)b->GetUserData();
+                    CGPoint location = [self convertToNodeSpace:bullet.sprite.position ];
+                    if (bullet.isOutOfScreen){
+                        b->SetAwake(false);
+                    }else{
+                        b->SetAwake(true);
+                    }
+                    b2Vec2 b2Position = b2Vec2(location.x/PTM_RATIO,
+                                               location.y/PTM_RATIO);
+                    float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(bullet.sprite.rotation);
+                    b->SetTransform(b2Position, b2Angle);
+                }else if ([b->GetUserData() isKindOfClass:[NSString class]]){
+                    CCSprite *sprite = self.harvesterLayer.harvesterSprite;
+                    CGPoint point = [self convertToNodeSpace:self.harvesterLayer.harvesterSprite.position];
+                    b2Vec2 b2Position = b2Vec2(point.x/PTM_RATIO,
+                                               point.y/PTM_RATIO);
+                    float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sprite.rotation);
+                    b->SetTransform(b2Position, b2Angle);
+                }else{
+                    CCSprite *sprite = (CCSprite *)b->GetUserData();
+                    if (sprite.position.x + sprite.contentSize.width/2 * sprite.scale <= _player.position.x + screenSize.width/2){
+                        b->SetAwake(true);
+                    }else{
+                        b->SetAwake(false);
+                    }
+                    b2Vec2 b2Position = b2Vec2(sprite.position.x/PTM_RATIO,
+                                               sprite.position.y/PTM_RATIO);
+                    float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sprite.rotation);
+                    b->SetTransform(b2Position, b2Angle);
+                }
+            }	
+            _world->Step(UPDATE_INTERVAL,3, 2);
+    }
 }
 
 
@@ -1334,27 +1326,27 @@
 	
 	if ([_backGroundNode convertToWorldSpace:_tree.position].x < -_tree.contentSize.width/2 * _tree.scale) {
 		[_backGroundNode incrementOffset:ccp(_tree.contentSize.width * _tree.scale + screenSize.width  ,0) forChild:_tree];
-		[_backGroundNode convertToWorldSpace:_tree.position];
+		//[_backGroundNode convertToWorldSpace:_tree.position];
 	}
 	
 	if ([_backGroundNode convertToWorldSpace:_tree2.position].x < -_tree2.contentSize.width/2 * _tree2.scale) {
 		[_backGroundNode incrementOffset:ccp(_tree2.contentSize.width * _tree2.scale + screenSize.width  ,0) forChild:_tree2];
-		[_backGroundNode convertToWorldSpace:_tree2.position];
+		//[_backGroundNode convertToWorldSpace:_tree2.position];
 	}
 	
 	if ([_backGroundNode convertToWorldSpace:_tree3.position].x < -_tree3.contentSize.width/2 * _tree3.scale) {
 		[_backGroundNode incrementOffset:ccp(_tree3.contentSize.width * _tree3.scale + screenSize.width  ,0) forChild:_tree3];
-		[_backGroundNode convertToWorldSpace:_tree3.position];
+		//[_backGroundNode convertToWorldSpace:_tree3.position];
 	}
 	
 	if ([_backGroundNode convertToWorldSpace:_hills1.position].x < -_hills1.contentSize.width/2 * _hills1.scale) {
 		[_backGroundNode incrementOffset:ccp(_hills1.contentSize.width * _hills1.scale +  _hills2.contentSize.width * _hills1.scale - 60,0) forChild:_hills1];
-		[_backGroundNode convertToWorldSpace:_hills1.position]; 
+		//[_backGroundNode convertToWorldSpace:_hills1.position]; 
 	}
 	
 	if ([_backGroundNode convertToWorldSpace:_hills2.position].x < -_hills2.contentSize.width/2 * _hills2.scale) {
 		[_backGroundNode incrementOffset:ccp(_hills1.contentSize.width * _hills1.scale +  _hills2.contentSize.width * _hills2.scale - 60 ,0) forChild:_hills2];
-		[_backGroundNode convertToWorldSpace:_hills2.position];
+		//[_backGroundNode convertToWorldSpace:_hills2.position];
 	}
 }
 
@@ -1403,13 +1395,9 @@
 	Predator* predator = [Predator spriteWithSpriteFrameName:@"fly.png"];
 	predator.scale = 0.6;
 	int pType = arc4random() % MAX_PREDATOR_TYPE;
-	
 	predator.type = pType;
-
 	predator.doRotation = YES; 
-	
-	float predatorSpeed = _level.predatorSpeed - (float)_level.difficulty;
-	
+	float predatorSpeed = 1.2;
 	_predatorCurrentSpeed = predatorSpeed;
 	
 	[predator setSpeedMax:predatorSpeed withRandomRangeOf:0.2f andSteeringForceMax:1 withRandomRangeOf:0.15f];
@@ -1438,9 +1426,31 @@
 		}
 	}
 }
+
+-(void) gameOverRestartTapped:(id)sender{
+    [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+    _currentDifficulty  = 1;
+    _evilAppearDone = NO;
+    _emitterMoving = NO;
+    [[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.5 scene:[CampaignScene scene] withColor:ccBLACK]];
+}
+
+-(void) gameOverExitTapped:(id)sender{
+    [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+    _currentDifficulty = 1;
+    _evilAppearDone = NO;
+    _emitterMoving = NO;
+    [[CCTextureCache sharedTextureCache] removeAllTextures];
+    [[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[LevelSelectScene scene] withColor:ccBLACK]];
+}
 	
 -(void) gameOver{
-	[self unschedule:@selector(update:)];
+    [self unschedule:@selector(update:)];
+    [self removeChild:_pauseMenu cleanup:YES];
+    if (_newHighScore && _distanceToGoal < 0){
+        [self saveLevelPerformance];    
+    }
+    /*
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	CCSprite* gameOverSprite = [CCSprite spriteWithFile:@"gameOverOverlay.png"];
 	gameOverSprite.position = _player.position;
@@ -1449,24 +1459,62 @@
 	[self addChild:gameOverSprite z:599 tag:299];
 	[gameOverSprite runAction:[CCFadeIn actionWithDuration:0.2]];
 	
-	CCLabelTTF* gameOverLabel = [[CCLabelTTF alloc] initWithString:@"Game Over" fontName:@"Marker Felt" fontSize:32];
+	CCLabelBMFont* gameOverLabel = [[CCLabelBMFont alloc] initWithString:@"Game Over" fntFile:@"markerfelt.fnt"];
+    gameOverLabel.scale = 0.5;
 	[self addChild:gameOverLabel z:600 tag:10];
 	gameOverLabel.position = ccpAdd(_player.position, ccp(0, screenSize.height/5));
 	//gameOverLabel.opacity = 0;
 	
-	CCLabelTTF* scoreLabel = [[CCLabelTTF alloc] initWithString:[NSString stringWithFormat:@"Points:  %i", _pointsGathered] fontName:@"Marker Felt" fontSize:14];	
+	CCLabelBMFont* scoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"Points:  %i", _pointsGathered] fntFile:@"markerfelt.fnt"];	
+    scoreLabel.scale = 0.25;
 	if (_newHighScore) {
 		_level.highScorePoints = _pointsGathered;
 	}
-
-	CCLabelTTF* highscoreLabel = [[CCLabelTTF alloc] initWithString:[NSString stringWithFormat:@"HighScore:  %i", _level.highScorePoints]  fontName:@"Marker Felt" fontSize:14];	
+    
+    
+    
+    
+    //highscore label
+    CCLabelBMFont* highscoreLabel;
+    if (_newHighScore){
+        highscoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"HighScore:  %i", _pointsGathered]  fntFile:@"markerfelt.fnt"];	
+        highscoreLabel.scale = 0.25;
+    }else{
+        highscoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"HighScore:  %i", _pointsGathered]  fntFile:@"markerfelt.fnt"];	
+        highscoreLabel.scale = 0.25;
+    }
 	
 	scoreLabel.position = _player.position;
 	[self addChild:scoreLabel z:600 tag:600];
 	
 	highscoreLabel.position = ccpAdd(scoreLabel.position, ccp(0, -screenSize.height/5));
 	[self addChild:highscoreLabel z:600 tag:600];
+    
+    CCMenuItemImage *exitButton = [CCMenuItemImage itemFromNormalImage:@"exitButton.png" selectedImage:@"exitButton.png" target:self selector:@selector(gameOverExitTapped:)];   
+    CCMenu* exitMenu = [CCMenu menuWithItems:exitButton, nil];
+    [self addChild:exitMenu z:601 tag:600];
+    
+    exitMenu.position = ccp(gameOverSprite.position.x - gameOverSprite.contentSize.width/2 * gameOverSprite.scaleX + 150 + exitButton.contentSize.width/2,
+                            gameOverSprite.position.y);
+    
+    CCMenuItemImage *restartButton = [CCMenuItemImage itemFromNormalImage:@"restartButton.png" selectedImage:@"restartButton.png" 
+                                                                   target:self selector:@selector(gameOverRestartTapped:)];   
+    CCMenu* restartMenu = [CCMenu menuWithItems:restartButton, nil];
+    [self addChild:restartMenu z:601 tag:600];
+    
+    restartMenu.position = ccp(gameOverSprite.position.x + gameOverSprite.contentSize.width/2 * gameOverSprite.scaleX - 190 + restartButton.contentSize.width/2,
+                               gameOverSprite.position.y);
+    
+    CCMenuItemImage *gameCenterImage = [CCMenuItemImage itemFromNormalImage:@"Game_Center_logo.png" selectedImage:@"Game_Center_logo.png" target:self selector:@selector(presentGameCenter)];
+    gameCenterImage.scale = 0.4;
+    CCMenu* gameCenterMenu = [CCMenu menuWithItems:gameCenterImage, nil];
+    [self addChild:gameCenterMenu z:601 tag:601];
+    gameCenterMenu.position = ccp(restartMenu.position.x, restartMenu.position.y - gameCenterImage.contentSize.height * gameCenterImage.scale);
+    */
+    [self.pauseLayer gameOver:_pointsGathered withHighScore:self.level.highScorePoints];
 }
+
+
 
 -(void) levelDone{
 	[self unschedule:@selector(update:)];
@@ -1517,7 +1565,7 @@
 
 
 -(void) beeDefaultMovement:(Boid*) bee withDt:(ccTime)dt{
-	[bee wander:0.1];
+	[bee wander: 0.05f];
 	[self separate:bee withSeparationDistance:40.0f usingMultiplier:0.4f];
 	[self align:bee withAlignmentDistance:30.0f usingMultiplier:0.2f];
 	[self cohesion:bee withNeighborDistance:40.0f usingMultiplier:0.1f];	
@@ -1527,14 +1575,14 @@
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	bool tmpSick = NO;
 	for (Boid* bee in _bees){
-		bee.leftEdgePosition = ccp(_player.position.x - screenSize.width/2, _player.position.y);
+		bee.leftEdgePosition = ccp(_player.position.x - screenSize.width/2 + 10, _player.position.y);
 		[self beeDefaultMovement:bee withDt:dt];
 		if (!CGPointEqualToPoint(_currentTouch , CGPointZero)){
-			[bee seek:_currentTouch usingMultiplier:0.15f];
+			[bee seek:ccp(_currentTouch.x - 50, _currentTouch.y) usingMultiplier:0.15f];
 		}else{
-			[bee seek:_player.position usingMultiplier:0.15f];
+			[bee seek:_player.position usingMultiplier:0.1f];
 		}
-		[bee update];
+		[bee update:dt];
 		if (bee.hasDisease){
 			tmpSick = YES;
 		}
@@ -1548,60 +1596,62 @@
 }
 
 -(void) updatePoints{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	for (Points* point in _points){
-		if (![self isOnScreen:point.sprite]){
+		if ((point.sprite.position.x > _player.position.x + screenSize.width/2) && 
+            point.sprite.position.x < _lastPointLocation.x){
 			point.taken = NO;
 		}
+        if (_currentDifficulty > 10 && point.sprite.position.x < _player.position.x + screenSize.width/2 && point.moving == NO){
+            [point update];
+        }
 	}
+    
+    /*
 	for (ComboFinisher* point in _comboFinishers){
 		if (![self isOnScreen:point.sprite]){
 			point.taken = NO;
 		}
-	}
+	}*/
 }
 
 -(void) displayNoBonus{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	//display an item for no bonus
-	CCLabelTTF* noBonus = [[[CCLabelTTF alloc] initWithString:@"Failed" fontName:@"Marker Felt" fontSize:32] autorelease];
-	noBonus.position = ccp(_player.position.x , _player.position.y - screenSize.height);
-
-	CCAction* moveInABit = [CCMoveTo actionWithDuration:0.2 position:ccp(_player.position.x , _player.position.y - screenSize.height/4)];
-	CCAction* fadeOut = [CCFadeOut actionWithDuration:1];
-	[self addChild:noBonus z:500 tag:500];
-	CCAction* bonusActionDone = [CCCallFuncN actionWithTarget:self 
-													 selector:@selector(actionBonusFinished:)];
-	[noBonus runAction:[CCSequence actions: moveInABit, fadeOut, bonusActionDone, nil]];					   
+    int rnd = floor(randRange(1, 8));
+    NSString* message;
+    switch (rnd) {
+        case 1:
+            message = @"Oh no...";
+            break;
+        case 2:
+            message = @"Focus!!!";
+            break;
+        case 3:
+            message = @"Nevermind...";
+            break;
+        case 4:
+            message = @"Try again!";
+            break;
+        case 5:
+            message = @"Not this time";
+            break;
+        case 6:
+            message = @"You can do this";
+            break;
+        case 7:
+            message = @"Yarrrggh";
+        default:
+            break;
+    }    [self.messageLayer displayMessage:message];				   
 }
 
 -(void) displayHighScore{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	//display an item for no bonus
-	CCLabelTTF* noBonus = [[[CCLabelTTF alloc] initWithString:@"High Score" fontName:@"Marker Felt" fontSize:32] autorelease];
-	noBonus.position = ccp(_player.position.x , _player.position.y - screenSize.height);
-	
-	CCAction* moveInABit = [CCMoveTo actionWithDuration:0.2 position:ccp(_player.position.x , _player.position.y - screenSize.height/4)];
-	CCAction* fadeOut = [CCFadeOut actionWithDuration:1];
-	[self addChild:noBonus z:500 tag:500];
-	CCAction* bonusActionDone = [CCCallFuncN actionWithTarget:self 
-													 selector:@selector(actionBonusFinished:)];
-	[noBonus runAction:[CCSequence actions: moveInABit, fadeOut, bonusActionDone, nil]];					   
+    [self.messageLayer displayMessage:@"High Score"];
 }
 
 	
 -(void) displayBonus{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	//display an item for no bonus
 	NSString* tmpStr = [[[NSString alloc] initWithFormat:@"%ix Bonus", _bonusCount] autorelease];
-	CCLabelTTF* noBonus = [[[CCLabelTTF alloc] initWithString:tmpStr fontName:@"Marker Felt" fontSize:32] autorelease];
-	noBonus.position = ccp(_player.position.x , _player.position.y - screenSize.height);
-	CCAction* bonusActionDone = [CCCallFuncN actionWithTarget:self 
-													 selector:@selector(actionBonusFinished:)];
-
-	CCAction* moveInABit = [CCMoveTo actionWithDuration:0.2 position:ccp(_player.position.x , _player.position.y - screenSize.height/4)];
-	CCAction* fadeOut = [CCFadeOut actionWithDuration:1];
-	[self addChild:noBonus z:500 tag:500];
-	[noBonus runAction:[CCSequence actions: moveInABit, fadeOut, bonusActionDone, nil]];					   
+    [self.messageLayer displayMessage:tmpStr];
 }
 
 
@@ -1614,6 +1664,9 @@
 	}
 }
 
+-(void) emitterMoveDone{
+    _emitterMoving = NO;
+}
 
 -(void)update:(ccTime)dt{
 	float tickTime = 1.0f/60.0f;
@@ -1658,29 +1711,23 @@
 						_illnessTimeLeft = 0;;
 					}
 				}
-				
+         
 				if (_touchEnded){
 					_currentTouch = ccp(_currentTouch.x + _playerAcceleration.x, _currentTouch.y);
 				}
-				if (_fireBall != nil){
-					_fireBall.sprite.position = ccpAdd(_fireBall.sprite.position, ccp(_fireBallSpeed,0));
-				}
-			
+						
+                /*
 				//parallaxNode
 				CGPoint backgroundScrollVel = ccp(-10, 0);
 				_backGroundNode.position = ccpAdd(_backGroundNode.position, backgroundScrollVel);
 				//ccpMult(backgroundScrollVel, dt));
+                 */
 				CGSize screenSize = [[CCDirector sharedDirector] winSize];
-				/*
-				if (((_player.position.y + _player.contentSize.height/2 >= screenSize.height) && _playerAcceleration.y > 0) ||
-					((_player.position.y - _player.contentSize.height/2 <= 0) && _playerAcceleration.y < 0)){
-						_playerAcceleration = ccp(_playerAcceleration.x, 0);
-				}*/
 				
-				_player.position = ccpAdd(_player.position, _playerAcceleration);
+				_player.position = ccpAdd(_player.position, ccp(_playerAcceleration.x * dt * 60, _playerAcceleration.y * dt * 60));
 
-				[self updateLabels];
-				[self setViewpointCenter:_player.position];
+				[self updateLabels:dt];
+
 				for (Boid* boid in _bees){
 					if (_slowestBoid == nil){
 						_slowestBoid = boid;
@@ -1696,11 +1743,21 @@
 				[self updatePredators:dt];
 				[self beeMovement:dt];
 				[self removeOutOfScreenItems];
-				//update terrain, tell it how far we have proceeded
-				//[_terrain setOffsetX:_playerAcceleration.x];
-				//respawn the clouds if needed
-				[self respawnCloud];
-				[self respawnForest];
+
+                [self.bgLayer updateBackground:dt];
+                [self.bgLayer respawnContinuosBackGround];
+                [self.harvesterLayer update:dt];
+                [self.bgLayer updateFish];
+                                
+                if (self.harvesterLayer.moveInParticle && !_evilAppearDone){
+                     [self.messageLayer displayWarning:@"It is coming"];
+                    _evilAppearDone = YES;
+                    [self.bgLayer fadeInOverlay];
+                }else if (self.harvesterLayer.moveOutParticle && _evilAppearDone){
+                    _evilAppearDone = NO;
+                    [self.bgLayer fadeOutOverlay];
+                }
+                
 				if (_updateBox) {
 					_updateBox = NO;
 					[self updateBox2DWorld:dt];
@@ -1710,16 +1767,18 @@
 				[self detectBox2DCollisions];
 				[self detectGameConditions];
 				_distanceTravelled = _player.position.x /3 ;
-				if (_level.sporeAvailable || _level.trapAvailable){
-					[self generateNextScreen];
-				}
+				
 				[self updatePoints];
-				[self updateSounds:dt];
+                
+                [self setViewpointCenter:_player.position];
 
+				[self updateSounds:dt];
 			}
 		}
 	}
 }
+
+
 
 
 -(void) separate:(Boid*)bee withSeparationDistance:(float)separationDistance usingMultiplier:(float)multiplier
@@ -1833,7 +1892,10 @@
 }
 
 -(void) switchPause:(id)sender{
+   // [self presentGameCenter];
+    
 	if (_paused == NO){
+        _pauseMenu.isTouchEnabled = NO;
 		[self unschedule:@selector(update:)];
         [self.pauseLayer switchPause];
 		_paused = YES;
@@ -1842,6 +1904,7 @@
         [self.pauseLayer switchPause];
 		[self schedule: @selector(update:)];
 		 _pausedMenu = nil;
+        _pauseMenu.isTouchEnabled = YES;
 	}
 }
 
@@ -1849,13 +1912,46 @@
 {
 	[[CCTouchDispatcher sharedDispatcher] addTargetedDelegate:self priority:0 swallowsTouches:YES];
 	[super onEnter];
+    /*
+    _bannerView = [[[ADBannerView alloc] initWithFrame:CGRectZero] retain];
+    _bannerView.delegate = self;
+    _bannerView.requiredContentSizeIdentifiers = [NSSet setWithObjects:ADBannerContentSizeIdentifierPortrait,
+                                                  ADBannerContentSizeIdentifierLandscape,nil];
+    _bannerView.currentContentSizeIdentifier = ADBannerContentSizeIdentifierLandscape;
+    [[[CCDirector sharedDirector] openGLView] addSubview:_bannerView];
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    _bannerView.center = ccp(_bannerView.frame.size.width/2, screenSize.height/2+145);
+    _bannerView.hidden = YES;
+     */
 }
 
 - (void)onExit
 {
+    _bannerView.delegate = nil;
+    [_bannerView removeFromSuperview];
+    [_bannerView release];
+    _bannerView = nil;
 	[[CCTouchDispatcher sharedDispatcher] removeDelegate:self];
 	[super onExit];
-	
+}
+
+-(void)bannerViewDidLoadAd:(ADBannerView *)banner{
+    NSLog(@"bannerViewDidLoadAd");
+    _bannerView.hidden = NO;
+    [_pausedMenu runAction:[CCMoveBy actionWithDuration:0.5 position:ccp(0,32)]];
+}
+
+-(void)bannerView:(ADBannerView *)banner didFailToReceiveAdWithError:(NSError *)error{
+    NSLog(@"bannerViewFailed");
+    _bannerView.hidden = YES;
+}
+
+-(void)bannerViewActionDidFinish:(ADBannerView *)banner{
+   [[UIApplication sharedApplication] setStatusBarOrientation:(UIInterfaceOrientation)[[CCDirector sharedDirector] deviceOrientation]];
+}
+    
+-(BOOL)bannerViewActionShouldBegin:(ADBannerView *)banner willLeaveApplication:(BOOL)willLeave{
+    return YES;
 }
 
 - (BOOL)ccTouchBegan:(UITouch *)touch withEvent:(UIEvent *)event
@@ -1864,18 +1960,30 @@
 		CGSize screenSize = [CCDirector sharedDirector].winSize;
         [self.pauseLayer startGame];
         _gameStarted = YES;
+        if ([[ConfigManager sharedManager] music]){
+            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"komaromi.mp3" loop:YES];
+        }
 		[self schedule: @selector(update:)];
 		[self generateGoals];
+        return NO;
 	}else if (_gameIsReady && _gameStarted){
 		self.currentTouch = [self convertTouchToNodeSpace: touch];
 		self.currentTouch = ccp(self.currentTouch.x - 10, self.currentTouch.y);
 		if (_isGameOver){
+            return NO;
+            /*
 			if (_newHighScore && _distanceToGoal < 0){
 				[self saveLevelPerformance];
 			}
-			[[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[MainMenuScene scene] withColor:ccBLACK]];
+            [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+			[[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[LevelSelectScene scene] withColor:ccBLACK]];
+             */
 		}else if (_isLevelDone) {
 			[self saveLevelPerformance];
+            [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+            _evilAppearDone = NO;
+            _emitterMoving = NO;
+            _currentDifficulty = 1;
 			[[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[MainMenuScene scene] withColor:ccBLACK]];
 		}
 	}
@@ -1893,10 +2001,31 @@
 	//self.currentTouch = CGPointZero;
 }
 
+-(void) presentGameCenter{
+    if ([GameCenterHelper sharedInstance].gameCenterAvailable) { 
+        //send the score
+        [[GameCenterHelper sharedInstance] reportScore:@"21" score:_pointsGathered];
+         
+        GKLeaderboardViewController *leaderboardController = [[GKLeaderboardViewController alloc] init];
+        if (leaderboardController != NULL) { 
+            leaderboardController.category = @"21";
+			leaderboardController.timeScope = GKLeaderboardTimeScopeAllTime;  
+            leaderboardController.leaderboardDelegate = self;
+            beesAppDelegate *delegate = [UIApplication sharedApplication].delegate; [delegate.viewController presentModalViewController:leaderboardController animated:YES]; 
+        }
+        
+    }
+}
+
+- (void)leaderboardViewControllerDidFinish:(GKLeaderboardViewController *)viewController { 
+    beesAppDelegate *delegate = [UIApplication sharedApplication].delegate;
+    [delegate.viewController dismissModalViewControllerAnimated: YES]; 
+    [viewController release]; 
+}
+
 
  
 -(void)setViewpointCenter:(CGPoint) position{
-	
 	CGSize winSize = [[CCDirector sharedDirector] winSize];
 	
     int x = MAX(position.x, winSize.width / 2);
@@ -1949,6 +2078,8 @@ inline float randRange(float min,float max)
 	LevelManager* sharedManager = [LevelManager sharedManager];
 	if (_newHighScore){
 		sharedManager.selectedLevel.highScorePoints = _pointsGathered;
+        [[GameCenterHelper sharedInstance] reportScore:_pointsGathered forCategory:@"PointsHills"];
+     //   [[GameCenterHelper sharedInstance] showLeaderboardForCategory:@"PointsHills"];
 	}
 	sharedManager.selectedLevel.completed = YES;
 	
@@ -1961,7 +2092,9 @@ inline float randRange(float min,float max)
 
 -(void) dealloc{	
 	[super dealloc];
-
+    self.messageLayer = nil;
+    self.pauseLayer = nil;
+    self.hudLayer = nil;
 	[_bees release];
 	_bees = nil;
 	[_predators release];
@@ -1993,9 +2126,9 @@ inline float randRange(float min,float max)
 	_hills2 = nil;
 	[_cemeteryBees release];
 	_cemeteryBees = nil;
-	[_comboFinishers release];
-	_comboFinishers = nil;
-	[_comboFinisher release];
+//	[_comboFinishers release];
+//	_comboFinishers = nil;
+//	[_comboFinisher release];
 }	
 
 

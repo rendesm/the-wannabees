@@ -15,6 +15,7 @@
     BOOL _userAuthenticated;
 	NSMutableArray* _unsentScores;
 	UIViewController* _GCViewController;
+    int _score;
 }
 
 @property (assign, readonly) BOOL gameCenterAvailable;
@@ -23,6 +24,7 @@
 
 + (GameCenterHelper *)sharedInstance;
 - (void)authenticateLocalUser;
+- (void)reportScore:(NSString *)identifier score:(int)rawScore;
 
 - (void) reportScore: (int64_t) score forCategory: (NSString*) category;
 - (void) reloadHighScoresForCategory: (NSString*) category;

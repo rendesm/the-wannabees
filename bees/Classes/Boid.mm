@@ -33,10 +33,10 @@
 
 #define rad2Deg 57.2957795
 
-#define leftEdge 0.0f
-#define bottomEdge 0.0f
-#define topEdge 320.0f
-#define rightEdge 480.0f
+#define leftEdge 10.0f
+#define bottomEdge 32.0f
+#define topEdge 310.0f
+#define rightEdge 465.0f
 
 #define IGNORE 1.0f
 
@@ -169,7 +169,7 @@
 		_velocity = ccpMult(_velocity, _maxSpeed);
 	}
 	
-	// Move the boid and reset the acceleartion
+	// Move the boid and reset the acceleration
 	_internalPosition = ccpAdd(_internalPosition, _velocity);
 	
 	if (_doRotation) {
@@ -182,6 +182,44 @@
 	
 	self.position = ccp(_internalPosition.x, _internalPosition.y);
 }
+
+
+
+
+-(void) update:(ccTime)dt
+{	
+	if (_illnessTime < 0){
+		_illnessTime = 0;
+	}
+	if (_hasDisease && _illnessTime <= 0){
+		[self cure];
+	}
+	_oldInternalPosition.x = _internalPosition.x;
+	_oldInternalPosition.y = _internalPosition.y;
+	_velocity = ccpAdd(_velocity,ccp(_acceleration.x , _acceleration.y ));
+	
+	// Cap the velocity
+	float velocityLengthSquared = ccpLengthSQ(_velocity);
+	if(velocityLengthSquared > _maxSpeedSQ)
+	{
+		_velocity = normalize(_velocity);
+		_velocity = ccpMult(_velocity, _maxSpeed);
+	}
+	
+	// Move the boid and reset the acceleration
+	_internalPosition = ccpAdd(_internalPosition, ccp(_velocity.x  * dt * 60, _velocity.y * dt * 60));
+	
+	if (_doRotation) {
+		self.rotation = atan2f(_oldInternalPosition.y-_internalPosition.y, _oldInternalPosition.x-_internalPosition.x ) * -rad2Deg;
+	}
+	
+	_acceleration = CGPointZero;	
+	
+	[self handleBorder];
+	
+	self.position = ccp(_internalPosition.x, _internalPosition.y);
+}
+
 
 -(void) handleBorder
 {
@@ -344,7 +382,7 @@
     bodyDef.position.Set(self.position.x/PTM_RATIO, self.position.y/PTM_RATIO);
     bodyDef.userData = self;
 	bodyDef.fixedRotation = false;
-	bodyDef.allowSleep = false;
+	bodyDef.allowSleep = true;
 	bodyDef.awake = true;
 	b2Body* body;
 	body = world->CreateBody(&bodyDef);
@@ -360,8 +398,12 @@
 	spriteShapeDef.restitution = 1.0f;
     spriteShapeDef.isSensor = true;
 	b2Filter filter;
-	filter.categoryBits = 0x0002;
-	filter.maskBits = 0xFFFF ^ 0x0002;
+    
+    enum CollideBits { none = 0, player = 0x0001, predator = 0x0002, harvester = 0x0004, point = 0x0008, bird = 0x0010, bullet = 0x0020 };
+    
+	filter.categoryBits = player;
+	//filter.maskBits = 0xFFFF ;
+    filter.maskBits = predator | harvester | point | bird | bullet;
 	filter.groupIndex = 0;
 	
 	spriteShapeDef.filter = filter;

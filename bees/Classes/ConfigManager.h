@@ -13,6 +13,7 @@
 	bool _music;
 	bool _sounds;
 	bool _particles;
+    int  _gfx;
 	int  _difficulty;
 }
 
@@ -20,5 +21,13 @@
 @property (nonatomic) bool sounds;
 @property (nonatomic) bool particles;
 @property (nonatomic) int  difficulty;
+@property (nonatomic) int  gfx;
 
++ (ConfigManager*)sharedManager;
+-(void) readInPropertyList;
+-(void) switchMusic;
+-(void) switchSounds;
+-(void) switchParticles;
+-(void) incrGfx;
+-(void) savePropertyList;
 @end

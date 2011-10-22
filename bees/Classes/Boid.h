@@ -130,7 +130,8 @@
  * Boid's position will be modified accordingly after the 
  * steering forces have been applied
  */
--(void) update:(ccTime)time;
+-(void) update:(ccTime)dt;
+-(void) update;
 -(void) handleBorder;
 /**
  * Applies a braking force to the boid by scaling it's 

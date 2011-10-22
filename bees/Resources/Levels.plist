@@ -6,6 +6,27 @@
 	<dict/>
 	<key>Survival</key>
 	<dict>
+		<key>Desert</key>
+		<dict>
+			<key>unlocked</key>
+			<true/>
+			<key>completed</key>
+			<false/>
+			<key>sporeAvailable</key>
+			<true/>
+			<key>trapAvailable</key>
+			<true/>
+			<key>predatorSpeed</key>
+			<real>3.2</real>
+			<key>background</key>
+			<string>bg3.png</string>
+			<key>distanceToGoal</key>
+			<integer>-1</integer>
+			<key>highScoreDistance</key>
+			<integer>0</integer>
+			<key>highScorePoints</key>
+			<integer>0</integer>
+		</dict>
 		<key>NarrowSea</key>
 		<dict>
 			<key>unlocked</key>
@@ -40,7 +61,7 @@
 			<key>predatorSpeed</key>
 			<real>3.2</real>
 			<key>background</key>
-			<string>bgCave.png</string>
+			<string>cave2.png</string>
 			<key>distanceToGoal</key>
 			<integer>-1</integer>
 			<key>highScoreDistance</key>

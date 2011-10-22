@@ -14,7 +14,8 @@
 
 -(id) initForNode:(CCNode*)node{
 	if ((self = [super init])){
-		self.sprite = [CCSprite spriteWithSpriteFrameName:@"tenger.png"];
+		self.sprite = [CCSprite spriteWithSpriteFrameName:@"bottomSea.png"];
+        self.sprite.scale = 0.7;
 		[node addChild:self.sprite z:4 tag:200];
 	}
 	return self;
@@ -36,13 +37,24 @@
     b2PolygonShape spriteShape;
 	
     spriteShape.SetAsBox(_sprite.contentSize.width/PTM_RATIO * 0.5  * _sprite.scale,
-                         _sprite.contentSize.height/PTM_RATIO * 0.25 * _sprite.scale);
+                         _sprite.contentSize.height/PTM_RATIO * 0.35 * _sprite.scale);
     b2FixtureDef spriteShapeDef;
     spriteShapeDef.shape = &spriteShape;
     spriteShapeDef.density = 1.0f;
 	spriteShapeDef.friction = 1.0f;
 	spriteShapeDef.restitution = 1.0f;
-    spriteShapeDef.isSensor = true;
+    spriteShapeDef.isSensor = false;
+    
+    b2Filter filter;
+    
+    enum CollideBits { none = 0, player = 0x0001, predator = 0x0002, harvester = 0x0004, point = 0x0008, bird = 0x0010, bullet = 0x0020 };
+    
+	filter.categoryBits = bird;
+	//filter.maskBits = 0xFFFF ;
+    filter.maskBits = player;
+	filter.groupIndex = 0;
+	
+	spriteShapeDef.filter = filter;
 	
     body->CreateFixture(&spriteShapeDef);
 }

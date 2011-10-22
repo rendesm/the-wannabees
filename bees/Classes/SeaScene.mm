@@ -10,13 +10,13 @@
 // Import the interfaces
 #import "SeaScene.h"
 #import "LevelManager.h"
-
+#import "beesAppDelegate.h"
 #define rad2Deg 57.2957795
 
-#define leftEdge 0.0f
+#define leftEdge 10.0f
 #define bottomEdge 0.0f
-#define topEdge 320.0f
-#define rightEdge 480.0f
+#define topEdge 310.0f
+#define rightEdge 465.0f
 
 #define IGNORE 1.0f
 
@@ -35,20 +35,32 @@
 @synthesize comboFinishers = _comboFinishers;
 @synthesize pauseLayer = _pauseLayer;
 @synthesize hudLayer = _hudLayer;
+@synthesize messageLayer = _messageLayer;
+@synthesize updateBox = _updateBox;
+@synthesize harvesterLayer = _harvesterLayer;
+
+static double UPDATE_INTERVAL = 1/30.0f;
+static double MAX_CYCLES_PER_FRAME = 1;
+static double timeAccumulator = 0;
 
 +(id)scene{
 	// 'scene' is an autorelease object.
 	CCScene *scene = [CCScene node];
 	
 	HUDLayer *hud = [HUDLayer node];
-    [scene addChild:hud z:1];
+    [scene addChild:hud z:3];
     
     PauseLayer* pauseLayer = [PauseLayer node];
-    [scene addChild:pauseLayer z:2];
+    [scene addChild:pauseLayer z:5];
 	
+    MessageLayer* messageLayer = [MessageLayer node];
+    [scene addChild:messageLayer z:4];
+    
+    HarvesterLayer* harvesterLayer = [HarvesterLayer node];
+    [scene addChild:harvesterLayer z:2];
 	
 	// 'layer' is an autorelease object.
-	SeaScene *layer =  [[[SeaScene alloc] initWithLayers:hud pause:pauseLayer] autorelease];
+	SeaScene *layer =  [[[SeaScene alloc] initWithLayers:hud pause:pauseLayer message:messageLayer harvester:harvesterLayer] autorelease];
 	
 	// add layer as a child to scene
 	[scene addChild: layer];
@@ -193,7 +205,7 @@
 
 - (void)genBackground {
 	CGSize winSize = [CCDirector sharedDirector].winSize;
-	_backGround = [CCSprite spriteWithFile:_level.backgroundImage];
+	_backGround = [CCSprite spriteWithFile:@"blue.png"];
 	_backGround.position = _player.position;
 	[self addChild:_backGround z:-1 tag:1];
 }
@@ -234,9 +246,14 @@
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	for (Points* point in _points){
 		if (point.sprite.position.x + point.sprite.contentSize.width/2 * point.sprite.scale < _player.position.x - screenSize.width/2){
-			[self movePointToNewPosition:point];
+            [point.sprite stopAllActions];
+            [self movePointToNewPosition:point];
+            [point startRotate];
+            point.moveDone = NO;
+            point.moving = NO;
 		}
 	}
+
 }
 
 -(void) removeOutOfScreenCombos{
@@ -248,24 +265,11 @@
 	}
 }
 
--(void) removeOutOfScreenPredators{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	for (Predator* predator in _predators){
-		if (predator.position.x + predator.contentSize.width/2 *predator.scale < _player.position.x - screenSize.width/2){
-			[self movePredatorToNewPosition:predator];
-		}else if (predator.position.x - predator.contentSize.width/2 *predator.scale > _player.position.x + screenSize.width/2){
-			//revive
-			predator.stamina = 800;
-			predator.life = _maxPredatorLife;
-		}
-	}
-}
-
 -(void) removeOutOfScreenItems{
 	[self removeOutOfScreenSpore];
 	[self removeOutOfScreenAtka];
 	[self removeOutOfScreenPoints];
-	[self removeOutOfScreenCombos];
+//	[self removeOutOfScreenCombos];
 }
 
 #pragma mark speeds
@@ -445,12 +449,9 @@
  }
  */
 
--(void) updateLabels{
+-(void) updateLabels:(ccTime)dt{
 	_backGround.position = ccpAdd(_backGround.position, _playerAcceleration);
-	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x, _pauseButton.position.y);	
-	_distanceLeft.position = ccpAdd(_distanceLeft.position, _playerAcceleration);
-	_distanceLeft.percentage = (float)_goalTimeLeft/(float)_goalTimeMax * 100;
-	[_distanceLeft updateRadial];
+	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x * dt * 60, _pauseButton.position.y);	
     [self.hudLayer updatePoints:_pointsGathered];
 }
 
@@ -459,15 +460,8 @@
 	[self clearItems];
 }
 
-
 -(void) initLabels{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];	
-	_distanceLeft = [CCProgressTimer progressWithFile:@"emptySlot.png"];
-	_distanceLeft.scale = 0.4;
-	[_distanceLeft setType:kCCProgressTimerTypeRadialCW];
-	[_distanceLeft setPercentage:0.0f];
-	_distanceLeft.position = ccpAdd(_player.position, ccp(0, screenSize.height/2 - _distanceLeft.contentSize.height/2 * _distanceLeft.scale));
-	[self addChild:_distanceLeft z:101 tag:500];
 	[self.hudLayer initLabels];
     _pauseButton = [CCMenuItemImage		itemFromNormalImage:@"pauseButton.png" selectedImage:@"pauseButton.png" 
 												  target:self selector:@selector(switchPause:)];
@@ -475,7 +469,7 @@
 	
 	CCMenu* _pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
 	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height);
-	[self addChild:_pauseMenu z:100 tag:100];	
+	[self addChild:_pauseMenu z:502 tag:100];	
 }
 
 -(bool) isOnScreen:(CCSprite*) sprite{
@@ -495,19 +489,7 @@
 #pragma mark effects for alchemy
 
 -(void) bombEffect{
-	for (Predator* predator in _predators){
-		if ([self isOnScreen:predator]){
-			CCAction* actionScaleIn = [CCScaleTo actionWithDuration:0.3f scale:1.0];
-			CCAction* actionScaleDone = [CCCallFuncN actionWithTarget:self 
-															 selector:@selector(actionMoveFinished:)];
-			CCSprite* deadSprite = [CCSprite spriteWithSpriteFrameName:@"beeDies.png"];
-			deadSprite.position = predator.position;
-			deadSprite.scale = 0.1;
-			[deadSprite runAction:[CCSequence actions:actionScaleIn, actionScaleDone, nil]];
-			[_batchNode addChild:deadSprite z:300 tag:400];
-			[_deadPredators addObject:predator];
-		}
-	} 
+	
 }
 
 
@@ -582,6 +564,7 @@
 	[self displayBonus];
 }
 
+
 -(void) applyEffect:(int)effect{
 	//check for completion
 	if ([self checkGoals]){
@@ -589,10 +572,14 @@
 		[self calculateAndApplyBonus];
 		[self clearGoals];
 		[self generateGoals];
+        if (self.harvesterLayer.isIn){
+            [self.harvesterLayer sendItBack];
+        }
 	}
 	//clear the items
 	[_alchemy clearItems];
 	[self clearItems];
+	[self clearItemValues];
 	
 	if (_level.distanceToGoal < 0){
 		if (self.comboFinisher != nil){
@@ -610,14 +597,12 @@
 			 }*/
 		}
 	}
-	
 }
 
 -(void) clearItems{
 	[self.hudLayer clearItems];
 	[self clearItemValues];
 }
-
 
 -(void) clearItemValues{
 	if (_item1Value != 0){
@@ -631,12 +616,14 @@
 	}
 }
 
+
 -(void) clearGoals{
 	[self.hudLayer clearGoals];
 	_goal1 = 0;
 	_goal2 = 0;
 	_goal3 = 0;
 }
+
 
 -(bool) checkGoals{
 	if (_item1Value == _goal1 && _item2Value == _goal2 && _item3Value == _goal3) {
@@ -663,11 +650,6 @@
 		maxTime = 15;
 	}
 	
-	_goalTimeLeft = randRange(minTime, maxTime);
-	_goalTimeMax = _goalTimeLeft;
-    //	int tmpTime = ceil(_goalTimeLeft);
-    //	[_goalTimer setString:[NSString stringWithFormat:@"%i", tmpTime]];
-	
 	_goal1 = ceil(randRange(0, maxNumber));
 	_goal2 = ceil(randRange(0, maxNumber));
 	_goal3 = ceil(randRange(0, maxNumber));
@@ -679,7 +661,6 @@
 	self.hudLayer.goals = goalsForHud;
 	[self.hudLayer createGoalSpritesForGoals];
 }
-
 
 #pragma mark out of screen stuff
 
@@ -742,29 +723,22 @@
 	}
 	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
-	
-	//check if it collides with a combo 
-	for(ComboFinisher* comboFinisher in _comboFinishers){
-		if (CGRectIntersectsRect(point.sprite.boundingBox, comboFinisher.sprite.boundingBox)){
-			_lastPointLocation = comboFinisher.sprite.position;
-			[self movePointToNewPosition:point];
-		}
-	}
-	
+    
 	_lastPointLocation = point.sprite.position;
 	point.taken = YES;
 }
 
--(void) movePredatorToNewPosition:(Predator*) predator{
+
+-(void) movePredatorToNewPosition:(Fish*) predator{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	float rnd = randRange(1, 4);
 	if (_lastPredatorLocation.x  < _player.position.x + screenSize.width/2){
-		_lastPredatorLocation = ccp(_player.position.x + screenSize.width/2, 0);
+		_lastPredatorLocation = ccp(_player.position.x + screenSize.width/2, 10);
 	}
-	[predator setPos:ccp(_lastPredatorLocation.x + screenSize.width * 0.75 ,rnd * screenSize.height/5 )];	
-	_lastPredatorLocation = predator.position;
-	predator.stamina = 800;
-	predator.life = _maxPredatorLife;
+    predator.sprite.position = ccp(_lastPredatorLocation.x + screenSize.width *randRange(0.5, 1),10);	
+	_lastPredatorLocation = predator.sprite.position;
+    predator.isJumping = NO;
+    predator.isDead = NO;
 }
 
 -(void) moveToCemetery:(Boid *)sprite{	
@@ -774,8 +748,48 @@
 	[sprite clearEffects];
 }
 
+
+-(void) displayNoBonus{
+    int rnd = floor(randRange(1, 8));
+    NSString* message;
+    switch (rnd) {
+        case 1:
+            message = @"Oh no...";
+            break;
+        case 2:
+            message = @"Focus!!!";
+            break;
+        case 3:
+            message = @"Nevermind...";
+            break;
+        case 4:
+            message = @"Try again!";
+            break;
+        case 5:
+            message = @"Not this time";
+            break;
+        case 6:
+            message = @"You can do this";
+            break;
+        case 7:
+            message = @"Yarrrggh";
+        default:
+            break;
+    }    [self.messageLayer displayMessage:message];				   
+}
+
+-(void) displayHighScore{
+    [self.messageLayer displayMessage:@"High Score"];
+}
+
+
+-(void) displayBonus{
+	NSString* tmpStr = [[[NSString alloc] initWithFormat:@"%ix Bonus", _bonusCount] autorelease];
+    [self.messageLayer displayMessage:tmpStr];
+}
+
+
 -(void) removeDeadItems{
-	_removeRunning = YES;
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	for (Points* point in _takenPoints){
 		PointTaken* actionMoveUp = [PointTaken actionWithDuration:0.4 moveTo:ccp(point.sprite.position.x - _playerAcceleration.x * 5,
@@ -784,39 +798,48 @@
 		CCSprite* deadSprite = nil;
 		bool goodForCombo = [self addItemValue:point.type];
 		if (!goodForCombo){
-			[self clearItems];
-			[_alchemy clearItems];
+            if (!self.harvesterLayer.isIn && !self.harvesterLayer.moveOutParticle && !self.harvesterLayer.moveInParticle){
+                self.harvesterLayer.timeElapsed += 10;
+            }
+            [_alchemy clearItems];
+            [self clearItems];
+            [self clearGoals];
+            _bonusCount = 1;
+            [self displayNoBonus];				
+            [self generateGoals];
 		}
-		
 		if (point.type == ATTACK_BOOST){
-			if (goodForCombo){
+			if (goodForCombo) {
 				[self.hudLayer addItem:@"redFlower.png"];
 				[_alchemy addItem:RED_SLOT];
 			}
 			deadSprite = [CCSprite spriteWithSpriteFrameName:@"redFlower.png"];
 		}else if (point.type == GOLD){
-			if (goodForCombo){
+			if (goodForCombo) {
 				[self.hudLayer addItem:@"yellowFlower.png"];
 				[_alchemy addItem:YELLOW_SLOT];
 			}
 			deadSprite = [CCSprite spriteWithSpriteFrameName:@"yellowFlower.png"];
-		}else if (point.type == EVADE_BOOST){	
+		}else if (point.type == EVADE_BOOST){
 			if (goodForCombo){
 				[self.hudLayer addItem:@"blueFlower.png"];
 				[_alchemy addItem:BLUE_SLOT];
 			}
-			deadSprite = [CCSprite spriteWithSpriteFrameName:@"blueFlower.png"];
+			deadSprite = [CCSprite spriteWithSpriteFrameName:@"blueFlower.png"];			
 		}
-		
 		[_batchNode addChild:deadSprite z:300 tag:300];
 		deadSprite.position = point.sprite.position;
 		deadSprite.scale = 0.1;
 		[deadSprite runAction:[CCSequence actions:actionMoveUp, actionMoveDone, nil]];
-		
-		[self movePointToNewPosition:point];			
+        if (point.moving){
+            [point.sprite stopAllActions];
+            point.moving = NO;
+            point.moveDone = NO;
+            [point startRotate];
+        }
+		[self movePointToNewPosition:point];
 	}
-	[_takenPoints removeAllObjects];
-	
+	[_takenPoints removeAllObjects];	
 	for (ComboFinisher* finisher in _takenCombos) {
 		PointTaken* actionMoveUp = [PointTaken actionWithDuration:0.4 moveTo:ccp(finisher.sprite.position.x - _playerAcceleration.x * 5,
 																				 finisher.sprite.position.y + finisher.sprite.contentSize.height * finisher.sprite.scale)];
@@ -861,21 +884,22 @@
 	}
 	[_deadBees removeAllObjects];
 	
-	for (Predator* predator in _deadPredators){
-		if ([self isOnScreen:predator]){
-			CCAction* actionScaleIn = [CCScaleTo actionWithDuration:0.3f scale:1.3];
-			CCAction* actionScaleDone = [CCCallFuncN actionWithTarget:self 
-															 selector:@selector(actionMoveFinished:)];
-			CCSprite* deadSprite = [CCSprite spriteWithSpriteFrameName:@"beeDies.png"];
-			deadSprite.position = predator.position;
-			deadSprite.scale = 0.6;
-			[deadSprite runAction:[CCSequence actions:actionScaleIn, actionScaleDone, nil]];	
-			[_batchNode addChild:deadSprite z:299 tag:predator.tag-1];
-		}
-		[self movePredatorToNewPosition:predator];
+	for (Fish* predator in _deadFish){
+        if (predator.isDead){
+            if ([self isOnScreen:predator.sprite]){
+                CCAction* actionScaleIn = [CCScaleTo actionWithDuration:0.3f scale:1.3];
+                CCAction* actionScaleDone = [CCCallFuncN actionWithTarget:self 
+                                                                 selector:@selector(actionMoveFinished:)];
+                CCSprite* deadSprite = [CCSprite spriteWithSpriteFrameName:@"beeDies.png"];
+                deadSprite.position = predator.sprite.position;
+                deadSprite.scale = 0.6;
+                [deadSprite runAction:[CCSequence actions:actionScaleIn, actionScaleDone, nil]];	
+                [_batchNode addChild:deadSprite z:299 tag:100];
+            }
+            [self movePredatorToNewPosition:predator];
+        }
 	}
-	[_deadPredators removeAllObjects];
-	_removeRunning = NO;
+	[_deadFish removeAllObjects];
 }
 
 
@@ -900,7 +924,7 @@
 
 
 -(void) addRockHitEmitter:(CGPoint)location{
-	_emitter = [CCParticleSystemQuad particleWithFile:@"rockHit.plist"];
+	_emitter = [CCParticleSystemQuad particleWithFile:@"watersplash.plist"];
 	_emitter.position = location;
 	_emitter.scale = 0.5;
 	[self addChild:_emitter z:600 tag:600];
@@ -919,40 +943,26 @@
 		b2Body *bodyA = contact.fixtureA->GetBody();
 		b2Body *bodyB = contact.fixtureB->GetBody();
 		if (bodyA->GetUserData() != NULL && bodyB->GetUserData() != NULL) {
-			if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Predator class]] ){
-				Boid *boid = (Boid *) bodyA->GetUserData();
-				if ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO){
-					Predator *predator = (Predator *) bodyB->GetUserData();
-					//if it is dead already dont do anything with it
-					if (predator.life > 0 ){
-						[self playDeadBeeSound];
-						[_deadBees addObject:boid];
-						//	toDestroy.push_back(bodyA);
-						[predator gotHit:boid.damage];
-						//if it is dead, do not iterate over this
-						if (predator.life <= 0){
-							[_deadPredators addObject:predator];
-							//		toDestroy.push_back(bodyB);
-						}
-					}
-				}
-			}else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Predator class]] ){
-				Boid *boid = (Boid *) bodyB->GetUserData();
-				if ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO){
-					Predator *predator = (Predator *) bodyA->GetUserData();
-					//if it is dead already dont do anything with it
-					if (predator.life > 0){
-						[self playDeadBeeSound];
-						[_deadBees addObject:boid];
-						//			toDestroy.push_back(bodyB);
-						[predator gotHit:boid.damage];
-						//if it is dead, do not iterate over this
-						if (predator.life <= 0){
-							[_deadPredators addObject:predator];
-							//toDestroy.push_back(bodyA);
-						}
-					}
-				}
+			if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Fish class]] ){
+                Fish *predator = (Fish *) bodyB->GetUserData();
+                if (!predator.isDead){
+                    Boid *boid = (Boid *) bodyA->GetUserData();        
+                    [self playDeadBeeSound];
+                    [_deadBees addObject:boid];
+                    [_deadFish addObject:predator];
+                    predator.isDead = YES;
+                    [predator.sprite stopAllActions];
+                }
+			}else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Fish class]] ){
+                Fish *predator = (Fish *) bodyA->GetUserData();
+                if (!predator.isDead){
+                    Boid *boid = (Boid *) bodyB->GetUserData();
+                    [self playDeadBeeSound];
+                    [_deadBees addObject:boid];
+                    [_deadFish addObject:predator];
+                    predator.isDead = YES;
+                    [predator.sprite stopAllActions];
+                }
 			}else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Points class]] 
 					  && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)){
 				Points* point = (Points*) bodyB->GetUserData();
@@ -1000,17 +1010,17 @@
 				[_deadBees addObject:boid];
 				//		toDestroy.push_back(bodyA);
 			}
-			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[Spore class]]) {
-				Predator *predator = (Predator *) bodyA->GetUserData();
-				if ([self isOnScreen:predator]){
-					[_deadPredators addObject:predator];
+			else if ([bodyA->GetUserData() isKindOfClass:[Fish class]] && [bodyB->GetUserData() isKindOfClass:[Spore class]]) {
+				Fish *predator = (Fish *) bodyA->GetUserData();
+				if ([self isOnScreen:predator.sprite]){
+					[_deadFish addObject:predator];
 				}
 				//	toDestroy.push_back(bodyA);
 			}
-			else if ([bodyB->GetUserData() isKindOfClass:[Predator class]] && [bodyA->GetUserData() isKindOfClass:[Spore class]]) {
-				Predator *predator = (Predator *) bodyB->GetUserData();
-				if ([self isOnScreen:predator]){
-					[_deadPredators addObject:predator];
+			else if ([bodyB->GetUserData() isKindOfClass:[Fish class]] && [bodyA->GetUserData() isKindOfClass:[Spore class]]) {
+				Fish *predator = (Fish *) bodyB->GetUserData();
+				if ([self isOnScreen:predator.sprite]){
+					[_deadFish addObject:predator];
 				}
 				//	toDestroy.push_back(bodyB);
 			}
@@ -1056,24 +1066,54 @@
 				if (sharedManager.particles){
 					[self addRockHitEmitter:boid.position];
 				}
+			} 
+            //Harvester
+			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[NSString class]]
+					 && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+				Boid *boid = (Boid *) bodyB->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                //		toDestroy.push_back(bodyB);
 			}
-			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[Sea class]]) {
-				Predator *predator = (Predator *) bodyA->GetUserData();
-				if ([self isOnScreen:predator]){
-					[_deadPredators addObject:predator];
-				}
-				if (sharedManager.particles){
-					[self addRockHitEmitter:predator.position];
-				}
+			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[NSString class]]
+					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+				Boid *boid = (Boid *) bodyA->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                //		toDestroy.push_back(bodyA);
 			}
-			else if ([bodyB->GetUserData() isKindOfClass:[Predator class]] && [bodyA->GetUserData() isKindOfClass:[Sea class]]) {
-				Predator *predator = (Predator *) bodyB->GetUserData();
-				if ([self isOnScreen:predator]){
-					[_deadPredators addObject:predator];
-				}
-				if (sharedManager.particles){
-					[self addRockHitEmitter:predator.position];
-				}
+            
+            //Bullet
+			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Bullet class]]
+					 && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+				Boid *boid = (Boid *) bodyB->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                //		toDestroy.push_back(bodyB);
+			}
+			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Bullet class]]
+					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+				Boid *boid = (Boid *) bodyA->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                //		toDestroy.push_back(bodyA);
+			}
+            else if ([bodyB->GetUserData() isKindOfClass:[Fish class]] && [bodyA->GetUserData() isKindOfClass:[Bullet class]]) {
+                Fish *predator = (Fish *) bodyB->GetUserData();
+				if (!predator.isDead && [self isOnScreen:predator.sprite]){
+                    [_deadFish addObject:predator];
+                    predator.isDead = YES;
+                    [predator.sprite stopAllActions];
+                }
+			}
+			else if ([bodyA->GetUserData() isKindOfClass:[Fish class]] && [bodyB->GetUserData() isKindOfClass:[Bullet class]]) {
+                Fish *predator = (Fish *) bodyA->GetUserData();
+				if (!predator.isDead && [self isOnScreen:predator.sprite]){
+                    [_deadFish addObject:predator];
+                    predator.isDead = YES;
+                    [predator.sprite stopAllActions];
+                }
+                //		toDestroy.push_back(bodyA);
 			}
 		}   
 	}
@@ -1097,15 +1137,19 @@
 }
 
 -(void) loadingTextures{
+    //fist stop the music and load some ambience
+    [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+    
 	_bonusCount = 1;
+    _currentDifficulty = 1;
 	[self unschedule:@selector(loadingTextures)];
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	[[[CCDirector sharedDirector] openGLView] setMultipleTouchEnabled:NO];
 	self.isTouchEnabled = YES;
 	
-	_batchNode = [CCSpriteBatchNode batchNodeWithFile:@"seaWorld.png"]; // 1
+	_batchNode = [CCSpriteBatchNode batchNodeWithFile:@"seaSheet_Untitled.pvr.ccz"]; // 1
 	[self addChild:_batchNode z:500 tag:500]; // 2
-	[[CCSpriteFrameCache sharedSpriteFrameCache] addSpriteFramesWithFile:@"seaWorld.plist"];
+	[[CCSpriteFrameCache sharedSpriteFrameCache] addSpriteFramesWithFile:@"seaSheet_Untitled.plist" textureFile:@"seaSheet_Untitled.pvr.ccz"];
 	
 	//init the box2d world
 	b2Vec2 gravity = b2Vec2(0.0f, 0.0f);
@@ -1121,9 +1165,10 @@
 	
 	_atkaOutOfScreen = YES;
 	_sporeOutOfScreen = NO;
+    
+    _maxFishJump = screenSize.height/4;
 	
 	//box2d end
-	_maxPredatorLife = 1;
 	_beeSick = NO;
 	//set the speeds 
 	
@@ -1155,10 +1200,11 @@
 	_takenCombos = [[[NSMutableArray alloc] init] retain];
 	_bees = [[[NSMutableArray alloc] init] retain];
 	_deadBees = [[[NSMutableArray alloc] init] retain];
-	_predators = [[[NSMutableArray alloc] init]retain];
-	_deadPredators = [[[NSMutableArray alloc] init]retain];
+	_fish = [[[NSMutableArray alloc] init]retain];
+	_deadFish = [[[NSMutableArray alloc] init]retain];
 	_cemeteryBees = [[[NSMutableArray alloc] init] retain];
 	_particleNode = [[CCNode alloc] init];
+    _birds = [[[NSMutableArray alloc] init] retain];
 	_particleNode.position = ccp(0,0);
 	
 	CGRect boidRect = CGRectMake(0,0, 16, 16);
@@ -1194,11 +1240,17 @@
 		
 		if (_level.difficulty == EASY){
 			[boid setSpeedMax:2.5f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f  withRandomRangeOf:0.25f];
+			_boidCurrentSpeed = 2.5f;
+			_boidCurrentTurn = 1.8f;
 		}else if (_level.difficulty == NORMAL){
 			[boid setSpeedMax:3.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+			_boidCurrentSpeed = 3.0f;
+			_boidCurrentTurn = 2.7f;
 		}else if (_level.difficulty == HARD) {
 			[boid setSpeedMax:4.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-		} 
+			_boidCurrentSpeed = 4.0f;
+			_boidCurrentTurn = 2.7f;
+		} 		
 		
 		[boid setWanderingRadius: 20.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.3f];
 		[boid setEdgeBehavior: EDGE_WRAP];
@@ -1211,7 +1263,7 @@
 			}
 		}
 		[boid setScale: randRange(0.3,0.5)];
-		[boid setPos: ccp( CCRANDOM_0_1() * screenSize.width/3,  screenSize.height / 2)];
+		[boid setPos: ccp( randRange(0.5, 1.0) * screenSize.width/3,  screenSize.height / 2)];
 		// Color
 		[boid setOpacity:220];
 		[boid createBox2dBodyDefinitions:_world];
@@ -1223,12 +1275,23 @@
 		[self generateNextPoint: (i % 3)+1];
 	}
 	
-	if (_level.distanceToGoal < 0){
-		self.comboFinishers = [[NSMutableArray alloc] init];
-		for (int i = 0; i < 3; i++){
-			[self generateNextFinisher:i];
-		}
-	}
+ 
+    //testpredator
+    _minFishDistance = screenSize.width * 2;
+    for (int i = 0; i < 3; i++){
+        Fish* fish = [[Fish alloc] initForNode:_batchNode];
+        fish.sprite.position = ccp(_minFishDistance * (i + 1), 10);
+        _lastPredatorLocation = fish.sprite.position;
+        [_fish addObject:fish];
+        [fish createBox2dBodyDefinitions:_world];
+    }
+    
+    for (int i = 0; i < 2; i++){
+        Spore* bird = [[Spore alloc] initForSeaNode:_batchNode];
+        [bird createBox2dBodyDefinitionsSeaBird:_world];
+        [_birds addObject:bird];
+        bird.sprite.position = ccp(500 * (i+1), 240);
+    }
 	
 	//init the array for clouds
 	_clouds = [[NSMutableArray alloc] init];
@@ -1257,29 +1320,40 @@
 											 screenSize.height - cloud.contentSize.height * cloud.scale);
 		[_backGroundNode addChild:cloud z:2 parallaxRatio:ccp(rnd*0.5/4,0) positionOffset:positionOffsetForCloud];
 	}
-	
-	[self initLabels];
-	
+	[self initLabels];	
 	[self schedule:@selector(loadingTerrain)];
 }
 
 
 -(void) loadingTerrain{
 	[self unschedule:@selector(loadingTerrain)];
+    [self.harvesterLayer initWithWorld:_world];
 	_topSea = [[[NSMutableArray alloc] init] retain];
 	_bottomSea = [[[NSMutableArray alloc] init] retain];
 	
-	for (int i = 0; i < 2; i++){
-		Sea* bottomSea = [[Sea alloc] initForNode:_batchNode];
-		CCSprite* topSea = [CCSprite spriteWithSpriteFrameName:@"tenger2.png"];
-		bottomSea.sprite.position = ccp(bottomSea.sprite.contentSize.width * i * bottomSea.sprite.scale, bottomSea.sprite.contentSize.height/2 * bottomSea.sprite.scale);
-		topSea.position = ccp(topSea.contentSize.width * i, topSea.contentSize.height/2 + bottomSea.sprite.contentSize.height/6 * bottomSea.sprite.scale - 50);
-	//   [bottomSea createBox2dBodyDefinitions:_world];
-		[_batchNode addChild:topSea z:2 tag:50];
-		[_topSea addObject:topSea];
-		[_bottomSea addObject:bottomSea];
-	}
-	
+    Sea* bottomSea1 = [[Sea alloc] initForNode:_batchNode];
+    CCSprite* topSea1 = [CCSprite spriteWithSpriteFrameName:@"tengerTop.png"];
+    [bottomSea1.sprite.texture setAliasTexParameters];
+    [topSea1.texture setAliasTexParameters];
+
+    Sea* bottomSea2 = [[Sea alloc] initForNode:_batchNode];
+    CCSprite* topSea2 = [CCSprite spriteWithSpriteFrameName:@"tengerTop.png"];
+    [bottomSea2.sprite.texture setAliasTexParameters];
+    [topSea2.texture setAliasTexParameters];
+
+    bottomSea1.sprite.position = ccp(bottomSea1.sprite.contentSize.width/2 * bottomSea1.sprite.scale, bottomSea1.sprite.contentSize.height/2 * bottomSea1.sprite.scale - 30);
+    bottomSea2.sprite.position = ccp(bottomSea2.sprite.contentSize.width/2 * bottomSea2.sprite.scale * 3 - 3, bottomSea2.sprite.contentSize.height/2 * bottomSea2.sprite.scale - 30);
+    topSea1.position = ccp(topSea1.contentSize.width/2, topSea1.contentSize.height/2 + bottomSea1.sprite.contentSize.height/3 * bottomSea1.sprite.scale - 70);
+    topSea2.position = ccp(topSea2.contentSize.width/2 * 3 - 3, topSea2.contentSize.height/2 + bottomSea2.sprite.contentSize.height/3 * bottomSea2.sprite.scale - 70);
+    [bottomSea1 createBox2dBodyDefinitions:_world];
+    [bottomSea2 createBox2dBodyDefinitions:_world];
+    [_batchNode addChild:topSea1 z:2 tag:50];
+    [_batchNode addChild:topSea2 z:2 tag:50];
+    [_topSea addObject:topSea1];
+    [_topSea addObject:topSea2];
+    [_bottomSea addObject:bottomSea1];
+    [_bottomSea addObject:bottomSea2];
+    	
 	[self schedule:@selector(loadingSounds)];
 }
 
@@ -1291,6 +1365,9 @@
 		[[SimpleAudioEngine sharedEngine] preloadEffect:@"au.wav"];
 		[[SimpleAudioEngine sharedEngine] preloadEffect:@"woohoo.wav"];
 	}
+    if (sharedManager.music){
+        [[SimpleAudioEngine sharedEngine] preloadBackgroundMusic:@"seamusic.mp3"];
+    }
 	[self schedule:@selector(loadingDone)];
 }
 
@@ -1303,10 +1380,12 @@
 	_alchemy.world = self;
 }
 
--(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer{
+-(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer message:(MessageLayer *)messageLayer harvester:(HarvesterLayer*)harvesterLayer{
 	if ((self = [super init])){
 		self.hudLayer = hudLayer;
         self.pauseLayer = pauseLayer;
+        self.messageLayer = messageLayer;
+        self.harvesterLayer = harvesterLayer;
         pauseLayer.gameScene = self;
 		self.level = (Level*)[[LevelManager sharedManager] selectedLevel];
 		_distanceToGoal = _level.distanceToGoal;
@@ -1327,46 +1406,86 @@
 }
 
 -(void) updateBox2DWorld:(ccTime)dt{
-	_world->Step(dt, 10, 10);
-    for(b2Body *b = _world->GetBodyList(); b; b=b->GetNext()) {
-		if ([b->GetUserData() isKindOfClass:[Spore class]]){
-			Spore *spore = (Spore *)b->GetUserData();
-            b2Vec2 b2Position = b2Vec2(spore.sprite.position.x/PTM_RATIO,
-                                       spore.sprite.position.y/PTM_RATIO);
-            float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(spore.sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-		}else if ([b->GetUserData() isKindOfClass:[Atka class]]){
-			Atka *atka = (Atka *)b->GetUserData();
-            b2Vec2 b2Position = b2Vec2(atka.sprite.position.x/PTM_RATIO,
-                                       atka.sprite.position.y/PTM_RATIO);
-            float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(atka.sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-		}else if ([b->GetUserData() isKindOfClass:[Points class]]){
-			Points *point = (Points *)b->GetUserData();
-            b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
-                                       point.sprite.position.y/PTM_RATIO);
-            float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-		}else if ([b->GetUserData() isKindOfClass:[ComboFinisher class]]){
-			ComboFinisher *point = (ComboFinisher *)b->GetUserData();
-            b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
-                                       point.sprite.position.y/PTM_RATIO);
-            float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-		}else if ([b->GetUserData() isKindOfClass:[Sea class]]){
-			Sea *sea = (Sea *)b->GetUserData();
-            b2Vec2 b2Position = b2Vec2(sea.sprite.position.x/PTM_RATIO,
-                                       sea.sprite.position.y/PTM_RATIO);
-            float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sea.sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);			
-		}else{
-            CCSprite *sprite = (CCSprite *)b->GetUserData();
-			b2Vec2 b2Position = b2Vec2(sprite.position.x/PTM_RATIO,
-									   sprite.position.y/PTM_RATIO);
-			float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sprite.rotation);
-            b->SetTransform(b2Position, b2Angle);
-        }
-    }	
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    timeAccumulator+=dt;
+    if (timeAccumulator > (MAX_CYCLES_PER_FRAME * UPDATE_INTERVAL)){
+        timeAccumulator = UPDATE_INTERVAL;
+    }
+    
+    while (timeAccumulator >= UPDATE_INTERVAL){
+        timeAccumulator -= UPDATE_INTERVAL;
+    	
+        for(b2Body *b = _world->GetBodyList(); b; b=b->GetNext()) {
+            if ([b->GetUserData() isKindOfClass:[Spore class]]){
+                Spore *spore = (Spore *)b->GetUserData();
+                b2Vec2 b2Position = b2Vec2(spore.sprite.position.x/PTM_RATIO,
+                                           spore.sprite.position.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(spore.sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+            }else if ([b->GetUserData() isKindOfClass:[Atka class]]){
+                Atka *atka = (Atka *)b->GetUserData();
+                b2Vec2 b2Position = b2Vec2(atka.sprite.position.x/PTM_RATIO,
+                                           atka.sprite.position.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(atka.sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+            }else if ([b->GetUserData() isKindOfClass:[Points class]]){
+                Points *point = (Points *)b->GetUserData();
+                b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
+                                           point.sprite.position.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+            }else if ([b->GetUserData() isKindOfClass:[ComboFinisher class]]){
+                ComboFinisher *point = (ComboFinisher *)b->GetUserData();
+                b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
+                                           point.sprite.position.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+            }else if ([b->GetUserData() isKindOfClass:[Sea class]]){
+                Sea *sea = (Sea *)b->GetUserData();
+                b2Vec2 b2Position = b2Vec2(sea.sprite.position.x/PTM_RATIO,
+                                           sea.sprite.position.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sea.sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);			
+            }else if ([b->GetUserData() isKindOfClass:[Fish class]]){
+                Fish *fish = (Fish *)b->GetUserData();
+                b2Vec2 b2Position = b2Vec2(fish.sprite.position.x/PTM_RATIO,
+                                           fish.sprite.position.y/PTM_RATIO);
+                if  (fish.sprite.position.x + fish.sprite.contentSize.width/2 * fish.sprite.scale < _player.position.x + screenSize.width/2){
+                    b->SetAwake(true);
+                }else{
+                    b->SetAwake(false);
+                }
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(fish.sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);			
+            }else if ([b->GetUserData() isKindOfClass:[Bullet class]]){
+                Bullet *bullet = (Bullet *)b->GetUserData();
+                CGPoint location = [self convertToNodeSpace:bullet.sprite.position ];
+                if (bullet.isOutOfScreen){
+                    b->SetAwake(false);
+                }else{
+                    b->SetAwake(true);
+                }
+                b2Vec2 b2Position = b2Vec2(location.x/PTM_RATIO,
+                                           location.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(bullet.sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+            }else if ([b->GetUserData() isKindOfClass:[NSString class]]){
+                CCSprite *sprite = self.harvesterLayer.harvesterSprite;
+                CGPoint point = [self convertToNodeSpace:self.harvesterLayer.harvesterSprite.position];
+                b2Vec2 b2Position = b2Vec2(point.x/PTM_RATIO,
+                                           point.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+            }else{
+                CCSprite *sprite = (CCSprite *)b->GetUserData();
+                b2Vec2 b2Position = b2Vec2(sprite.position.x/PTM_RATIO,
+                                           sprite.position.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+            }
+        }	
+        _world->Step(UPDATE_INTERVAL, 3, 2);
+    }
 }
 
 
@@ -1382,34 +1501,22 @@
 
 -(void) updateTerrain{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	float moveX = _playerAcceleration.x * 0.2;
+	float moveX = _playerAcceleration.x * 0.4;
 	for (CCSprite* sea in _topSea) {
-		sea.position = ccpAdd(sea.position, ccp(moveX, 0));
-		if (sea.position.x + sea.contentSize.width/2 < _player.position.x - screenSize.width/2){
-			sea.position = ccp(sea.position.x + sea.contentSize.width * ([_bottomSea count]), sea.position.y);
+		sea.position = ccpAdd(sea.position, ccp(-moveX * 0.1, 0));
+		if (sea.position.x + sea.contentSize.width/2 * sea.scale < _player.position.x - screenSize.width/2){
+			sea.position = ccp(sea.position.x + sea.contentSize.width * ([_bottomSea count]) - 6, sea.position.y);
 		}
 	}
 	
 	for (Sea* sea in _bottomSea) {
-		sea.sprite.position = ccpAdd(sea.sprite.position, ccp(moveX * 0.2, 0));
-		if (sea.sprite.position.x + sea.sprite.contentSize.width/2 < _player.position.x - screenSize.width/2){
-			sea.sprite.position = ccp(sea.sprite.position.x + sea.sprite.contentSize.width * ([_bottomSea count]), sea.sprite.position.y);
+		sea.sprite.position = ccpAdd(sea.sprite.position, ccp(-moveX, 0));
+		if (sea.sprite.position.x + sea.sprite.contentSize.width/2 * sea.sprite.scale < _player.position.x - screenSize.width/2){
+			sea.sprite.position = ccp(sea.sprite.position.x + sea.sprite.contentSize.width * 2 * sea.sprite.scale - 6, sea.sprite.position.y);
 		}
 	}
-}
-
--(void)respawnTerrain{
-	for (CCSprite* sea in _topSea) {
-		if (![self isOnScreen:sea]){
-			sea.position = ccpAdd(sea.position, ccp(sea.contentSize.width * 3,0));
-		}
-	}
-	
-	for (CCSprite* sea in _bottomSea) {
-		if (![self isOnScreen:sea]){
-			sea.position= ccpAdd(sea.position, ccp(sea.contentSize.width * 3,0));
-		}
-	}
+    
+ //   _boat.position = ccpAdd(ccp(_playerAcceleration.x - 1, 0), _boat.position);
 }
 
 -(void)selectTarget:(Predator*)predator{
@@ -1438,73 +1545,91 @@
 }
 
 
--(void)generatePredators{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	Predator* predator = [Predator spriteWithSpriteFrameName:@"fly.png"];
-	predator.scale = 0.6;
-	int pType = arc4random() % MAX_PREDATOR_TYPE;
-	
-	predator.type = pType;
-	
-	predator.doRotation = YES; 
-	
-	float predatorSpeed = _level.predatorSpeed - (float)_level.difficulty;
-	
-	
-	[predator setSpeedMax:predatorSpeed withRandomRangeOf:0.2f andSteeringForceMax:1 withRandomRangeOf:0.15f];
-	[predator setWanderingRadius: 16.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.2f];
-	[predator setEdgeBehavior: EDGE_NONE];
-	//[predator setPos: ccp( _player.position.x + screenSize.width/2 + CCRANDOM_0_1() * screenSize.width/3,  screenSize.height * CCRANDOM_0_1())];
-	// Color
-	[predator setOpacity:250];
-	[_batchNode addChild:predator z:101 tag:1];
-	
-	predator.life = _maxPredatorLife;
-	predator.stamina = 800;
-	[_predators addObject:predator];
-	[self movePredatorToNewPosition:predator];
-	[predator createBox2dBodyDefinitions:_world];
+-(void) gameOverRestartTapped:(id)sender{
+    if (_newHighScore && _distanceToGoal < 0){
+        [self saveLevelPerformance];
+    }
+    [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+    [[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[SeaScene scene] withColor:ccBLACK]];
 }
 
-
--(void)updatePredators:(ccTime)dt{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	for (Predator* predator in _predators){
-		if ([self isOnScreen:predator]){
-			predator.illnessTime -= dt;
-			[self selectTarget:predator];
-			[predator update:dt];
-		}
-	}
+-(void) gameOverExitTapped:(id)sender{
+    if (_newHighScore && _distanceToGoal < 0){
+        [self saveLevelPerformance];
+    }
+    [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+    [[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[LevelSelectScene scene] withColor:ccBLACK]];
 }
 
 -(void) gameOver{
-	[self unschedule:@selector(update:)];
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	CCSprite* gameOverSprite = [CCSprite spriteWithFile:@"gameOverOverlay.png"];
-	gameOverSprite.position = _player.position;
-	gameOverSprite.scaleX = 1.8f;
-	gameOverSprite.opacity = 0;
-	[self addChild:gameOverSprite z:599 tag:299];
-	[gameOverSprite runAction:[CCFadeIn actionWithDuration:0.2]];
-	
-	CCLabelTTF* gameOverLabel = [[CCLabelTTF alloc] initWithString:@"Game Over" fontName:@"Marker Felt" fontSize:32];
-	[self addChild:gameOverLabel z:600 tag:10];
-	gameOverLabel.position = ccpAdd(_player.position, ccp(0, screenSize.height/5));
-	//gameOverLabel.opacity = 0;
-	
-	CCLabelTTF* scoreLabel = [[CCLabelTTF alloc] initWithString:[NSString stringWithFormat:@"Points:  %i", _pointsGathered] fontName:@"Marker Felt" fontSize:14];	
-	if (_newHighScore && _isLevelDone) {
-		_level.highScorePoints = _pointsGathered;
-	}
-	
-	CCLabelTTF* highscoreLabel = [[CCLabelTTF alloc] initWithString:[NSString stringWithFormat:@"HighScore:  %i", _level.highScorePoints]  fontName:@"Marker Felt" fontSize:14];	
-	
-	scoreLabel.position = _player.position;
-	[self addChild:scoreLabel z:600 tag:600];
-	
-	highscoreLabel.position = ccpAdd(scoreLabel.position, ccp(0, -screenSize.height/5));
-	[self addChild:highscoreLabel z:600 tag:600];
+    [self unschedule:@selector(update:)];
+    [self removeChild:_pauseMenu cleanup:YES];
+    if (_newHighScore && _distanceToGoal < 0){
+        [self saveLevelPerformance];    
+    }
+    
+    /*
+     CGSize screenSize = [[CCDirector sharedDirector] winSize];
+     CCSprite* gameOverSprite = [CCSprite spriteWithFile:@"gameOverOverlay.png"];
+     gameOverSprite.position = _player.position;
+     gameOverSprite.scaleX = 1.8f;
+     gameOverSprite.opacity = 0;
+     [self addChild:gameOverSprite z:599 tag:299];
+     [gameOverSprite runAction:[CCFadeIn actionWithDuration:0.2]];
+     
+     CCLabelBMFont* gameOverLabel = [[CCLabelBMFont alloc] initWithString:@"Game Over" fntFile:@"markerfelt.fnt"];
+     gameOverLabel.scale = 0.5;
+     [self addChild:gameOverLabel z:600 tag:10];
+     gameOverLabel.position = ccpAdd(_player.position, ccp(0, screenSize.height/5));
+     //gameOverLabel.opacity = 0;
+     
+     CCLabelBMFont* scoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"Points:  %i", _pointsGathered] fntFile:@"markerfelt.fnt"];	
+     scoreLabel.scale = 0.25;
+     if (_newHighScore) {
+     _level.highScorePoints = _pointsGathered;
+     }
+     
+     
+     
+     
+     //highscore label
+     CCLabelBMFont* highscoreLabel;
+     if (_newHighScore){
+     highscoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"HighScore:  %i", _pointsGathered]  fntFile:@"markerfelt.fnt"];	
+     highscoreLabel.scale = 0.25;
+     }else{
+     highscoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"HighScore:  %i", _pointsGathered]  fntFile:@"markerfelt.fnt"];	
+     highscoreLabel.scale = 0.25;
+     }
+     
+     scoreLabel.position = _player.position;
+     [self addChild:scoreLabel z:600 tag:600];
+     
+     highscoreLabel.position = ccpAdd(scoreLabel.position, ccp(0, -screenSize.height/5));
+     [self addChild:highscoreLabel z:600 tag:600];
+     
+     CCMenuItemImage *exitButton = [CCMenuItemImage itemFromNormalImage:@"exitButton.png" selectedImage:@"exitButton.png" target:self selector:@selector(gameOverExitTapped:)];   
+     CCMenu* exitMenu = [CCMenu menuWithItems:exitButton, nil];
+     [self addChild:exitMenu z:601 tag:600];
+     
+     exitMenu.position = ccp(gameOverSprite.position.x - gameOverSprite.contentSize.width/2 * gameOverSprite.scaleX + 150 + exitButton.contentSize.width/2,
+     gameOverSprite.position.y);
+     
+     CCMenuItemImage *restartButton = [CCMenuItemImage itemFromNormalImage:@"restartButton.png" selectedImage:@"restartButton.png" 
+     target:self selector:@selector(gameOverRestartTapped:)];   
+     CCMenu* restartMenu = [CCMenu menuWithItems:restartButton, nil];
+     [self addChild:restartMenu z:601 tag:600];
+     
+     restartMenu.position = ccp(gameOverSprite.position.x + gameOverSprite.contentSize.width/2 * gameOverSprite.scaleX - 190 + restartButton.contentSize.width/2,
+     gameOverSprite.position.y);
+     
+     CCMenuItemImage *gameCenterImage = [CCMenuItemImage itemFromNormalImage:@"Game_Center_logo.png" selectedImage:@"Game_Center_logo.png" target:self selector:@selector(presentGameCenter)];
+     gameCenterImage.scale = 0.4;
+     CCMenu* gameCenterMenu = [CCMenu menuWithItems:gameCenterImage, nil];
+     [self addChild:gameCenterMenu z:601 tag:601];
+     gameCenterMenu.position = ccp(restartMenu.position.x, restartMenu.position.y - gameCenterImage.contentSize.height * gameCenterImage.scale);
+     */
+    [self.pauseLayer gameOver:_pointsGathered withHighScore:self.level.highScorePoints];
 }
 
 -(void) levelDone{
@@ -1566,14 +1691,14 @@
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	bool tmpSick = NO;
 	for (Boid* bee in _bees){
-		bee.leftEdgePosition = ccp(_player.position.x - screenSize.width/2, _player.position.y);
+		bee.leftEdgePosition = ccp(_player.position.x - screenSize.width/2+ 10, _player.position.y);
 		[self beeDefaultMovement:bee withDt:dt];
 		if (!CGPointEqualToPoint(_currentTouch , CGPointZero)){
 			[bee seek:_currentTouch usingMultiplier:0.15f];
 		}else{
 			[bee seek:_player.position usingMultiplier:0.15f];
 		}
-		[bee update];
+		[bee update:dt];
 		if (bee.hasDisease){
 			tmpSick = YES;
 		}
@@ -1586,61 +1711,84 @@
 	}
 }
 
+-(void) updateCurrentDifficulty{
+	if (_totalTimeElapsed - 10 * _currentDifficulty >= 10) {
+        CGSize screenSize = [[CCDirector sharedDirector] winSize];
+        float rndChange = randRange(1, 6);
+        int change = floor(rndChange);
+        bool changeWasEnough = NO;
+        //time to increase the difficulty
+		_currentDifficulty++;
+		//increase the playeracceleration if it is not at the maximum
+        
+        if (_normalSpeed.x <= 3.0){
+            _normalSpeed.x += 0.05;
+            _sickSpeed.x += 0.025;
+            _boostSpeed.x += 0.1;
+            
+            if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
+                _level.difficulty = NORMAL;
+            }else if (_normalSpeed.x > 3.0f){
+                _level.difficulty = HARD;
+            }
+            
+            //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
+            //		_playerAcceleration.x += 0.05;
+            //	}else {
+            _playerAcceleration.x += 0.05;
+            //	}
+        }
+        
+        //increase the boid speed, if it is not at the maximum
+        if (_boidCurrentSpeed < 4.0f){
+            changeWasEnough = YES;
+            _boidCurrentSpeed+=0.05;
+            for (Boid* bee in _bees){
+                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+                bee.startMaxSpeed = _boidCurrentSpeed;
+            }
+        }
+        
+        
+        if ( _maxFishJump < screenSize.height/4 * 3){
+            _maxFishJump += 5;
+        }
+              
+        if (change == 1 || changeWasEnough == NO){
+            if (_fishJumpTime < 1.0f){
+                _fishJumpTime -= 0.1;
+            }
+        }
+
+		//increase the chance of spore if it is not at the maximum
+		
+		//increase the chance of atka if it is not at the maximum
+		
+		//decrease the distance between the predators if it is not at the minimum
+		
+		
+	}
+}
+
+
 -(void) updatePoints{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	for (Points* point in _points){
-		if (![self isOnScreen:point.sprite]){
+		if ((point.sprite.position.x > _player.position.x + screenSize.width/2) && 
+            point.sprite.position.x < _lastPointLocation.x){
 			point.taken = NO;
 		}
+        if (_currentDifficulty > 10 && point.sprite.position.x < _player.position.x + screenSize.width/2 && point.moving == NO){
+            [point update];
+        }
 	}
+    
+    /*
 	for (ComboFinisher* point in _comboFinishers){
 		if (![self isOnScreen:point.sprite]){
 			point.taken = NO;
 		}
-	}
-}
-
--(void) displayNoBonus{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	//display an item for no bonus
-	CCLabelTTF* noBonus = [[[CCLabelTTF alloc] initWithString:@"Failed" fontName:@"Marker Felt" fontSize:32] autorelease];
-	noBonus.position = ccp(_player.position.x , _player.position.y - screenSize.height);
-	
-	CCAction* moveInABit = [CCMoveTo actionWithDuration:0.2 position:ccp(_player.position.x , _player.position.y - screenSize.height/4)];
-	CCAction* fadeOut = [CCFadeOut actionWithDuration:1];
-	[self addChild:noBonus z:500 tag:500];
-	CCAction* bonusActionDone = [CCCallFuncN actionWithTarget:self 
-													 selector:@selector(actionBonusFinished:)];
-	[noBonus runAction:[CCSequence actions: moveInABit, fadeOut, bonusActionDone, nil]];					   
-}
-
--(void) displayHighScore{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	//display an item for no bonus
-	CCLabelTTF* noBonus = [[[CCLabelTTF alloc] initWithString:@"High Score" fontName:@"Marker Felt" fontSize:32] autorelease];
-	noBonus.position = ccp(_player.position.x , _player.position.y - screenSize.height);
-	
-	CCAction* moveInABit = [CCMoveTo actionWithDuration:0.2 position:ccp(_player.position.x , _player.position.y - screenSize.height/4)];
-	CCAction* fadeOut = [CCFadeOut actionWithDuration:1];
-	[self addChild:noBonus z:500 tag:500];
-	CCAction* bonusActionDone = [CCCallFuncN actionWithTarget:self 
-													 selector:@selector(actionBonusFinished:)];
-	[noBonus runAction:[CCSequence actions: moveInABit, fadeOut, bonusActionDone, nil]];					   
-}
-
-
--(void) displayBonus{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	//display an item for no bonus
-	NSString* tmpStr = [[[NSString alloc] initWithFormat:@"%ix Bonus", _bonusCount] autorelease];
-	CCLabelTTF* noBonus = [[[CCLabelTTF alloc] initWithString:tmpStr fontName:@"Marker Felt" fontSize:32] autorelease];
-	noBonus.position = ccp(_player.position.x , _player.position.y - screenSize.height);
-	CCAction* bonusActionDone = [CCCallFuncN actionWithTarget:self 
-													 selector:@selector(actionBonusFinished:)];
-	
-	CCAction* moveInABit = [CCMoveTo actionWithDuration:0.2 position:ccp(_player.position.x , _player.position.y - screenSize.height/4)];
-	CCAction* fadeOut = [CCFadeOut actionWithDuration:1];
-	[self addChild:noBonus z:500 tag:500];
-	[noBonus runAction:[CCSequence actions: moveInABit, fadeOut, bonusActionDone, nil]];					   
+	}*/
 }
 
 
@@ -1654,6 +1802,27 @@
 }
 
 
+-(void) updateFish{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    for (Fish* fish in _fish){
+        if (fish.sprite.position.x + fish.sprite.contentSize.width/2 * fish.sprite.scale < _player.position.x - screenSize.width/2 && fish.isJumping == NO){
+            //respawn the fish
+            [self movePredatorToNewPosition:fish];
+        }else if (!fish.isJumping){
+            if (fish.sprite.position.x - fish.sprite.contentSize.width/2 * fish.sprite.scale <= _player.position.x + screenSize.width/2 ){
+                [fish.sprite stopAllActions];
+                [fish.sprite runAction:fish.animation];
+                CCAction* jump = [CCJumpTo actionWithDuration:4 position:ccp(fish.sprite.position.x - screenSize.width, fish.sprite.position.y) height:_maxFishJump jumps:2];
+                CCAction* jumpDone = [CCCallFunc actionWithTarget:fish selector:@selector(jumpDone:)];
+                [fish.sprite runAction:[CCSequence actions:jump, jumpDone, nil]];
+                fish.isJumping = YES;
+            }
+        }
+    }
+}
+
+
+
 -(void)update:(ccTime)dt{
 	float tickTime = 1.0f/60.0f;
 	_totalTimeElapsed += tickTime;
@@ -1663,24 +1832,10 @@
 				_updateBox = YES;
 			}			
 			_totalTimeElapsed += tickTime;
-			//update goalTime
-			_goalTimeLeft -= tickTime;
-			if (_goalTimeLeft <= 0) {
-				[_alchemy clearItems];
-				[self clearItems];
-				[self clearGoals];
-				_bonusCount = 1;
-				[self displayNoBonus];				
-				[self generateGoals];
-			}else{
-				//		int tmpTime = ceil(_goalTimeLeft);
-				//		[_goalTimer setString:[NSString stringWithFormat:@"%i", tmpTime]];
-			}
+			[self updateCurrentDifficulty];
 			
 			if (_isGameOver == NO && _isLevelDone == NO){
-				if (_removeRunning == NO){
-					[self removeDeadItems];
-				}
+                [self removeDeadItems];
 				//decrease boost, enemy, and illnesstimes
 				if (_boostTimeLeft > 0){
 					_boostTimeLeft -= tickTime;
@@ -1709,26 +1864,24 @@
 						_illnessTimeLeft = 0;;
 					}
 				}
-				
+                
 				if (_touchEnded){
 					_currentTouch = ccp(_currentTouch.x + _playerAcceleration.x, _currentTouch.y);
 				}
 				if (_fireBall != nil){
-					_fireBall.sprite.position = ccpAdd(_fireBall.sprite.position, ccp(-1,0));
+					_fireBall.sprite.position = ccpAdd(_fireBall.sprite.position, ccp(0,0));
 				}
-				
+                
 				//parallaxNode
 				CGPoint backgroundScrollVel = ccp(-10, 0);
 				_backGroundNode.position = ccpAdd(_backGroundNode.position, backgroundScrollVel);
 				//ccpMult(backgroundScrollVel, dt));
 				CGSize screenSize = [[CCDirector sharedDirector] winSize];
-				if (((_player.position.y + _player.contentSize.height/2 >= screenSize.height) && _playerAcceleration.y > 0) ||
-					((_player.position.y - _player.contentSize.height/2 <= 0) && _playerAcceleration.y < 0)){
-					_playerAcceleration = ccp(_playerAcceleration.x, 0);
-				}
 				
-				_player.position = ccpAdd(_player.position, _playerAcceleration);
-				
+				_player.position = ccpAdd(_player.position, ccp(_playerAcceleration.x * dt * 60, _playerAcceleration.y * dt * 60));
+                
+				[self updateLabels:dt];
+				[self setViewpointCenter:_player.position];
 				for (Boid* boid in _bees){
 					if (_slowestBoid == nil){
 						_slowestBoid = boid;
@@ -1738,9 +1891,18 @@
 						}
 					}
 				}
+                
+                if (self.harvesterLayer.moveInParticle && !_evilAppearDone){
+                    [self.messageLayer displayWarning:@"It is coming"];
+                    _evilAppearDone = YES;
+                }else if (self.harvesterLayer.moveOutParticle && _evilAppearDone){
+                    _evilAppearDone = NO;
+                }
 				
 				[self beeMovement:dt];
+                [self updateFish];	
 				[self removeOutOfScreenItems];
+                [self updateTerrain];
 				//update terrain, tell it how far we have proceeded
 				//[_terrain setOffsetX:_playerAcceleration.x];
 				//respawn the clouds if needed
@@ -1750,16 +1912,14 @@
 					[self updateBox2DWorld:dt];
 				}
 				
-				[self updateTerrain];
-		//		[self respawnTerrain];
-				
 				//detect the collisions
 				[self detectBox2DCollisions];
-				[self setViewpointCenter:_player.position];
 				[self detectGameConditions];
 				_distanceTravelled = _player.position.x /3 ;
-				[self updateLabels];
-				
+				if (_level.sporeAvailable || _level.trapAvailable){
+					[self generateNextScreen];
+				}
+                [self.harvesterLayer update:dt];
 				[self updatePoints];
 				[self updateSounds:dt];
 			}
@@ -1886,6 +2046,7 @@
 	}else{
 		_paused = NO;
         [self.pauseLayer switchPause];
+        self.updateBox = 0;
 		[self schedule: @selector(update:)];
         _pausedMenu = nil;
 	}
@@ -1910,18 +2071,27 @@
 		CGSize screenSize = [CCDirector sharedDirector].winSize;
         [self.pauseLayer startGame];
         _gameStarted = YES;
+        if ([[ConfigManager sharedManager] music]){
+            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"seamusic.mp3" loop:YES];
+        }
 		[self schedule: @selector(update:)];
 		[self generateGoals];
+        return NO;
 	}else if (_gameIsReady && _gameStarted){
 		self.currentTouch = [self convertTouchToNodeSpace: touch];
 		self.currentTouch = ccp(self.currentTouch.x - 10, self.currentTouch.y);
 		if (_isGameOver){
-			if (_newHighScore && _distanceToGoal < 0){
-				[self saveLevelPerformance];
-			}
-			[[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[MainMenuScene scene] withColor:ccBLACK]];
+            return NO;
+            /*
+             if (_newHighScore && _distanceToGoal < 0){
+             [self saveLevelPerformance];
+             }
+             [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+             [[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[LevelSelectScene scene] withColor:ccBLACK]];
+             */
 		}else if (_isLevelDone) {
 			[self saveLevelPerformance];
+            [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
 			[[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[MainMenuScene scene] withColor:ccBLACK]];
 		}
 	}
@@ -1988,6 +2158,29 @@ inline float randRange(float min,float max)
 }
 
 
+-(void) presentGameCenter{
+    if ([GameCenterHelper sharedInstance].gameCenterAvailable) { 
+        //send the score
+        [[GameCenterHelper sharedInstance] reportScore:@"21" score:_pointsGathered];
+        
+        GKLeaderboardViewController *leaderboardController = [[GKLeaderboardViewController alloc] init];
+        if (leaderboardController != NULL) { 
+            leaderboardController.category = @"21";
+			leaderboardController.timeScope = GKLeaderboardTimeScopeAllTime;  
+            leaderboardController.leaderboardDelegate = self;
+            beesAppDelegate *delegate = [UIApplication sharedApplication].delegate; [delegate.viewController presentModalViewController:leaderboardController animated:YES]; 
+        }
+        
+    }
+}
+
+- (void)leaderboardViewControllerDidFinish:(GKLeaderboardViewController *)viewController { 
+    beesAppDelegate *delegate = [UIApplication sharedApplication].delegate;
+    [delegate.viewController dismissModalViewControllerAnimated: YES]; 
+    [viewController release]; 
+}
+
+
 
 
 -(void) saveLevelPerformance{
@@ -2007,11 +2200,15 @@ inline float randRange(float min,float max)
 
 -(void) dealloc{	
 	[super dealloc];
-	
+    self.messageLayer = nil;
+    self.pauseLayer = nil;
+    self.hudLayer = nil;
 	[_bees release];
 	_bees = nil;
-	[_predators release];
-	_predators = nil;
+	[_fish removeAllObjects];
+    [_deadFish removeAllObjects];
+    _deadFish = nil;
+	_fish = nil;
 	[_clouds release];
 	_clouds = nil;
 	[_level release];
@@ -2032,9 +2229,10 @@ inline float randRange(float min,float max)
 	_backGround = nil;
 	[_cemeteryBees release];
 	_cemeteryBees = nil;
-	[_comboFinishers release];
-	_comboFinishers = nil;
-	[_comboFinisher release];
+    _harvesterLayer = nil;
+//	[_comboFinishers release];
+//	_comboFinishers = nil;
+//	[_comboFinisher release];
 }	
 
 

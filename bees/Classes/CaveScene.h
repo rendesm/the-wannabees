@@ -9,15 +9,17 @@
 
 // When you import this file, you import all the cocos2d classes
 #import "BeeImports.h"
-#import "MyContactFilter.h"
+#import <iAd/iAd.h>
+#import "GLES-Render.h"
 
 
 // HelloWorld Layer
-@interface CaveScene : CCLayer
+@interface CaveScene : CCLayer<ADBannerViewDelegate, GKLeaderboardViewControllerDelegate>
 {	
     PauseLayer* _pauseLayer;
     HUDLayer* _hudLayer;
 	Level* _level;
+    BackgroundLayer* _backgroundLayer;
 	bool _updateBox;
 	CCProgressTimer* _distanceLeft;
 	bool _newHighScore;
@@ -26,7 +28,6 @@
 	CCParticleSystemQuad *_emitter;
 	b2World *_world;
 	MyContactListener* _contactListener;
-	MyContactFilter* _contactFilter;
 	UITouch* _touch1;
 	NSMutableArray* _clouds;
 	NSMutableArray* _forests;
@@ -149,12 +150,19 @@
 	float _boidCurrentSpeed;
 	float _boidCurrentTurn;
 	float _predatorCurrentSpeed;
-	float _fireBallSpeed;
+	float _guanoTime;
+    float _fireBallChance;
+    float _fireBallSpeed;
+    CCMenu* _pauseMenu;
+    
+    MessageLayer* _messageLayer;
+    HarvesterLayer* _harvesterLayer;
+    bool _evilAppearDone;
 }
 
 // returns a Scene that contains the HelloWorld as the only child
 +(id) scene;
--(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer;
+-(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer message:(MessageLayer *)messageLayer harvester:(HarvesterLayer*)harvesterLayer background:(BackgroundLayer*)backgroundLayer;
 -(void) updateCave;
 -(void)updateSounds:(ccTime)dt;
 -(void)update:(ccTime)dt;
@@ -171,21 +179,12 @@
 -(void) align:(Boid*)bee withAlignmentDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
 -(void) cohesion:(Boid*)bee withNeighborDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
 
--(void) sortBees;
 -(void) beeDefaultMovement:(Boid*) bee withDt:(ccTime)dt;
 -(void) beeMovement:(ccTime)dt;
--(void)selectTarget:(Predator*)predator;
 -(void) shrinkEffectDone;
 
 -(void)setViewpointCenter:(CGPoint) position;
--(void)initActions;
--(void) actionScaleFinished:(id)sender;
--(void)updateBats:(ccTime)dt;
 
-- (CCSprite *)spriteWithColor:(ccColor4F)bgColor textureSize:(float)textureSize withNoise:(NSString*)inNoise withGradientAlpha:(float)gradientAlpha;
-- (ccColor4F)randomBrightColor;
-- (ccColor4F)randomBlueColor;
-- (ccColor4F)randomGreenColor;
 - (void)genBackground;
 
 
@@ -201,7 +200,7 @@
 -(bool) checkGoals;
 
 -(bool)addItemValue:(int)value;
-
+-(void) beeMovement:(ccTime)dt;
 -(void) removeDeadItems;
 
 -(void) playDeadBeeSound;
@@ -214,8 +213,6 @@
 
 -(void)switchPause:(id)sender;
 
--(void)continueGame;
-
 -(void) updateBox2DWorld:(ccTime)dt;
 
 -(void) removeOutOfScreenAtka;
@@ -226,9 +223,9 @@
 
 -(void) moveComboToNewPosition:(ComboFinisher*) point;
 -(void) moveToCemetery:(Boid*) sprite;
--(void) movePredatorToNewPosition:(Predator*) predator;
 -(void) movePointToNewPosition:(Points*) point;
 -(void) generateNextPoint:(int)types;
+-(void) presentGameCenter;
 
 @property(nonatomic, assign) CGPoint currentTouch;
 @property(nonatomic) bool paused;
@@ -239,6 +236,9 @@
 @property(nonatomic, retain) NSMutableArray* comboFinishers;
 @property(nonatomic, retain) PauseLayer* pauseLayer;
 @property(nonatomic, retain) HUDLayer* hudLayer;
+@property(nonatomic, retain) MessageLayer* messageLayer;
+@property(nonatomic, retain) BackgroundLayer* backgroundLayer;
+@property(nonatomic, retain) HarvesterLayer* harvesterLayer;
 
 @end
 

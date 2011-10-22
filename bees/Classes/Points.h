@@ -17,6 +17,10 @@
 	int _collistionType;
 	bool _taken;
 	int _type;
+    bool _isOnScreen;
+    bool _moveDone;
+    bool _moving;
+    CCAction* _moveAction;
 }
 
 
@@ -26,6 +30,12 @@
 @property (nonatomic) int value;
 @property (nonatomic) int collisionType;
 @property (nonatomic) int type;
--(id) initWithFileName:(NSString*) fileName withValue:(int)value;
-- (void)createBox2dBodyDefinitions:(b2World*)world;
+@property (nonatomic) bool isOnScreen;
+@property (nonatomic, retain) CCAction* moveAction;
+@property (nonatomic) bool moveDone;
+@property (nonatomic) bool moving;
+-(id)   initWithFileName:(NSString*) fileName withValue:(int)value;
+-(void) createBox2dBodyDefinitions:(b2World*)world;
+-(void) update;
+-(void) startRotate;
 @end

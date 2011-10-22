@@ -9,7 +9,7 @@
 #import "MainMenuScene.h"
 #import "LevelSelectScene.h"
 #import "ConfigManager.h"
-
+#import "GameCenterHelper.h"
 
 @implementation MainMenuScene
 @synthesize selectedLevel = _selectedLevel;
@@ -38,18 +38,6 @@
 		[self readInLevels];
 		self.selectedLevel = [[NSString alloc] initWithString:@"level1"];
 		
-		
-		
-		/*
-		[[SimpleAudioEngine sharedEngine] preloadEffect:@"music2.mp3"];
-		if (_musicEnabled && !_backGroundMusicStarted){
-			[[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"music2.mp3" loop:YES];
-			_backGroundMusicStarted = YES;
-		}
-		 */
-		
-	
-		
 		CCMenuItemImage *button1 = [CCMenuItemImage 
 							itemFromNormalImage:@"play.png" selectedImage:@"playTapped.png" 
 							target:self selector:@selector(gameButtonTapped)];
@@ -69,7 +57,6 @@
 		
 		_menu.position =  ccp( size.width /4 * 3 + size.width, size.height - 60 - button1.contentSize.height - button2.contentSize.height);
 		[_menu alignItemsVerticallyWithPadding:30];
-		_menu.opacity =255;
 		
 		_bgPicture = [CCSprite spriteWithFile:@"mainMenuBg.png"];
 		_bgPicture.position = ccp(size.width/2 , size.height/2);
@@ -91,14 +78,17 @@
 		
 		
 		
-		if (_soundsEnabled) {
+		if (_configManager.sounds) {
 			[[SimpleAudioEngine sharedEngine] preloadEffect:@"tick.wav"];
 		}
-		
-//		_effectSprite = [CCSprite spriteWithFile:@"darkenCornersEffect.png"];
-//		_effectSprite.position = ccp(size.width/2,  size.height/2);
-//		_effectSprite.scale = 0.5;
-//		[self addChild:_effectSprite z:1000 tag:1000];
+        
+        [[SimpleAudioEngine sharedEngine] setEffectsVolume:0.8];
+		[[SimpleAudioEngine sharedEngine] preloadEffect:@"menuMusic.caf"];
+        [[SimpleAudioEngine sharedEngine] setBackgroundMusicVolume:0.7];
+		if (_configManager.music && ![[SimpleAudioEngine sharedEngine] isBackgroundMusicPlaying]){
+			[[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"menuMusic.caf" loop:YES];
+			_backGroundMusicStarted = YES;
+		}
 	}
 	
 	return self; 
@@ -127,7 +117,8 @@
 								   itemFromNormalImage:@"back.png" selectedImage:@"backTapped.png" 
 								   target:self selector:@selector(playBackButtonTapped)];
 	
-	_playMenu = [CCMenu menuWithItems:campaignButton, survivalButton, timeRaceButton, backButton,nil];
+	//_playMenu = [CCMenu menuWithItems:campaignButton, survivalButton, timeRaceButton, backButton,nil];
+    _playMenu = [CCMenu menuWithItems:survivalButton, backButton,nil];
 	[self addChild:_playMenu z:201 tag:3];
 	
 	CGSize size = [[CCDirector sharedDirector] winSize];
@@ -174,23 +165,23 @@
 								   itemFromNormalImage:@"back.png" selectedImage:@"backTapped.png" 
 								   target:self selector:@selector(optionsBackButtonTapped)];
 	
-	_optionsMenu = [CCMenu menuWithItems:musicLabel, soundsLabel, tutorialsLabel, backButton,nil];
+
+    _optionsMenu = [CCMenu menuWithItems:musicLabel, soundsLabel, tutorialsLabel, backButton, nil];
 	[self addChild:_optionsMenu z:200 tag:2];
 	
 	CGSize size = [[CCDirector sharedDirector] winSize];
-	
 	_optionsMenu.position =  ccp( size.width /4 * 3 + size.width, size.height - 60 - musicLabel.contentSize.height - soundsLabel.contentSize.height);
 	[_optionsMenu alignItemsVerticallyWithPadding:20];
 	[self readInPropertyList];
-	if (!_musicEnabled) {
+	if (!_configManager.music) {
 		[musicLabel activate];
 	}
 	
-	if (!_soundsEnabled){
+	if (!_configManager.sounds){
 		[soundsLabel activate];
 	}
 	
-	if (!_particlesEnabled){
+	if (!_configManager.particles){
 		[tutorialsLabel activate];
 	}else {
 		[self loadParticles];
@@ -203,64 +194,12 @@
 #pragma mark property list functions
 
 -(void) readInPropertyList{
-	NSString *errorDesc = nil;
-	NSPropertyListFormat format;
-	NSString *plistPath;
-	NSString *rootPath = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
-															  NSUserDomainMask, YES) objectAtIndex:0];
-	plistPath = [rootPath stringByAppendingPathComponent:@"GameInfo.plist"];
-	if (![[NSFileManager defaultManager] fileExistsAtPath:plistPath]) {
-		plistPath = [[NSBundle mainBundle] pathForResource:@"GameInfo" ofType:@"plist"];
-	}
-	NSData *plistXML = [[NSFileManager defaultManager] contentsAtPath:plistPath];
-	NSDictionary *temp = (NSDictionary *)[NSPropertyListSerialization
-										  propertyListFromData:plistXML
-										  mutabilityOption:NSPropertyListMutableContainersAndLeaves
-										  format:&format
-										  errorDescription:&errorDesc];
-	if (!temp) {
-		NSLog(@"Error reading plist: %@, format: %d", errorDesc, format);
-	}
-		
-	_musicEnabled = [[temp objectForKey:@"Music"] boolValue];
-	_soundsEnabled = [[temp objectForKey:@"Sounds"] boolValue];
-	_particlesEnabled = [[temp objectForKey:@"Particles"] boolValue];
-	
-	ConfigManager* sharedManager = [ConfigManager sharedManager];
-	
-	sharedManager.sounds = _soundsEnabled;
-	sharedManager.music = _musicEnabled;
-	sharedManager.particles = _particlesEnabled;
+	_configManager = [ConfigManager sharedManager];		
 }
 
 
 -(void) savePropertyList{
-	NSError* error;
-	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-	NSString *documentsDirectory = [paths objectAtIndex:0];
-	NSString *path = [documentsDirectory stringByAppendingPathComponent:@"GameInfo.plist"];
-
-	NSFileManager *fileManager = [NSFileManager defaultManager];
-	
-	if (![fileManager fileExistsAtPath: path]) //4
-	{
-		NSString *bundle = [[NSBundle mainBundle] pathForResource:@"GameInfo" ofType:@"plist"]; //5
-		[fileManager copyItemAtPath:bundle toPath: path error:&error]; //6
-	}
-	
-	NSMutableDictionary *data = [[NSMutableDictionary alloc] initWithContentsOfFile: path];
-	
-	[data setObject:[NSNumber numberWithBool: _musicEnabled] forKey:@"Music"];
-	[data setObject:[NSNumber numberWithBool: _soundsEnabled] forKey:@"Sounds"];
-	[data setObject:[NSNumber numberWithBool: _particlesEnabled] forKey:@"Particles"];
-	if(data) {
-		[data writeToFile:path atomically:YES];
-	}
-	else {
-		NSLog(error);
-		[error release];
-	}
-	[data release];
+	[_configManager savePropertyList];
 }
 
 
@@ -295,7 +234,7 @@
 
 #pragma mark playmenu buttons functions
 -(void)playBackButtonTapped{
-	if (_soundsEnabled && !_init){
+	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
 	
@@ -305,7 +244,7 @@
 }
 
 -(void)campaignButtonTapped{
-	if (_soundsEnabled  && !_init){
+	if (_configManager.sounds  && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
 	
@@ -315,7 +254,7 @@
 }
 
 -(void)survivalButtonTapped{
-	if (_soundsEnabled  && !_init){
+	if (_configManager.sounds  && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
 	
@@ -323,7 +262,7 @@
 }
 
 -(void)timeRaceButtonTapped{
-	if (_soundsEnabled && !_init){
+	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}	
 	[[CCDirector sharedDirector] replaceScene: [HiveScene scene]];
@@ -334,7 +273,7 @@
 
 -(void)gameButtonTapped{
 	_menu.isTouchEnabled = NO;
-	if (_soundsEnabled && !_init){
+	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
 	[_menu runAction:_actionMoveOut];
@@ -342,7 +281,7 @@
 }
 
 -(void)optionsButtonTapped{
-	if (_soundsEnabled && !_init){
+	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}	
 	[self readInPropertyList];
@@ -352,7 +291,7 @@
 }
 
 -(void)storeButtonTapped{
-	if (_soundsEnabled && !_init){
+	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
 	
@@ -387,48 +326,46 @@
 #pragma mark options buttons tapped
 
 -(void) musicButtonTapped{
-	if (_soundsEnabled && !_init){
+	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
 	
-	if (_musicEnabled){
+	if (_configManager.music){
 		if (!_init){
-			_musicEnabled = NO;
+            [[ConfigManager sharedManager] setMusic:NO];
 			[[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
 			_backGroundMusicStarted = NO;
 		}
 	}else{
 		if (!_init){
-			[[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"music2.mp3"] ;
+			[[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"menuMusic.caf"] ;
 			_backGroundMusicStarted = YES;
-			_musicEnabled = YES;
+			[[ConfigManager sharedManager] setMusic:YES];
 		}
 	}
 	if (!_init){
-		[[ConfigManager sharedManager] setMusic:_musicEnabled];
+		
 	}
 }
 
 -(void) soundButtonTapped{
-	if (_soundsEnabled && !_init){
+	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
 	
 	if (!_init){
-		_soundsEnabled = !_soundsEnabled;	
-		[[ConfigManager sharedManager] setSounds:_soundsEnabled];
+		[[ConfigManager sharedManager] switchSounds];
 	}
 }
 
 -(void) vibrationButtonTapped{
-	if (_soundsEnabled && !_init){
+	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
 	
 	if (!_init){
-		_particlesEnabled = !_particlesEnabled;
-		[[ConfigManager sharedManager] setParticles:_particlesEnabled];
-		if (_particlesEnabled && _emitter == nil){
+		[[ConfigManager sharedManager] switchParticles];
+		if (_configManager.particles && _emitter == nil){
 			[self loadParticles];
 		}else if (_emitter != nil){
 			[self unloadParticles];
@@ -436,8 +373,18 @@
 	}
 }
 
+-(void) gfxButtonTapped{
+    if (_configManager.sounds && !_init){
+        [[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
+    }
+    
+    if (!_init){
+        [_configManager incrGfx];
+    }
+}
+
 -(void) optionsBackButtonTapped{
-	if (_soundsEnabled && !_init){
+	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
 	
@@ -448,8 +395,8 @@
 }
 
 -(void) dealloc{
-	
 	_emitter = nil;
+    [super dealloc];
 }
 
 

@@ -11,7 +11,7 @@
 
 @interface HUDLayer : CCLayer {
 	CCSprite *_pointsSprite;
-	CCLabelTTF* _pointsLabel;
+	CCLabelBMFont* _pointsLabel;
 	CCSprite *_item1;
 	CCSprite *_item2;
 	CCSprite *_item3;

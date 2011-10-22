@@ -98,7 +98,9 @@
 	
 	[self addChild:_pointsSprite z:100 tag:100];
 	
-	_pointsLabel = [CCLabelTTF labelWithString:@"0" fontName:@"Marker Felt" fontSize:12];
+    _pointsLabel = [[CCLabelBMFont alloc] initWithString:@"Loading..." fntFile:@"markerfelt.fnt"];
+    _pointsLabel.scale = 0.15;
+//	_pointsLabel = [CCLabelTTF labelWithString:@"0" fontName:@"Marker Felt" fontSize:12];
 	_pointsLabel.position = _pointsSprite.position;
 	_pointsLabel.color = ccWHITE;
 	[self addChild:_pointsLabel z: 300 tag:301];
