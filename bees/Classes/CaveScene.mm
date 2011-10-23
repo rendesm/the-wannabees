@@ -266,7 +266,7 @@ static double timeAccumulator = 0;
 	//check if it is colliding with a toprock 
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	Bat* bat = [[Bat alloc] initForPosition:_lastBatPosition forNode:_batchNode withTime:_guanoTime];
-	[self checkBatRockCollision:bat];
+	//[self checkBatRockCollision:bat];
 	bat.timeLeftForGuano = 0;
 	[bat.sprite setOpacity:250];
 	[_bats addObject:bat];
@@ -667,7 +667,7 @@ static double timeAccumulator = 0;
 	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
     
-    [self checkPointRockCollision:point];
+  //  [self checkPointRockCollision:point];
 	_lastPointLocation = point.sprite.position;
 	point.taken = YES;
 }
@@ -1372,7 +1372,7 @@ static double timeAccumulator = 0;
            if ([b->GetUserData() isKindOfClass:[Spore class]]){
                 Spore *spore = (Spore *)b->GetUserData();
                if (spore.sprite.position.x < _player.position.x +screenSize.width/2){
-                   if (spore.sprite.position.x > _player.position.x - screenSize.width/2){
+                   if (spore.sprite.position.x - spore.sprite.contentSize.width/2 * spore.sprite.scale > _player.position.x - screenSize.width/2){
                        b->SetAwake(true);
                        b->SetActive(true);
                    }else{

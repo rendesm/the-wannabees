@@ -450,7 +450,7 @@ static double timeAccumulator = 0;
  */
 
 -(void) updateLabels:(ccTime)dt{
-	_backGround.position = ccpAdd(_backGround.position, _playerAcceleration);
+	_backGround.position = ccp(_backGround.position.x + _playerAcceleration.x * dt * 60, _backGround.position.y);	
 	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x * dt * 60, _pauseButton.position.y);	
     [self.hudLayer updatePoints:_pointsGathered];
 }
@@ -1452,8 +1452,10 @@ static double timeAccumulator = 0;
                                            fish.sprite.position.y/PTM_RATIO);
                 if  (fish.sprite.position.x + fish.sprite.contentSize.width/2 * fish.sprite.scale < _player.position.x + screenSize.width/2){
                     b->SetAwake(true);
+                    b->SetActive(true);
                 }else{
                     b->SetAwake(false);
+                    b->SetActive(false);
                 }
                 float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(fish.sprite.rotation);
                 b->SetTransform(b2Position, b2Angle);			
@@ -1462,8 +1464,10 @@ static double timeAccumulator = 0;
                 CGPoint location = [self convertToNodeSpace:bullet.sprite.position ];
                 if (bullet.isOutOfScreen){
                     b->SetAwake(false);
+                    b->SetActive(false);
                 }else{
                     b->SetAwake(true);
+                    b->SetActive(true);
                 }
                 b2Vec2 b2Position = b2Vec2(location.x/PTM_RATIO,
                                            location.y/PTM_RATIO);
@@ -1521,26 +1525,6 @@ static double timeAccumulator = 0;
 
 -(void)selectTarget:(Predator*)predator{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	/*
-	 switch (predator.type) {
-	 case AGGRESSIVE:
-	 predator.target = _slowestBoid.position;
-	 break;
-	 case LAZY:
-	 predator.target = _slowestBoid.position;
-	 break;
-	 
-	 case DUMB:
-	 predator.target = _slowestBoid.position;
-	 break;
-	 
-	 case PASSIVE:
-	 predator.target = ccp(_player.position.x - screenSize.width * 2, screenSize.height * CCRANDOM_0_1() );
-	 break;
-	 
-	 default:
-	 break;
-	 }	*/
 	predator.target = _slowestBoid.position;
 }
 
@@ -1568,68 +1552,7 @@ static double timeAccumulator = 0;
         [self saveLevelPerformance];    
     }
     
-    /*
-     CGSize screenSize = [[CCDirector sharedDirector] winSize];
-     CCSprite* gameOverSprite = [CCSprite spriteWithFile:@"gameOverOverlay.png"];
-     gameOverSprite.position = _player.position;
-     gameOverSprite.scaleX = 1.8f;
-     gameOverSprite.opacity = 0;
-     [self addChild:gameOverSprite z:599 tag:299];
-     [gameOverSprite runAction:[CCFadeIn actionWithDuration:0.2]];
-     
-     CCLabelBMFont* gameOverLabel = [[CCLabelBMFont alloc] initWithString:@"Game Over" fntFile:@"markerfelt.fnt"];
-     gameOverLabel.scale = 0.5;
-     [self addChild:gameOverLabel z:600 tag:10];
-     gameOverLabel.position = ccpAdd(_player.position, ccp(0, screenSize.height/5));
-     //gameOverLabel.opacity = 0;
-     
-     CCLabelBMFont* scoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"Points:  %i", _pointsGathered] fntFile:@"markerfelt.fnt"];	
-     scoreLabel.scale = 0.25;
-     if (_newHighScore) {
-     _level.highScorePoints = _pointsGathered;
-     }
-     
-     
-     
-     
-     //highscore label
-     CCLabelBMFont* highscoreLabel;
-     if (_newHighScore){
-     highscoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"HighScore:  %i", _pointsGathered]  fntFile:@"markerfelt.fnt"];	
-     highscoreLabel.scale = 0.25;
-     }else{
-     highscoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"HighScore:  %i", _pointsGathered]  fntFile:@"markerfelt.fnt"];	
-     highscoreLabel.scale = 0.25;
-     }
-     
-     scoreLabel.position = _player.position;
-     [self addChild:scoreLabel z:600 tag:600];
-     
-     highscoreLabel.position = ccpAdd(scoreLabel.position, ccp(0, -screenSize.height/5));
-     [self addChild:highscoreLabel z:600 tag:600];
-     
-     CCMenuItemImage *exitButton = [CCMenuItemImage itemFromNormalImage:@"exitButton.png" selectedImage:@"exitButton.png" target:self selector:@selector(gameOverExitTapped:)];   
-     CCMenu* exitMenu = [CCMenu menuWithItems:exitButton, nil];
-     [self addChild:exitMenu z:601 tag:600];
-     
-     exitMenu.position = ccp(gameOverSprite.position.x - gameOverSprite.contentSize.width/2 * gameOverSprite.scaleX + 150 + exitButton.contentSize.width/2,
-     gameOverSprite.position.y);
-     
-     CCMenuItemImage *restartButton = [CCMenuItemImage itemFromNormalImage:@"restartButton.png" selectedImage:@"restartButton.png" 
-     target:self selector:@selector(gameOverRestartTapped:)];   
-     CCMenu* restartMenu = [CCMenu menuWithItems:restartButton, nil];
-     [self addChild:restartMenu z:601 tag:600];
-     
-     restartMenu.position = ccp(gameOverSprite.position.x + gameOverSprite.contentSize.width/2 * gameOverSprite.scaleX - 190 + restartButton.contentSize.width/2,
-     gameOverSprite.position.y);
-     
-     CCMenuItemImage *gameCenterImage = [CCMenuItemImage itemFromNormalImage:@"Game_Center_logo.png" selectedImage:@"Game_Center_logo.png" target:self selector:@selector(presentGameCenter)];
-     gameCenterImage.scale = 0.4;
-     CCMenu* gameCenterMenu = [CCMenu menuWithItems:gameCenterImage, nil];
-     [self addChild:gameCenterMenu z:601 tag:601];
-     gameCenterMenu.position = ccp(restartMenu.position.x, restartMenu.position.y - gameCenterImage.contentSize.height * gameCenterImage.scale);
-     */
-    [self.pauseLayer gameOver:_pointsGathered withHighScore:self.level.highScorePoints];
+      [self.pauseLayer gameOver:_pointsGathered withHighScore:self.level.highScorePoints];
 }
 
 -(void) levelDone{
@@ -1751,7 +1674,7 @@ static double timeAccumulator = 0;
         
         
         if ( _maxFishJump < screenSize.height/4 * 3){
-            _maxFishJump += 5;
+            _maxFishJump += 2;
         }
               
         if (change == 1 || changeWasEnough == NO){
@@ -1821,6 +1744,17 @@ static double timeAccumulator = 0;
     }
 }
 
+
+-(void) updateBird:(ccTime)dt{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    for (Spore* bird in _birds){
+        if (bird.sprite.position.x + bird.sprite.contentSize.width * bird.sprite.scale < _player.position.x - screenSize.width){
+            //respawn the bird
+        }else{
+            //move the bird
+        }
+    }
+}
 
 
 -(void)update:(ccTime)dt{
@@ -2082,13 +2016,6 @@ static double timeAccumulator = 0;
 		self.currentTouch = ccp(self.currentTouch.x - 10, self.currentTouch.y);
 		if (_isGameOver){
             return NO;
-            /*
-             if (_newHighScore && _distanceToGoal < 0){
-             [self saveLevelPerformance];
-             }
-             [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
-             [[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[LevelSelectScene scene] withColor:ccBLACK]];
-             */
 		}else if (_isLevelDone) {
 			[self saveLevelPerformance];
             [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
@@ -2106,7 +2033,6 @@ static double timeAccumulator = 0;
 - (void)ccTouchEnded:(UITouch *)touch withEvent:(UIEvent *)event
 {
 	_touchEnded = YES;
-	//self.currentTouch = CGPointZero;
 }
 
 

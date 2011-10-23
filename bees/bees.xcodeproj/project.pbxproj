@@ -335,6 +335,9 @@
 		81A44E01143F89F700DC1390 /* iAd.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81A44E00143F89F700DC1390 /* iAd.framework */; };
 		81AFA28D1433AE2900C10433 /* Fish.mm in Sources */ = {isa = PBXBuildFile; fileRef = 81AFA28C1433AE2900C10433 /* Fish.mm */; };
 		81B4D6B8143F46C9006C3B31 /* GameCenterLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 81B4D6B7143F46C9006C3B31 /* GameCenterLayer.m */; };
+		81BD01D31452EABB00261B6C /* DesertBackgroundLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 81BD01D21452EABB00261B6C /* DesertBackgroundLayer.mm */; };
+		81BD01DB145314BC00261B6C /* desert_default.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81BD01D9145314BC00261B6C /* desert_default.plist */; };
+		81BD01DC145314BC00261B6C /* desert_default.pvr.ccz in Resources */ = {isa = PBXBuildFile; fileRef = 81BD01DA145314BC00261B6C /* desert_default.pvr.ccz */; };
 		81E6983A144F579900203097 /* harvester_default.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81E69838144F579900203097 /* harvester_default.plist */; };
 		81E6983B144F579900203097 /* harvester_default.pvr.ccz in Resources */ = {isa = PBXBuildFile; fileRef = 81E69839144F579900203097 /* harvester_default.pvr.ccz */; };
 		81E6983E144F619B00203097 /* seaSheet_Untitled.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81E6983C144F619B00203097 /* seaSheet_Untitled.plist */; };
@@ -911,6 +914,10 @@
 		81AFA28C1433AE2900C10433 /* Fish.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = Fish.mm; sourceTree = "<group>"; };
 		81B4D6B6143F46C9006C3B31 /* GameCenterLayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GameCenterLayer.h; sourceTree = "<group>"; };
 		81B4D6B7143F46C9006C3B31 /* GameCenterLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GameCenterLayer.m; sourceTree = "<group>"; };
+		81BD01D11452EABB00261B6C /* DesertBackgroundLayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DesertBackgroundLayer.h; sourceTree = "<group>"; };
+		81BD01D21452EABB00261B6C /* DesertBackgroundLayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = DesertBackgroundLayer.mm; sourceTree = "<group>"; };
+		81BD01D9145314BC00261B6C /* desert_default.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = desert_default.plist; sourceTree = "<group>"; };
+		81BD01DA145314BC00261B6C /* desert_default.pvr.ccz */ = {isa = PBXFileReference; lastKnownFileType = file; path = desert_default.pvr.ccz; sourceTree = "<group>"; };
 		81C45821142E2184007ADA64 /* GameScene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GameScene.h; sourceTree = "<group>"; };
 		81E69838144F579900203097 /* harvester_default.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = harvester_default.plist; sourceTree = "<group>"; };
 		81E69839144F579900203097 /* harvester_default.pvr.ccz */ = {isa = PBXFileReference; lastKnownFileType = file; path = harvester_default.pvr.ccz; sourceTree = "<group>"; };
@@ -1238,6 +1245,8 @@
 		02BF131A142D10E6004E2F60 /* Layers */ = {
 			isa = PBXGroup;
 			children = (
+				81BD01D11452EABB00261B6C /* DesertBackgroundLayer.h */,
+				81BD01D21452EABB00261B6C /* DesertBackgroundLayer.mm */,
 				81A44DFE143F721B00DC1390 /* darksmoke.plist */,
 				02BF12AB142D0124004E2F60 /* HUDLayer.h */,
 				81A44DF1143F67B400DC1390 /* ClippingNode.h */,
@@ -1475,6 +1484,8 @@
 		02F0185113EB39BC00355B76 /* sheets */ = {
 			isa = PBXGroup;
 			children = (
+				81BD01D9145314BC00261B6C /* desert_default.plist */,
+				81BD01DA145314BC00261B6C /* desert_default.pvr.ccz */,
 				81E6983C144F619B00203097 /* seaSheet_Untitled.plist */,
 				81E6983D144F619B00203097 /* seaSheet_Untitled.pvr.ccz */,
 				81E69838144F579900203097 /* harvester_default.plist */,
@@ -2478,6 +2489,8 @@
 				81E6983E144F619B00203097 /* seaSheet_Untitled.plist in Resources */,
 				81E6983F144F619B00203097 /* seaSheet_Untitled.pvr.ccz in Resources */,
 				8190FC331452CDE400BF48EC /* komaromi.mp3 in Resources */,
+				81BD01DB145314BC00261B6C /* desert_default.plist in Resources */,
+				81BD01DC145314BC00261B6C /* desert_default.pvr.ccz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2556,6 +2569,7 @@
 				81965A4F14423670005895C3 /* Eyes.mm in Sources */,
 				81903BC61444D38600E423ED /* GameCenterScene.m in Sources */,
 				818F59CB144D5C820028BC10 /* DesertScene.mm in Sources */,
+				81BD01D31452EABB00261B6C /* DesertBackgroundLayer.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

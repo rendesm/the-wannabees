@@ -34,6 +34,9 @@
     int _goal1;
 	int _goal2;
 	int _goal3;
+    int _item1Value;
+    int _item2Value;
+    int _item3Value;
     int _currentDifficulty;
     bool _newHighScore;
     CCMenuItemImage* _pauseButton;
@@ -63,12 +66,21 @@
     CCSpriteBatchNode* _batchNode;
     
     CGPoint _lastPointLocation;
+    Alchemy* _alchemy;
 }
 
 -(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer message:(MessageLayer *)messageLayer harvester:(HarvesterLayer*)harvesterLayer background:(HillsBackgroundLayer*) background;
 -(void)detectBox2DCollisions;
 -(void) updateBox2DWorld:(ccTime)dt;
 -(void) beeMovement:(ccTime)dt;
+-(void) generateGoals;
+-(void) clearItemValues;
+-(void) clearItems;
+-(void) clearGoals;
+-(void) cohesion:(Boid*)bee withNeighborDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
+-(void) align:(Boid*)bee withAlignmentDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
+-(void) separate:(Boid*)bee withSeparationDistance:(float)separationDistance usingMultiplier:(float)multiplier;
+-(bool)addItemValue:(int)value;
 
 @property (nonatomic, retain) NSMutableArray* bees;
 @property (nonatomic, retain) NSMutableArray* deadBees;

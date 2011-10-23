@@ -409,6 +409,7 @@ static bool _evilAppearDone = NO;
 
 
 -(void) updateLabels:(ccTime)dt{
+    _backGround.position = ccp(_backGround.position.x + _playerAcceleration.x * dt * 60, _backGround.position.y);	
 	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x * dt * 60, _pauseButton.position.y);	
     [self.hudLayer updatePoints:_pointsGathered];
 }
@@ -1250,8 +1251,10 @@ static bool _evilAppearDone = NO;
                     CGPoint fishLocation =  [self convertToNodeSpace:spore.sprite.position ];
                     if (fishLocation.x + spore.sprite.contentSize.width/2 * spore.sprite.scale < _player.position.x + screenSize.width/2){
                        b->SetAwake(true);
+                       b->SetActive(true);
                     }else{
                        b->SetAwake(false);
+                       b->SetActive(false);
                     }
                     b2Vec2 b2Position = b2Vec2(fishLocation.x/PTM_RATIO,
                                                fishLocation.y/PTM_RATIO);
@@ -1274,8 +1277,10 @@ static bool _evilAppearDone = NO;
                     CGPoint location = [self convertToNodeSpace:bullet.sprite.position ];
                     if (bullet.isOutOfScreen){
                         b->SetAwake(false);
+                        b->SetActive(false);
                     }else{
                         b->SetAwake(true);
+                        b->SetActive(true);
                     }
                     b2Vec2 b2Position = b2Vec2(location.x/PTM_RATIO,
                                                location.y/PTM_RATIO);
@@ -1292,8 +1297,10 @@ static bool _evilAppearDone = NO;
                     CCSprite *sprite = (CCSprite *)b->GetUserData();
                     if (sprite.position.x + sprite.contentSize.width/2 * sprite.scale <= _player.position.x + screenSize.width/2){
                         b->SetAwake(true);
+                        b->SetActive(true);
                     }else{
                         b->SetAwake(false);
+                        b->SetActive(false);
                     }
                     b2Vec2 b2Position = b2Vec2(sprite.position.x/PTM_RATIO,
                                                sprite.position.y/PTM_RATIO);
@@ -1562,6 +1569,10 @@ static bool _evilAppearDone = NO;
 		_isLevelDone = YES;
 	}
 }
+
+
+
+
 
 
 -(void) beeDefaultMovement:(Boid*) bee withDt:(ccTime)dt{

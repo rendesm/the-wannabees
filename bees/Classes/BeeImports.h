@@ -35,4 +35,5 @@
 #import "HarvesterLayer.h"
 #import "HillsBackgroundLayer.h"
 #import "GameCenterHelper.h"
+#import "DesertBackgroundLayer.h"
 #import "Fish.h"

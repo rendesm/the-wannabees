@@ -7,6 +7,7 @@
 //
 
 #import "DesertScene.h"
+#import "DesertBackgroundLayer.h"
 
 #define rad2Deg 57.2957795
 
@@ -42,7 +43,7 @@ static double timeAccumulator = 0;
     MessageLayer* messageLayer = [MessageLayer node];
     [scene addChild:messageLayer z:4];
     
-    HillsBackgroundLayer* bgLayer = [HillsBackgroundLayer node];
+    HillsBackgroundLayer* bgLayer = [DesertBackgroundLayer node];
     [scene addChild:bgLayer z: 0];
 
     
@@ -60,6 +61,21 @@ static double timeAccumulator = 0;
 }
 
 
+
+-(void)setViewpointCenter:(CGPoint) position{
+	
+	CGSize winSize = [[CCDirector sharedDirector] winSize];
+	
+    int x = MAX(position.x, winSize.width / 2);
+    //int y = MAX(position.y, winSize.height / 2);
+	int y = winSize.height/2;
+    CGPoint actualPosition = ccp(x, y);
+    CGPoint centerOfView = ccp(winSize.width/2, winSize.height/2);
+    CGPoint viewPoint = ccpSub(centerOfView, actualPosition);
+    self.position = viewPoint;	
+}	
+
+
 -(void) movePointToNewPosition:(Points*) point{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	float rnd = randRange(1, 4);
@@ -68,18 +84,7 @@ static double timeAccumulator = 0;
 	}
 	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
-	
-    /*
-     //check if it collides with a combo 
-     for(ComboFinisher* comboFinisher in _comboFinishers){
-     if (CGRectIntersectsRect(point.sprite.boundingBox, comboFinisher.sprite.boundingBox)){
-     _lastPointLocation = comboFinisher.sprite.position;
-     [self movePointToNewPosition:point];
-     }
-     }*/
-    
 	_lastPointLocation = point.sprite.position;
-	point.taken = NO;
 }
 
 
@@ -299,7 +304,7 @@ static double timeAccumulator = 0;
 		[boid update];
 	}
     
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 6; i++) {
 		[self generateNextPoint: (i % 3)+1];
 	}
     
@@ -333,7 +338,8 @@ static double timeAccumulator = 0;
     [self unschedule:@selector(loadingDone)];
     [self.pauseLayer loadingFinished];
     _gameIsReady = YES;
-
+    _alchemy = [[[Alchemy alloc]init] retain];
+    _alchemy.world = self;
 }
 
 
@@ -348,15 +354,22 @@ static double timeAccumulator = 0;
 
 -(void) updatePoints{
     CGSize screenSize = [[CCDirector sharedDirector] winSize];
-    if ([self.points count] < 12){
-        [self generateNextPoint:1];
+    int rnd = floor(CCRANDOM_0_1() * 3 + 1);
+    if (rnd == 4){
+        rnd = 3;
+    }
+    
+    if ([self.points count] < 6){
+        [self generateNextPoint:rnd];
     }
     
 	for (Points* point in _points){
-		if ((point.sprite.position.x > _player.position.x + screenSize.width/2) && 
+		if ((point.sprite.position.x - point.sprite.contentSize.width/2 * point.sprite.scale > _player.position.x + screenSize.width/2) && 
             point.sprite.position.x < _lastPointLocation.x){
-			point.taken = NO;
-		}
+		}else if(point.sprite.position.x + point.sprite.contentSize.width/2 * point.sprite.scale < _player.position.x - screenSize.width/2){
+            point.taken = YES;
+        }
+        
         if (_currentDifficulty > 10 && point.sprite.position.x < _player.position.x + screenSize.width/2 && point.moving == NO){
             [point update];
         }
@@ -391,6 +404,8 @@ static double timeAccumulator = 0;
 
 -(void) updateBox2DWorld:(ccTime)dt{
     CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    std::vector<b2Body *>toDestroy; 
+    
     timeAccumulator+=dt;
     if (timeAccumulator > (MAX_CYCLES_PER_FRAME * UPDATE_INTERVAL)){
         timeAccumulator = UPDATE_INTERVAL;
@@ -402,10 +417,18 @@ static double timeAccumulator = 0;
         for(b2Body *b = _world->GetBodyList(); b; b=b->GetNext()) {
             if ([b->GetUserData() isKindOfClass:[Points class]]){
                 Points *point = (Points *)b->GetUserData();
-                b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
-                                           point.sprite.position.y/PTM_RATIO);
-                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
-                b->SetTransform(b2Position, b2Angle);
+                if (point.taken == NO){
+                    b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
+                                               point.sprite.position.y/PTM_RATIO);
+                    float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
+                    b->SetTransform(b2Position, b2Angle);
+                }else{
+                    //remove the point
+                    [_batchNode removeChild:point.sprite cleanup:YES];
+                    [self.points removeObject:point];
+                    [point release];
+                    toDestroy.push_back(b);
+                }
             }if ([b->GetUserData() isKindOfClass:[Fish class]]){
                 Points *point = (Points *)b->GetUserData();
                 b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
@@ -421,6 +444,13 @@ static double timeAccumulator = 0;
                 i++;
             }
         }	
+        
+        std::vector<b2Body *>::iterator pos2;
+        for(pos2 = toDestroy.begin(); pos2 != toDestroy.end(); ++pos2) {
+            b2Body *body = *pos2;     
+            _world->DestroyBody(body);
+        }
+        
         _world->Step(UPDATE_INTERVAL, 3, 2);
     }
 }
@@ -460,18 +490,63 @@ static double timeAccumulator = 0;
     
     if ([_takenPoints count] > 0){        
         for (Points* point in _takenPoints){
+            [self.points removeObject:point];
+            PointTaken* actionMoveUp = [PointTaken actionWithDuration:0.4 moveTo:ccp(point.sprite.position.x - _playerAcceleration.x * 5,
+                                                                                     point.sprite.position.y + point.sprite.contentSize.height * point.sprite.scale)];
+            CCAction* actionMoveDone = [CCCallFuncN actionWithTarget:self selector:@selector(actionMoveFinished:)];
+            CCSprite* deadSprite = nil;
+            bool goodForCombo = [self addItemValue:point.type];
+            if (!goodForCombo){
+                if (!self.harvesterLayer.isIn && !self.harvesterLayer.moveOutParticle && !self.harvesterLayer.moveInParticle){
+                    self.harvesterLayer.timeElapsed += 10;
+                }
+                [_alchemy clearItems];
+                [self clearItems];
+                [self clearGoals];
+                _bonusCount = 1;
+                [self displayNoBonus];				
+                [self generateGoals];
+            }
+            if (point.type == ATTACK_BOOST){
+                if (goodForCombo) {
+                    [self.hudLayer addItem:@"redFlower.png"];
+                    [_alchemy addItem:RED_SLOT];
+                }
+                deadSprite = [CCSprite spriteWithSpriteFrameName:@"redFlower.png"];
+            }else if (point.type == GOLD){
+                if (goodForCombo) {
+                    [self.hudLayer addItem:@"yellowFlower.png"];
+                    [_alchemy addItem:YELLOW_SLOT];
+                }
+                deadSprite = [CCSprite spriteWithSpriteFrameName:@"yellowFlower.png"];
+            }else if (point.type == EVADE_BOOST){
+                if (goodForCombo){
+                    [self.hudLayer addItem:@"blueFlower.png"];
+                    [_alchemy addItem:BLUE_SLOT];
+                }
+                deadSprite = [CCSprite spriteWithSpriteFrameName:@"blueFlower.png"];			
+            }
+            [_batchNode addChild:deadSprite z:300 tag:300];
+            deadSprite.position = point.sprite.position;
+            deadSprite.scale = 0.1;
+            [deadSprite runAction:[CCSequence actions:actionMoveUp, actionMoveDone, nil]];
+            if (point.moving){
+                [point.sprite stopAllActions];
+                point.moving = NO;
+                point.moveDone = NO;
+            }
             [_batchNode removeChild:point.sprite cleanup:YES];
-            [_points removeObject:point];
+            [point release];
         }
         [_takenPoints removeAllObjects];
-        
-         std::vector<b2Body *>::iterator pos2;
-         for(pos2 = toDestroy.begin(); pos2 != toDestroy.end(); ++pos2) {
-             b2Body *body = *pos2;     
-             _world->DestroyBody(body);
-         }
+        [_takenPoints release];
     }
-    [_takenPoints release];
+
+    std::vector<b2Body *>::iterator pos2;
+    for(pos2 = toDestroy.begin(); pos2 != toDestroy.end(); ++pos2) {
+        b2Body *body = *pos2;     
+        _world->DestroyBody(body);
+    }
 }
 
 
@@ -503,10 +578,6 @@ static double timeAccumulator = 0;
 
 }
 
-
--(void) generateGoals{
-    
-}
 
 - (void)onEnter
 {
@@ -562,23 +633,6 @@ static double timeAccumulator = 0;
 	_touchEnded = YES;
 	//self.currentTouch = CGPointZero;
 }
-
-
-
--(void)setViewpointCenter:(CGPoint) position{
-	
-	CGSize winSize = [[CCDirector sharedDirector] winSize];
-	
-    int x = MAX(position.x, winSize.width / 2);
-    //int y = MAX(position.y, winSize.height / 2);
-	int y = winSize.height/2;
-    CGPoint actualPosition = ccp(x, y);
-    CGPoint centerOfView = ccp(winSize.width/2, winSize.height/2);
-    CGPoint viewPoint = ccpSub(centerOfView, actualPosition);
-    self.position = viewPoint;	
-}	
-
-
 
 
 inline CGPoint normalize(CGPoint point)
@@ -666,7 +720,7 @@ inline float randRange(float min,float max)
 	bee.acceleration = ccpAdd(bee.acceleration, force);
 }
 
--(void) align:(Boid*)bee withAlignmentDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
+-(void) align:(Boid*)bee withAlignmentDistance:(float)neighborDistance usingMultiplier:(float)multiplier
 {
 	CGPoint		force = CGPointZero;
 	int			count = 0;
@@ -736,6 +790,175 @@ inline float randRange(float min,float max)
 	
 	bee.acceleration = ccpAdd(bee.acceleration, force);
 }
+
+
+-(void) actionMoveFinished:(id)sender{
+	[_batchNode removeChild:(CCSprite*)sender cleanup:YES];
+}
+
+
+-(void) actionBonusFinished:(id)sender{
+	[self removeChild:(CCLabelTTF*)sender cleanup:YES];
+}
+
+
+-(void) removeDeadItems{
+	CGSize screenSize = [[CCDirector sharedDirector] winSize];
+	
+	
+	//remove the dead objects
+	for (Boid* boid in _deadBees){
+		CCAction* actionScaleIn = [CCScaleTo actionWithDuration:0.3f scale:1.0] ;
+		CCAction* actionScaleDone = [CCCallFuncN actionWithTarget:self 
+														 selector:@selector(actionMoveFinished:)];
+		//add the deadAnimation
+		CCSprite* deadSprite = [CCSprite spriteWithSpriteFrameName:@"beeDies.png"];
+		deadSprite.position = boid.position;
+		deadSprite.scale = 0.3;
+		[_batchNode addChild:deadSprite z:300 tag:boid.tag-1];
+		[deadSprite runAction:[CCSequence actions:actionScaleIn, actionScaleDone, nil]];	
+		[_bees removeObject:boid];
+		//check if it was the slowest
+		if ([_slowestBoid isEqual:boid]){
+			_slowestBoid = nil;
+		}
+	}
+	[_deadBees removeAllObjects];
+}
+
+
+#pragma mark goals 
+
+-(bool)addItemValue:(int)value{
+	if (_item1Value == 0){
+		if (value == _goal1){
+			_item1Value = value;
+			return YES;
+		}
+	}else if(_item2Value == 0){
+		if (value == _goal2){
+			_item2Value = value;
+			return YES;
+		}
+	}else if (_item3Value == 0) {
+		if (value == _goal3){
+			_item3Value = value;
+			return YES;
+		}
+	}
+	return NO;
+}
+
+
+-(void) clearItemValues{
+	if (_item1Value != 0){
+		_item1Value = 0;
+	}
+	if (_item2Value != 0){
+		_item2Value = 0;
+	}
+	if (_item3Value != 0){
+		_item3Value = 0;
+	}
+}
+
+-(void) clearItems{
+	[self.hudLayer clearItems];
+	[self clearItemValues];
+}
+
+
+
+-(void) clearGoals{
+	[self.hudLayer clearGoals];
+	_goal1 = 0;
+	_goal2 = 0;
+	_goal3 = 0;
+}
+
+
+-(bool) checkGoals{
+	if (_item1Value == _goal1 && _item2Value == _goal2 && _item3Value == _goal3) {
+		return YES;
+	}else {
+		return NO;
+	}
+}
+
+
+-(void) calculateAndApplyBonus{
+	//*16 is the maximum bonus
+	switch (_level.difficulty) {
+		case EASY:
+			if (_bonusCount <=2){
+				_bonusCount *=2;
+			}
+			break;
+		case NORMAL:
+			if (_bonusCount <=4){
+				_bonusCount *=2;
+			}
+			break;
+		case HARD:
+			if (_bonusCount <=8){
+				_bonusCount *=2;
+			}
+			break;
+		default:
+			break;
+	}
+	//show a label for the current bonus
+	[self displayBonus];
+}
+
+
+-(void) generateGoals{
+	float maxNumber = 3;
+	float minTime = 0;
+	float maxTime = 0;
+	
+	if (_level.difficulty == EASY){
+		minTime = 25;
+		maxTime = 30;
+	}else if (_level.difficulty == NORMAL){
+		minTime = 15;
+		maxTime = 20;
+	}else if (_level.difficulty == HARD){
+		minTime = 10;
+		maxTime = 15;
+	}
+	
+	_goal1 = ceil(randRange(0, maxNumber));
+	_goal2 = ceil(randRange(0, maxNumber));
+	_goal3 = ceil(randRange(0, maxNumber));
+	
+    NSMutableArray* goalsForHud = [[[NSMutableArray alloc] init] autorelease];
+	[goalsForHud addObject:[NSNumber numberWithInt:_goal1]];
+	[goalsForHud addObject:[NSNumber numberWithInt:_goal2]];
+	[goalsForHud addObject:[NSNumber numberWithInt:_goal3]];
+	self.hudLayer.goals = goalsForHud;
+	[self.hudLayer createGoalSpritesForGoals];
+}
+
+
+-(void) applyEffect:(int)effect{
+	//check for completion
+	if ([self checkGoals]){
+		[self playComboSuccessSound];
+		[self calculateAndApplyBonus];
+		[self clearGoals];
+		[self generateGoals];
+        if (self.harvesterLayer.isIn){
+            [self.harvesterLayer sendItBack];
+        }
+	}
+	//clear the items
+	[_alchemy clearItems];
+	[self clearItems];
+	[self clearItemValues];
+}
+
+
 
 
 @end
