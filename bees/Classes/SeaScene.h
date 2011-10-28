@@ -24,6 +24,7 @@
 	UITouch* _touch1;
 	NSMutableArray* _clouds;
 	CCSprite* _backGround;
+    CCSprite* _island;
 	
 	CCLabelBMFont* _goalTimer;
 	ccTime _goalTimeLeft;
@@ -135,6 +136,8 @@
     CCMenu* _pauseMenu;
     HarvesterLayer* _harvesterLayer;
     bool _evilAppearDone;
+    
+    float _minBirdDistance;
 }
 
 // returns a Scene that contains the HelloWorld as the only child
@@ -232,4 +235,5 @@
 @property(nonatomic, retain) NSMutableArray* comboFinishers;
 @property(nonatomic, retain) MessageLayer* messageLayer;
 @property(nonatomic, retain) HarvesterLayer* harvesterLayer;
+@property(nonatomic, retain) CCSprite* island;
 @end

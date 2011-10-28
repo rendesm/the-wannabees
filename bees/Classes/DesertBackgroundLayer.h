@@ -26,6 +26,7 @@
     float _minFishDistance;
     float _jumpSpeed;
     CCSprite* _overLaySprite;
+    CCSprite* _palm;
 }
 
 @property (nonatomic, retain) NSMutableArray* hills;
@@ -41,6 +42,7 @@
 @property (nonatomic) float minFishDistance;
 @property (nonatomic) float jumpSpeed;
 @property (nonatomic) float maxFishJump;
+@property (nonatomic, retain) CCSprite* palm;
 
 -(void) createBackground;
 -(void) fadeInOverlay;

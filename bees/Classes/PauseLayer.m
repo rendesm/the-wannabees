@@ -155,10 +155,10 @@
     [self addChild:gameOverSprite z:5001 tag:5001];
     
     CCLabelBMFont* highscoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"%i", _highScore]  fntFile:@"markerfelt.fnt"];	
-    highscoreLabel.scale = 0.25;
+    highscoreLabel.scale = 0.20;
     highscoreLabel.position = ccp(180, 45);
     CCLabelBMFont* scoreLabel = [[CCLabelBMFont alloc] initWithString:[NSString stringWithFormat:@"%i", _score]  fntFile:@"markerfelt.fnt"];	
-    scoreLabel.scale = 0.25;
+    scoreLabel.scale = 0.20;
     scoreLabel.position = ccp(180, 78);
     [gameOverSprite addChild:highscoreLabel];
     [gameOverSprite addChild:scoreLabel];

@@ -103,8 +103,12 @@ static GameCenterHelper *sharedHelper = nil;
 }
 
 - (void)sendScore:(GKScore *)score {
-    [score reportScoreWithCompletionHandler:^(NSError *error) 
-    { dispatch_async(dispatch_get_main_queue(), ^(void) 
+    if (score == nil){
+        NSLog(@"nil score");
+    }
+
+    [score reportScoreWithCompletionHandler:^(NSError *error)
+    //{ dispatch_async(dispatch_get_main_queue(), ^(void) 
         { if (error == NULL) { 
             NSLog(@"Successfully sent score!");
             _score = 0;
@@ -113,14 +117,16 @@ static GameCenterHelper *sharedHelper = nil;
             NSLog(@"Score failed to send... will try again later. Reason: %@", error.localizedDescription);
         } 
         }
-                     ); 
-    }
+                   //  ); 
+    //}
      ]; 
 }
 
 - (void)reportScore:(NSString *)identifier score:(int)rawScore{
+
     GKScore *score = [[[GKScore alloc] initWithCategory:@"21"] autorelease];
-    score.value = rawScore; 
+    score.value = rawScore;
+
     _score = rawScore;
    // [self save]; 
     if (!_gameCenterAvailable || !_userAuthenticated) return; 

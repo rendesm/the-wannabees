@@ -7,8 +7,9 @@
 //
 
 #import "BeeImports.h"
+#import <iAd/iAd.h>
 
-@interface DesertScene : CCLayer {
+@interface DesertScene  : CCLayer<ADBannerViewDelegate, GKLeaderboardViewControllerDelegate>{
     GLESDebugDraw *_debugDraw;
     //layers
     PauseLayer* _pauseLayer;
@@ -80,7 +81,8 @@
 -(void) cohesion:(Boid*)bee withNeighborDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
 -(void) align:(Boid*)bee withAlignmentDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
 -(void) separate:(Boid*)bee withSeparationDistance:(float)separationDistance usingMultiplier:(float)multiplier;
--(bool)addItemValue:(int)value;
+-(bool) addItemValue:(int)value;
+-(void) saveLevelPerformance;
 
 @property (nonatomic, retain) NSMutableArray* bees;
 @property (nonatomic, retain) NSMutableArray* deadBees;

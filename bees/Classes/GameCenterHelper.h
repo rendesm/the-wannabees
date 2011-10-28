@@ -25,8 +25,7 @@
 + (GameCenterHelper *)sharedInstance;
 - (void)authenticateLocalUser;
 - (void)reportScore:(NSString *)identifier score:(int)rawScore;
-
-- (void) reportScore: (int64_t) score forCategory: (NSString*) category;
+- (void)sendScore:(GKScore *)score ;
 - (void) reloadHighScoresForCategory: (NSString*) category;
 - (void)leaderboardViewControllerDidFinish:(GKLeaderboardViewController *)viewController;
 - (void) showLeaderboardForCategory:(NSString *)category;

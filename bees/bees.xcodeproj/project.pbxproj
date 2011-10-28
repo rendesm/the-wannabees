@@ -320,7 +320,6 @@
 		819CFA6B1449C84300379682 /* gamover_default.pvr.ccz in Resources */ = {isa = PBXBuildFile; fileRef = 819CFA691449C84300379682 /* gamover_default.pvr.ccz */; };
 		819CFA781449CF0900379682 /* exitButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 819CFA6F1449CF0900379682 /* exitButton.png */; };
 		819CFA791449CF0900379682 /* exitButtonTapped.png in Resources */ = {isa = PBXBuildFile; fileRef = 819CFA701449CF0900379682 /* exitButtonTapped.png */; };
-		819CFA7A1449CF0900379682 /* gameOver.png in Resources */ = {isa = PBXBuildFile; fileRef = 819CFA711449CF0900379682 /* gameOver.png */; };
 		819CFA7B1449CF0900379682 /* highscoresButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 819CFA721449CF0900379682 /* highscoresButton.png */; };
 		819CFA7C1449CF0900379682 /* highscoresButtonTapped.png in Resources */ = {isa = PBXBuildFile; fileRef = 819CFA731449CF0900379682 /* highscoresButtonTapped.png */; };
 		819CFA7D1449CF0900379682 /* restartButton.png in Resources */ = {isa = PBXBuildFile; fileRef = 819CFA741449CF0900379682 /* restartButton.png */; };
@@ -336,12 +335,13 @@
 		81AFA28D1433AE2900C10433 /* Fish.mm in Sources */ = {isa = PBXBuildFile; fileRef = 81AFA28C1433AE2900C10433 /* Fish.mm */; };
 		81B4D6B8143F46C9006C3B31 /* GameCenterLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 81B4D6B7143F46C9006C3B31 /* GameCenterLayer.m */; };
 		81BD01D31452EABB00261B6C /* DesertBackgroundLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 81BD01D21452EABB00261B6C /* DesertBackgroundLayer.mm */; };
-		81BD01DB145314BC00261B6C /* desert_default.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81BD01D9145314BC00261B6C /* desert_default.plist */; };
-		81BD01DC145314BC00261B6C /* desert_default.pvr.ccz in Resources */ = {isa = PBXBuildFile; fileRef = 81BD01DA145314BC00261B6C /* desert_default.pvr.ccz */; };
+		81D74EE21459E8DD00F442E8 /* gameOver.png in Resources */ = {isa = PBXBuildFile; fileRef = 81D74EE11459E8DD00F442E8 /* gameOver.png */; };
+		81D74EE51459EA9B00F442E8 /* seaSheet_Untitled.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81D74EE31459EA9B00F442E8 /* seaSheet_Untitled.plist */; };
+		81D74EE61459EA9B00F442E8 /* seaSheet_Untitled.pvr.ccz in Resources */ = {isa = PBXBuildFile; fileRef = 81D74EE41459EA9B00F442E8 /* seaSheet_Untitled.pvr.ccz */; };
+		81D74EE91459F05700F442E8 /* desert_default.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81D74EE71459F05700F442E8 /* desert_default.plist */; };
+		81D74EEA1459F05700F442E8 /* desert_default.pvr.ccz in Resources */ = {isa = PBXBuildFile; fileRef = 81D74EE81459F05700F442E8 /* desert_default.pvr.ccz */; };
 		81E6983A144F579900203097 /* harvester_default.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81E69838144F579900203097 /* harvester_default.plist */; };
 		81E6983B144F579900203097 /* harvester_default.pvr.ccz in Resources */ = {isa = PBXBuildFile; fileRef = 81E69839144F579900203097 /* harvester_default.pvr.ccz */; };
-		81E6983E144F619B00203097 /* seaSheet_Untitled.plist in Resources */ = {isa = PBXBuildFile; fileRef = 81E6983C144F619B00203097 /* seaSheet_Untitled.plist */; };
-		81E6983F144F619B00203097 /* seaSheet_Untitled.pvr.ccz in Resources */ = {isa = PBXBuildFile; fileRef = 81E6983D144F619B00203097 /* seaSheet_Untitled.pvr.ccz */; };
 		DC6640030F83B3EA000B3E49 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC6640020F83B3EA000B3E49 /* AudioToolbox.framework */; };
 		DC6640050F83B3EA000B3E49 /* OpenAL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DC6640040F83B3EA000B3E49 /* OpenAL.framework */; };
 		DCCBF1B70F6022AE0040855A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DCCBF1B60F6022AE0040855A /* CoreGraphics.framework */; };
@@ -896,7 +896,6 @@
 		819CFA691449C84300379682 /* gamover_default.pvr.ccz */ = {isa = PBXFileReference; lastKnownFileType = file; path = gamover_default.pvr.ccz; sourceTree = "<group>"; };
 		819CFA6F1449CF0900379682 /* exitButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = exitButton.png; sourceTree = "<group>"; };
 		819CFA701449CF0900379682 /* exitButtonTapped.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = exitButtonTapped.png; sourceTree = "<group>"; };
-		819CFA711449CF0900379682 /* gameOver.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = gameOver.png; sourceTree = "<group>"; };
 		819CFA721449CF0900379682 /* highscoresButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = highscoresButton.png; sourceTree = "<group>"; };
 		819CFA731449CF0900379682 /* highscoresButtonTapped.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = highscoresButtonTapped.png; sourceTree = "<group>"; };
 		819CFA741449CF0900379682 /* restartButton.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = restartButton.png; sourceTree = "<group>"; };
@@ -916,13 +915,14 @@
 		81B4D6B7143F46C9006C3B31 /* GameCenterLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GameCenterLayer.m; sourceTree = "<group>"; };
 		81BD01D11452EABB00261B6C /* DesertBackgroundLayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DesertBackgroundLayer.h; sourceTree = "<group>"; };
 		81BD01D21452EABB00261B6C /* DesertBackgroundLayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = DesertBackgroundLayer.mm; sourceTree = "<group>"; };
-		81BD01D9145314BC00261B6C /* desert_default.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = desert_default.plist; sourceTree = "<group>"; };
-		81BD01DA145314BC00261B6C /* desert_default.pvr.ccz */ = {isa = PBXFileReference; lastKnownFileType = file; path = desert_default.pvr.ccz; sourceTree = "<group>"; };
 		81C45821142E2184007ADA64 /* GameScene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GameScene.h; sourceTree = "<group>"; };
+		81D74EE11459E8DD00F442E8 /* gameOver.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = gameOver.png; sourceTree = "<group>"; };
+		81D74EE31459EA9B00F442E8 /* seaSheet_Untitled.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = seaSheet_Untitled.plist; sourceTree = "<group>"; };
+		81D74EE41459EA9B00F442E8 /* seaSheet_Untitled.pvr.ccz */ = {isa = PBXFileReference; lastKnownFileType = file; path = seaSheet_Untitled.pvr.ccz; sourceTree = "<group>"; };
+		81D74EE71459F05700F442E8 /* desert_default.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = desert_default.plist; sourceTree = "<group>"; };
+		81D74EE81459F05700F442E8 /* desert_default.pvr.ccz */ = {isa = PBXFileReference; lastKnownFileType = file; path = desert_default.pvr.ccz; sourceTree = "<group>"; };
 		81E69838144F579900203097 /* harvester_default.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = harvester_default.plist; sourceTree = "<group>"; };
 		81E69839144F579900203097 /* harvester_default.pvr.ccz */ = {isa = PBXFileReference; lastKnownFileType = file; path = harvester_default.pvr.ccz; sourceTree = "<group>"; };
-		81E6983C144F619B00203097 /* seaSheet_Untitled.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = seaSheet_Untitled.plist; sourceTree = "<group>"; };
-		81E6983D144F619B00203097 /* seaSheet_Untitled.pvr.ccz */ = {isa = PBXFileReference; lastKnownFileType = file; path = seaSheet_Untitled.pvr.ccz; sourceTree = "<group>"; };
 		DC6640020F83B3EA000B3E49 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		DC6640040F83B3EA000B3E49 /* OpenAL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenAL.framework; path = System/Library/Frameworks/OpenAL.framework; sourceTree = SDKROOT; };
 		DCCBF1B60F6022AE0040855A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -1484,10 +1484,10 @@
 		02F0185113EB39BC00355B76 /* sheets */ = {
 			isa = PBXGroup;
 			children = (
-				81BD01D9145314BC00261B6C /* desert_default.plist */,
-				81BD01DA145314BC00261B6C /* desert_default.pvr.ccz */,
-				81E6983C144F619B00203097 /* seaSheet_Untitled.plist */,
-				81E6983D144F619B00203097 /* seaSheet_Untitled.pvr.ccz */,
+				81D74EE71459F05700F442E8 /* desert_default.plist */,
+				81D74EE81459F05700F442E8 /* desert_default.pvr.ccz */,
+				81D74EE31459EA9B00F442E8 /* seaSheet_Untitled.plist */,
+				81D74EE41459EA9B00F442E8 /* seaSheet_Untitled.pvr.ccz */,
 				81E69838144F579900203097 /* harvester_default.plist */,
 				81E69839144F579900203097 /* harvester_default.pvr.ccz */,
 				819CFA681449C84300379682 /* gamover_default.plist */,
@@ -1865,9 +1865,9 @@
 		819CFA6C1449CEE100379682 /* pause */ = {
 			isa = PBXGroup;
 			children = (
+				81D74EE11459E8DD00F442E8 /* gameOver.png */,
 				819CFA6F1449CF0900379682 /* exitButton.png */,
 				819CFA701449CF0900379682 /* exitButtonTapped.png */,
-				819CFA711449CF0900379682 /* gameOver.png */,
 				819CFA721449CF0900379682 /* highscoresButton.png */,
 				819CFA731449CF0900379682 /* highscoresButtonTapped.png */,
 				819CFA741449CF0900379682 /* restartButton.png */,
@@ -2474,7 +2474,6 @@
 				819CFA6B1449C84300379682 /* gamover_default.pvr.ccz in Resources */,
 				819CFA781449CF0900379682 /* exitButton.png in Resources */,
 				819CFA791449CF0900379682 /* exitButtonTapped.png in Resources */,
-				819CFA7A1449CF0900379682 /* gameOver.png in Resources */,
 				819CFA7B1449CF0900379682 /* highscoresButton.png in Resources */,
 				819CFA7C1449CF0900379682 /* highscoresButtonTapped.png in Resources */,
 				819CFA7D1449CF0900379682 /* restartButton.png in Resources */,
@@ -2486,11 +2485,12 @@
 				811AE24A144B2574000834E8 /* caveSheet.pvr.ccz in Resources */,
 				81E6983A144F579900203097 /* harvester_default.plist in Resources */,
 				81E6983B144F579900203097 /* harvester_default.pvr.ccz in Resources */,
-				81E6983E144F619B00203097 /* seaSheet_Untitled.plist in Resources */,
-				81E6983F144F619B00203097 /* seaSheet_Untitled.pvr.ccz in Resources */,
 				8190FC331452CDE400BF48EC /* komaromi.mp3 in Resources */,
-				81BD01DB145314BC00261B6C /* desert_default.plist in Resources */,
-				81BD01DC145314BC00261B6C /* desert_default.pvr.ccz in Resources */,
+				81D74EE21459E8DD00F442E8 /* gameOver.png in Resources */,
+				81D74EE51459EA9B00F442E8 /* seaSheet_Untitled.plist in Resources */,
+				81D74EE61459EA9B00F442E8 /* seaSheet_Untitled.pvr.ccz in Resources */,
+				81D74EE91459F05700F442E8 /* desert_default.plist in Resources */,
+				81D74EEA1459F05700F442E8 /* desert_default.pvr.ccz in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

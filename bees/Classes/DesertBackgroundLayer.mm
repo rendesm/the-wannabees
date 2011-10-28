@@ -17,6 +17,7 @@
 @synthesize minFishDistance = _minFishDistance;
 @synthesize jumpSpeed = _jumpSpeed;
 @synthesize maxFishJump = _maxFishJump;
+@synthesize palm = _palm;
 
 +(id)scene{
 	// 'scene' is an autorelease object.
@@ -139,10 +140,8 @@
     backTreeWidth = backTree.contentSize.width;
     [self.backTrees addObject:backTree];
     [self.batchnode addChild:backTree z:2 tag:1];
-    [CCTexture2D setDefaultAlphaPixelFormat:kCCTexture2DPixelFormat_RGBA8888];
-
    
-	for (int i= 0; i <1; i++){
+	for (int i= 0; i < 4; i++){
         CCSprite* bgCloud = [CCSprite spriteWithSpriteFrameName:@"cloud.png"];
 		bgCloud.opacity = 200;
 		[_clouds addObject:bgCloud];
@@ -157,16 +156,20 @@
 
         CGSize screenSize = [[CCDirector sharedDirector] winSize];
 		bgCloud.position = ccp(screenSize.width + bgCloud.contentSize.width * i * bgCloud.scale, 
-											 screenSize.height - bgCloud.contentSize.height * bgCloud.scale);
+											 screenSize.height);
 	}
-   
+    
+    self.palm = [CCSprite spriteWithSpriteFrameName:@"palma.png"];
+    self.palm.position = ccp(400, self.palm.contentSize.height * 0.5 + hillHeight );
+    [self.batchnode addChild:self.palm z:30];
 }
 
 -(void) updateBackground:(ccTime)dt{
     int backItemOn = 0;
     int forItemOn = 0;
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
     for (CCSprite* backTree in self.backTrees){
-        backTree.position = ccpAdd(backTree.position, ccp(_forSpeed/12 * (dt*60), 0));
+        backTree.position = ccpAdd(backTree.position, ccp(_forSpeed/9 * (dt*60), 0));
     //    backTree.position = ccpAdd(backTree.position, ccp(-0.25, 0));
     }
     for (CCSprite* hill in self.backHills){
@@ -186,6 +189,12 @@
     
     for (CCSprite* hill in self.hills){
         hill.position = ccpAdd(hill.position, ccp(_forSpeed * (dt*60), 0));
+    }
+    
+    if (self.palm.position.x + self.palm.contentSize.width/2 < 0){
+        self.palm.position = ccp(screenSize.width + self.palm.contentSize.width * 2, self.palm.position.y);
+    }else{
+        self.palm.position = ccpAdd(self.palm.position, ccp(_forSpeed/4 * dt * 60,0));
     }
 
 }

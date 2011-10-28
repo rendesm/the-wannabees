@@ -1449,7 +1449,7 @@ static double timeAccumulator = 0;
                 b->SetTransform(b2Position, b2Angle);
             }
         }	
-        _world->Step(UPDATE_INTERVAL,3, 2);
+        _world->Step(UPDATE_INTERVAL,0, 2);
     }
 }
 

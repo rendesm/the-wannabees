@@ -8,6 +8,7 @@
 
 #import "DesertScene.h"
 #import "DesertBackgroundLayer.h"
+#import "beesAppDelegate.h"
 
 #define rad2Deg 57.2957795
 
@@ -325,6 +326,7 @@ static double timeAccumulator = 0;
         [fish createBox2dBodyDefinitions:_world];
     }
     self.bgLayer.forSpeed = -_playerAcceleration.x;
+    [self.harvesterLayer initWithWorld:_world];
     [self schedule:@selector(loadingSounds)];
 }
 
@@ -378,6 +380,45 @@ static double timeAccumulator = 0;
 
 
 
+-(void) gameOverRestartTapped:(id)sender{
+    [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+    _currentDifficulty  = 1;
+    [[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.5 scene:[CampaignScene scene] withColor:ccBLACK]];
+}
+
+-(void) gameOverExitTapped:(id)sender{
+    [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+    _currentDifficulty = 1;
+    [[CCTextureCache sharedTextureCache] removeAllTextures];
+    [[CCDirector sharedDirector] replaceScene: [CCTransitionFade transitionWithDuration:1.0 scene:[LevelSelectScene scene] withColor:ccBLACK]];
+}
+
+-(void) gameOver{
+    [self unschedule:@selector(update:)];
+    NSLog(@"gameover");
+    [self removeChild:_pauseMenu cleanup:YES];
+    if (_newHighScore){
+        [self saveLevelPerformance];    
+    }
+    [self.pauseLayer gameOver:_pointsGathered withHighScore:self.level.highScorePoints];
+}
+
+-(void) detectGameConditions{
+	//first check for gameOver
+	if (_pointsGathered > _level.highScorePoints && _newHighScore == NO){
+		_newHighScore = YES;
+		if (_level.highScorePoints > 0)
+			[self displayHighScore];
+	}	
+	
+	if ([_bees count] == 0){
+		//Game Over
+		_isGameOver = YES;
+		[self gameOver];
+	}
+}
+
+
 -(void)update:(ccTime)dt{
 	float tickTime = 1.0f/60.0f;
 	_totalTimeElapsed += tickTime;
@@ -394,9 +435,10 @@ static double timeAccumulator = 0;
             [self setViewpointCenter:_player.position];
             [self.bgLayer updateBackground:dt];
             [self.bgLayer respawnContinuosBackGround];
-
+            [self.harvesterLayer update:dt];
             [self updateBox2DWorld:dt];
             [self detectBox2DCollisions];
+            [self detectGameConditions];
         }
     }
 }
@@ -435,6 +477,27 @@ static double timeAccumulator = 0;
                                            point.sprite.position.y/PTM_RATIO);
                 float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
                 b->SetTransform(b2Position, b2Angle);
+            }else if ([b->GetUserData() isKindOfClass:[Bullet class]]){
+                Bullet *bullet = (Bullet *)b->GetUserData();
+                CGPoint location = [self convertToNodeSpace:bullet.sprite.position ];
+                if (bullet.isOutOfScreen){
+                    b->SetAwake(false);
+                    b->SetActive(false);
+                }else{
+                    b->SetAwake(true);
+                    b->SetActive(true);
+                }
+                b2Vec2 b2Position = b2Vec2(location.x/PTM_RATIO,
+                                           location.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(bullet.sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+            }else if ([b->GetUserData() isKindOfClass:[NSString class]]){
+                CCSprite *sprite = self.harvesterLayer.harvesterSprite;
+                CGPoint point = [self convertToNodeSpace:self.harvesterLayer.harvesterSprite.position];
+                b2Vec2 b2Position = b2Vec2(point.x/PTM_RATIO,
+                                           point.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
             }else if ([b->GetUserData() isKindOfClass:[CCSprite class]]){
                 CCSprite *sprite = (CCSprite *)b->GetUserData();
                 b2Vec2 b2Position = b2Vec2(sprite.position.x/PTM_RATIO,
@@ -451,7 +514,7 @@ static double timeAccumulator = 0;
             _world->DestroyBody(body);
         }
         
-        _world->Step(UPDATE_INTERVAL, 3, 2);
+        _world->Step(UPDATE_INTERVAL, 0, 2);
     }
 }
 
@@ -462,6 +525,8 @@ static double timeAccumulator = 0;
 	std::vector<b2Body *>toDestroy; 
     ConfigManager* sharedManager = [ConfigManager sharedManager];
 	_takenPoints = [[NSMutableArray alloc] init];
+    _deadBees = [[NSMutableArray alloc] init];
+    CCSprite* deadSprite = nil;
 	for(pos = _contactListener->_contacts.begin(); 
 		pos != _contactListener->_contacts.end(); ++pos) {
 		MyContact contact = *pos;
@@ -484,8 +549,23 @@ static double timeAccumulator = 0;
 					[_takenPoints addObject:point];
                     toDestroy.push_back(bodyA);
                 }
-			}
+            }
+            else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[NSString class]]
+                     && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+                Boid *boid = (Boid *) bodyB->GetUserData();
+                [self playDeadBeeSound];
+                [_deadBees addObject:boid];
+                toDestroy.push_back(bodyB);
+            }
+            else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[NSString class]]
+                     && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+                Boid *boid = (Boid *) bodyA->GetUserData();
+                [self playDeadBeeSound];
+                [_deadBees addObject:boid];
+                toDestroy.push_back(bodyA);
+            }
         }
+        //bullet
     }
     
     if ([_takenPoints count] > 0){        
@@ -538,8 +618,21 @@ static double timeAccumulator = 0;
             [_batchNode removeChild:point.sprite cleanup:YES];
             [point release];
         }
-        [_takenPoints removeAllObjects];
+    //    [_takenPoints removeAllObjects];
         [_takenPoints release];
+    }
+    
+    for (Boid* boid in _deadBees){
+        CCAction* actionScaleIn = [CCScaleTo actionWithDuration:0.3f scale:1.0] ;
+		CCAction* actionScaleDone = [CCCallFuncN actionWithTarget:self 
+														 selector:@selector(actionMoveFinished:)];
+        [self.bees removeObject:boid];
+        [_batchNode removeChild:boid cleanup:YES];
+        CCSprite* deadSprite = [CCSprite spriteWithSpriteFrameName:@"beeDies.png"];
+		deadSprite.position = boid.position;
+		deadSprite.scale = 0.3;
+		[_batchNode addChild:deadSprite z:300 tag:boid.tag-1];
+		[deadSprite runAction:[CCSequence actions:actionScaleIn, actionScaleDone, nil]];	
     }
 
     std::vector<b2Body *>::iterator pos2;
@@ -805,7 +898,6 @@ inline float randRange(float min,float max)
 -(void) removeDeadItems{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	
-	
 	//remove the dead objects
 	for (Boid* boid in _deadBees){
 		CCAction* actionScaleIn = [CCScaleTo actionWithDuration:0.3f scale:1.0] ;
@@ -959,6 +1051,58 @@ inline float randRange(float min,float max)
 }
 
 
+
+
+
+-(void) presentGameCenter{
+    if ([GameCenterHelper sharedInstance].gameCenterAvailable) { 
+        //send the score
+        [[GameCenterHelper sharedInstance] reportScore:@"21" score:_pointsGathered];
+        
+        GKLeaderboardViewController *leaderboardController = [[GKLeaderboardViewController alloc] init];
+        if (leaderboardController != NULL) { 
+            leaderboardController.category = @"21";
+			leaderboardController.timeScope = GKLeaderboardTimeScopeAllTime;  
+            leaderboardController.leaderboardDelegate = self;
+            beesAppDelegate *delegate = [UIApplication sharedApplication].delegate; [delegate.viewController presentModalViewController:leaderboardController animated:YES]; 
+        }
+        
+    }
+}
+
+- (void)leaderboardViewControllerDidFinish:(GKLeaderboardViewController *)viewController { 
+    beesAppDelegate *delegate = [UIApplication sharedApplication].delegate;
+    [delegate.viewController dismissModalViewControllerAnimated: YES]; 
+    [viewController release]; 
+}
+
+
+-(void)dealloc{
+    self.pauseLayer = nil;
+    self.hudLayer = nil;
+    self.messageLayer = nil;
+    self.harvesterLayer = nil;
+    self.bgLayer = nil;
+    
+    //other objects
+    self.level = nil;
+    
+    _pauseButton = nil;
+	_pauseMenu = nil;
+    
+    self.bees = nil;
+    self.deadBees = nil;
+    self.points = nil;
+    self.takenPoints = nil;
+    _slowestBoid = nil;
+    _player = nil;
+    _world = nil;
+    _contactListener = nil;
+    _batchNode = nil;
+    [_alchemy release];
+    _alchemy = nil;
+    [super dealloc];
+}
 
 
 @end

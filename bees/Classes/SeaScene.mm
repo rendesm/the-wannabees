@@ -38,6 +38,7 @@
 @synthesize messageLayer = _messageLayer;
 @synthesize updateBox = _updateBox;
 @synthesize harvesterLayer = _harvesterLayer;
+@synthesize island = _island;
 
 static double UPDATE_INTERVAL = 1/30.0f;
 static double MAX_CYCLES_PER_FRAME = 1;
@@ -1142,6 +1143,7 @@ static double timeAccumulator = 0;
     
 	_bonusCount = 1;
     _currentDifficulty = 1;
+    _minBirdDistance = 300;
 	[self unschedule:@selector(loadingTextures)];
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	[[[CCDirector sharedDirector] openGLView] setMultipleTouchEnabled:NO];
@@ -1290,7 +1292,7 @@ static double timeAccumulator = 0;
         Spore* bird = [[Spore alloc] initForSeaNode:_batchNode];
         [bird createBox2dBodyDefinitionsSeaBird:_world];
         [_birds addObject:bird];
-        bird.sprite.position = ccp(500 * (i+1), 240);
+        bird.sprite.position = ccp((i+1) * _minBirdDistance, 240);
     }
 	
 	//init the array for clouds
@@ -1353,6 +1355,10 @@ static double timeAccumulator = 0;
     [_topSea addObject:topSea2];
     [_bottomSea addObject:bottomSea1];
     [_bottomSea addObject:bottomSea2];
+    
+    self.island = [CCSprite spriteWithSpriteFrameName:@"island.png"];
+    [_batchNode addChild:self.island z:1];
+    self.island.position = ccp(1000,self.island.contentSize.height * 0.6);
     	
 	[self schedule:@selector(loadingSounds)];
 }
@@ -1488,7 +1494,7 @@ static double timeAccumulator = 0;
                 b->SetTransform(b2Position, b2Angle);
             }
         }	
-        _world->Step(UPDATE_INTERVAL, 3, 2);
+        _world->Step(UPDATE_INTERVAL, 0, 2);
     }
 }
 
@@ -1520,7 +1526,12 @@ static double timeAccumulator = 0;
 		}
 	}
     
- //   _boat.position = ccpAdd(ccp(_playerAcceleration.x - 1, 0), _boat.position);
+    NSLog(@"playeracc:%f", _playerAcceleration.x);
+    if (self.island.position.x + self.island.contentSize.width/2 < _player.position.x - screenSize.width/2){
+        self.island.position = ccp(_player.position.x + screenSize.width/2 + self.island.contentSize.width * 3, self.island.position.y);
+    }else{
+        self.island.position = ccpAdd(self.island.position, ccp(_playerAcceleration.x - 0.05, 0));
+    }
 }
 
 -(void)selectTarget:(Predator*)predator{
@@ -1750,8 +1761,10 @@ static double timeAccumulator = 0;
     for (Spore* bird in _birds){
         if (bird.sprite.position.x + bird.sprite.contentSize.width * bird.sprite.scale < _player.position.x - screenSize.width){
             //respawn the bird
+            bird.sprite.position = ccp(_player.position.x + screenSize.width/2 + _minBirdDistance, bird.sprite.position.y);
         }else{
             //move the bird
+            bird.sprite.position = ccp(bird.sprite.position.x - dt * 60, bird.sprite.position.y);
         }
     }
 }
@@ -1813,9 +1826,8 @@ static double timeAccumulator = 0;
 				CGSize screenSize = [[CCDirector sharedDirector] winSize];
 				
 				_player.position = ccpAdd(_player.position, ccp(_playerAcceleration.x * dt * 60, _playerAcceleration.y * dt * 60));
-                
+                [self setViewpointCenter:_player.position];
 				[self updateLabels:dt];
-				[self setViewpointCenter:_player.position];
 				for (Boid* boid in _bees){
 					if (_slowestBoid == nil){
 						_slowestBoid = boid;
@@ -1835,6 +1847,7 @@ static double timeAccumulator = 0;
 				
 				[self beeMovement:dt];
                 [self updateFish];	
+                [self updateBird:dt];
 				[self removeOutOfScreenItems];
                 [self updateTerrain];
 				//update terrain, tell it how far we have proceeded
@@ -2038,7 +2051,6 @@ static double timeAccumulator = 0;
 
 
 -(void)setViewpointCenter:(CGPoint) position{
-	
 	CGSize winSize = [[CCDirector sharedDirector] winSize];
 	
     int x = MAX(position.x, winSize.width / 2);
@@ -2096,7 +2108,6 @@ inline float randRange(float min,float max)
             leaderboardController.leaderboardDelegate = self;
             beesAppDelegate *delegate = [UIApplication sharedApplication].delegate; [delegate.viewController presentModalViewController:leaderboardController animated:YES]; 
         }
-        
     }
 }
 

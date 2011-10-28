@@ -1308,7 +1308,7 @@ static bool _evilAppearDone = NO;
                     b->SetTransform(b2Position, b2Angle);
                 }
             }	
-            _world->Step(UPDATE_INTERVAL,3, 2);
+            _world->Step(UPDATE_INTERVAL,0, 2);
     }
 }
 
@@ -2015,7 +2015,7 @@ static bool _evilAppearDone = NO;
 -(void) presentGameCenter{
     if ([GameCenterHelper sharedInstance].gameCenterAvailable) { 
         //send the score
-        [[GameCenterHelper sharedInstance] reportScore:@"21" score:_pointsGathered];
+        [[GameCenterHelper sharedInstance] reportScore:@"GreenHills" score:_pointsGathered];
          
         GKLeaderboardViewController *leaderboardController = [[GKLeaderboardViewController alloc] init];
         if (leaderboardController != NULL) { 
@@ -2024,7 +2024,6 @@ static bool _evilAppearDone = NO;
             leaderboardController.leaderboardDelegate = self;
             beesAppDelegate *delegate = [UIApplication sharedApplication].delegate; [delegate.viewController presentModalViewController:leaderboardController animated:YES]; 
         }
-        
     }
 }
 
