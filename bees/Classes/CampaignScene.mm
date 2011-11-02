@@ -41,8 +41,8 @@
 @synthesize fish = _fish;
 
 static bool _removeRunning = NO;
-static double UPDATE_INTERVAL = 1/30.0f;
-static double MAX_CYCLES_PER_FRAME = 1;
+static double UPDATE_INTERVAL = 1/20.0f;
+static double MAX_CYCLES_PER_FRAME = 3;
 static double timeAccumulator = 0;
 static bool _emitterMoving = NO;
 static bool _evilAppearDone = NO;
@@ -848,7 +848,7 @@ static bool _evilAppearDone = NO;
 #pragma mark collision detection
 
 -(void)detectBox2DCollisions{
-//	std::vector<b2Body *>toDestroy; 
+	std::vector<b2Body *>toDestroy; 
 	std::vector<MyContact>::iterator pos;
 	
 	for(pos = _contactListener->_contacts.begin(); 
@@ -863,14 +863,16 @@ static bool _evilAppearDone = NO;
 					Predator *predator = (Predator *) bodyB->GetUserData();
 					//if it is dead already dont do anything with it
 					if (predator.life > 0 ){
+                        NSLog(@"predator hit boid");
 						[self playDeadBeeSound];
 						[_deadBees addObject:boid];
-					//	toDestroy.push_back(bodyA);
-						[predator gotHit:boid.damage];
+                        toDestroy.push_back(bodyA);
+						predator.life--;
+                        NSLog(@"%i", predator.life);
 						//if it is dead, do not iterate over this
 						if (predator.life <= 0){
 							[_deadPredators addObject:predator];
-					//		toDestroy.push_back(bodyB);
+                        //		toDestroy.push_back(bodyB);
 						}
 					}
 				}
@@ -880,10 +882,12 @@ static bool _evilAppearDone = NO;
 					Predator *predator = (Predator *) bodyA->GetUserData();
 					//if it is dead already dont do anything with it
 					if (predator.life > 0){
+                        NSLog(@"predator hit boid :");
 						[self playDeadBeeSound];
 						[_deadBees addObject:boid];
-			//			toDestroy.push_back(bodyB);
-						[predator gotHit:boid.damage];
+						toDestroy.push_back(bodyB);
+                        predator.life--;
+                        NSLog(@"%i", predator.life);
 						//if it is dead, do not iterate over this
 						if (predator.life <= 0){
 							[_deadPredators addObject:predator];
@@ -908,36 +912,20 @@ static bool _evilAppearDone = NO;
 					[_takenPoints addObject:point];
 				}
 			}
-			//ComboFinisher
-			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[ComboFinisher class]] 
-					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)){
-				ComboFinisher* point = (ComboFinisher*) bodyB->GetUserData();
-				if (point.taken == NO){
-					point.taken = YES;
-					[_takenCombos addObject:point];
-				}
-			}else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[ComboFinisher class]]
-					  && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
-				ComboFinisher* point = (ComboFinisher*) bodyA->GetUserData();
-				if (point.taken == NO){
-					point.taken = YES;
-					[_takenCombos addObject:point];
-				}
-			}
 			//SPORE
 			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Fish class]]
 					 && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
 				Boid *boid = (Boid *) bodyB->GetUserData();
 				[self playDeadBeeSound];
 				[_deadBees addObject:boid];
-		//		toDestroy.push_back(bodyB);
+                toDestroy.push_back(bodyB);
 			}
 			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Fish class]]
 					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
 				Boid *boid = (Boid *) bodyA->GetUserData();
 				[self playDeadBeeSound];
 				[_deadBees addObject:boid];
-		//		toDestroy.push_back(bodyA);
+                toDestroy.push_back(bodyA);
 			}
 			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[Fish class]]) {
 				Predator *predator = (Predator *) bodyA->GetUserData();
@@ -961,69 +949,39 @@ static bool _evilAppearDone = NO;
 				Boid *boid = (Boid *) bodyB->GetUserData();
 				[self playDeadBeeSound];
 				[_deadBees addObject:boid];
-                //		toDestroy.push_back(bodyB);
+                toDestroy.push_back(bodyB);
 			}
 			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[NSString class]]
 					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
 				Boid *boid = (Boid *) bodyA->GetUserData();
 				[self playDeadBeeSound];
 				[_deadBees addObject:boid];
-                //		toDestroy.push_back(bodyA);
-			}
-			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[NSString class]]) {
-				Predator *predator = (Predator *) bodyA->GetUserData();
-				if ([self isOnScreen:predator]){
-					[_deadPredators addObject:predator];
-				}
-                //	toDestroy.push_back(bodyA);
-			}
-			else if ([bodyB->GetUserData() isKindOfClass:[Predator class]] && [bodyA->GetUserData() isKindOfClass:[NSString class]]) {
-				Predator *predator = (Predator *) bodyB->GetUserData();
-				if ([self isOnScreen:predator]){
-					[_deadPredators addObject:predator];
-				}
-                //	toDestroy.push_back(bodyB);
-			}
-            
+               toDestroy.push_back(bodyA);
+			}    
             //Bullet
 			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Bullet class]]
 					 && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
 				Boid *boid = (Boid *) bodyB->GetUserData();
 				[self playDeadBeeSound];
 				[_deadBees addObject:boid];
-                //		toDestroy.push_back(bodyB);
+                toDestroy.push_back(bodyB);
 			}
 			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Bullet class]]
 					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
 				Boid *boid = (Boid *) bodyA->GetUserData();
 				[self playDeadBeeSound];
 				[_deadBees addObject:boid];
-                //		toDestroy.push_back(bodyA);
-			}
-			else if ([bodyA->GetUserData() isKindOfClass:[Predator class]] && [bodyB->GetUserData() isKindOfClass:[Bullet class]]) {
-				Predator *predator = (Predator *) bodyA->GetUserData();
-				if ([self isOnScreen:predator]){
-					[_deadPredators addObject:predator];
-				}
-                //	toDestroy.push_back(bodyA);
-			}
-			else if ([bodyB->GetUserData() isKindOfClass:[Predator class]] && [bodyA->GetUserData() isKindOfClass:[Bullet class]]) {
-				Predator *predator = (Predator *) bodyB->GetUserData();
-				if ([self isOnScreen:predator]){
-					[_deadPredators addObject:predator];
-				}
-                //	toDestroy.push_back(bodyB);
+                toDestroy.push_back(bodyA);
 			}
 		}   
 	}
 	
-	/*
+	
 	std::vector<b2Body *>::iterator pos2;
 	for(pos2 = toDestroy.begin(); pos2 != toDestroy.end(); ++pos2) {
 		b2Body *body = *pos2;     
 		_world->DestroyBody(body);
-	}	*/
-	
+	}
 }
 
 -(void) actionMoveFinished:(id)sender{
@@ -1097,14 +1055,13 @@ static bool _evilAppearDone = NO;
 	_particleNode.position = ccp(0,0);
 	
 	CGRect boidRect = CGRectMake(0,0, 16, 16);
-	
-	_currentTouch = CGPointZero;
-	
+		
 	_player = [[CCSprite alloc] init];
 	_player.position = ccp(screenSize.width/2 , screenSize.height/2);
 	_player.opacity = 0;
+    
+    _currentTouch = _player.position;
 
-	
 	[self addChild:_player z:110 tag:2];
 	[self setViewpointCenter:_player.position];
 	
@@ -1250,11 +1207,15 @@ static bool _evilAppearDone = NO;
                     Fish *spore = (Fish *)b->GetUserData();                        
                     CGPoint fishLocation =  [self convertToNodeSpace:spore.sprite.position ];
                     if (fishLocation.x + spore.sprite.contentSize.width/2 * spore.sprite.scale < _player.position.x + screenSize.width/2){
-                       b->SetAwake(true);
-                       b->SetActive(true);
+                        if (!b->IsAwake()){
+                            b->SetAwake(true);
+                            b->SetActive(true);
+                        }
                     }else{
-                       b->SetAwake(false);
-                       b->SetActive(false);
+                        if (b->IsAwake()){
+                            b->SetAwake(false);
+                            b->SetActive(false);
+                        }
                     }
                     b2Vec2 b2Position = b2Vec2(fishLocation.x/PTM_RATIO,
                                                fishLocation.y/PTM_RATIO);
@@ -1296,11 +1257,15 @@ static bool _evilAppearDone = NO;
                 }else{
                     CCSprite *sprite = (CCSprite *)b->GetUserData();
                     if (sprite.position.x + sprite.contentSize.width/2 * sprite.scale <= _player.position.x + screenSize.width/2){
-                        b->SetAwake(true);
-                        b->SetActive(true);
+                        if (!b->IsAwake()){
+                            b->SetAwake(true);
+                            b->SetActive(true);
+                        }
                     }else{
-                        b->SetAwake(false);
-                        b->SetActive(false);
+                        if (b->IsAwake()){
+                            b->SetAwake(false);
+                            b->SetActive(false);
+                        }
                     }
                     b2Vec2 b2Position = b2Vec2(sprite.position.x/PTM_RATIO,
                                                sprite.position.y/PTM_RATIO);
@@ -1308,66 +1273,13 @@ static bool _evilAppearDone = NO;
                     b->SetTransform(b2Position, b2Angle);
                 }
             }	
-            _world->Step(UPDATE_INTERVAL,0, 2);
+            _world->Step(UPDATE_INTERVAL,1, 3);
+            [self detectBox2DCollisions];
+    }
+    if(timeAccumulator < UPDATE_INTERVAL){
+        
     }
 }
-
-
--(void)respawnCloud{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	for (CCSprite *background in _clouds) {
-		if ([_backGroundNode convertToWorldSpace:background.position].x < -background.contentSize.width) {
-			[_backGroundNode incrementOffset:ccp(screenSize.width + background.contentSize.width * 2,0) forChild:background];
-			background.scale = randRange(0.1, 0.8);
-		}
-	}
-}
-
--(void) respawnForest{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	for (CCSprite *background in _forests) {
-		if ([_backGroundNode convertToWorldSpace:background.position].x < -background.contentSize.width * background.scale) {
-			[_backGroundNode incrementOffset:ccp(background.contentSize.width * background.scale *  [_forests count],0) forChild:background];
-		}
-	}
-	
-	if ([_backGroundNode convertToWorldSpace:_tree.position].x < -_tree.contentSize.width/2 * _tree.scale) {
-		[_backGroundNode incrementOffset:ccp(_tree.contentSize.width * _tree.scale + screenSize.width  ,0) forChild:_tree];
-		//[_backGroundNode convertToWorldSpace:_tree.position];
-	}
-	
-	if ([_backGroundNode convertToWorldSpace:_tree2.position].x < -_tree2.contentSize.width/2 * _tree2.scale) {
-		[_backGroundNode incrementOffset:ccp(_tree2.contentSize.width * _tree2.scale + screenSize.width  ,0) forChild:_tree2];
-		//[_backGroundNode convertToWorldSpace:_tree2.position];
-	}
-	
-	if ([_backGroundNode convertToWorldSpace:_tree3.position].x < -_tree3.contentSize.width/2 * _tree3.scale) {
-		[_backGroundNode incrementOffset:ccp(_tree3.contentSize.width * _tree3.scale + screenSize.width  ,0) forChild:_tree3];
-		//[_backGroundNode convertToWorldSpace:_tree3.position];
-	}
-	
-	if ([_backGroundNode convertToWorldSpace:_hills1.position].x < -_hills1.contentSize.width/2 * _hills1.scale) {
-		[_backGroundNode incrementOffset:ccp(_hills1.contentSize.width * _hills1.scale +  _hills2.contentSize.width * _hills1.scale - 60,0) forChild:_hills1];
-		//[_backGroundNode convertToWorldSpace:_hills1.position]; 
-	}
-	
-	if ([_backGroundNode convertToWorldSpace:_hills2.position].x < -_hills2.contentSize.width/2 * _hills2.scale) {
-		[_backGroundNode incrementOffset:ccp(_hills1.contentSize.width * _hills1.scale +  _hills2.contentSize.width * _hills2.scale - 60 ,0) forChild:_hills2];
-		//[_backGroundNode convertToWorldSpace:_hills2.position];
-	}
-}
-
-/*
--(void) moveSun:(ccTime)dt{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	_sunSprite.position = ccpAdd(_sunSprite.position, ccpMult(_sunAcceleration, dt));
-	_sunAcceleration = ccp(_playerAcceleration.x, _playerAcceleration.x/50);
-	if (_sunSprite.position.y + _sunSprite.contentSize.height/2 >= screenSize.height){
-		//time to move downwards 
-		_sunAcceleration = ccp(_sunAcceleration.x, -_sunAcceleration.y);
-	}
-}
-*/
 
 
 
@@ -1570,13 +1482,8 @@ static bool _evilAppearDone = NO;
 	}
 }
 
-
-
-
-
-
 -(void) beeDefaultMovement:(Boid*) bee withDt:(ccTime)dt{
-	[bee wander: 0.05f];
+    [bee wander:0.1];
 	[self separate:bee withSeparationDistance:40.0f usingMultiplier:0.4f];
 	[self align:bee withAlignmentDistance:30.0f usingMultiplier:0.2f];
 	[self cohesion:bee withNeighborDistance:40.0f usingMultiplier:0.1f];	
@@ -1590,9 +1497,8 @@ static bool _evilAppearDone = NO;
 		[self beeDefaultMovement:bee withDt:dt];
 		if (!CGPointEqualToPoint(_currentTouch , CGPointZero)){
 			[bee seek:ccp(_currentTouch.x - 50, _currentTouch.y) usingMultiplier:0.15f];
-		}else{
-			[bee seek:_player.position usingMultiplier:0.1f];
 		}
+        
 		[bee update:dt];
 		if (bee.hasDisease){
 			tmpSick = YES;
@@ -1679,6 +1585,9 @@ static bool _evilAppearDone = NO;
     _emitterMoving = NO;
 }
 
+
+
+
 -(void)update:(ccTime)dt{
 	float tickTime = 1.0f/60.0f;
 	_totalTimeElapsed += tickTime;
@@ -1693,49 +1602,12 @@ static bool _evilAppearDone = NO;
 			if (_isGameOver == NO && _isLevelDone == NO){
 				if (_removeRunning == NO){
 					[self removeDeadItems];
-				}
-				//decrease boost, enemy, and illnesstimes
-				if (_boostTimeLeft > 0){
-					_boostTimeLeft -= tickTime;
-					if (_boostTimeLeft <= 0){
-						[self setNormalSpeed];
-						[self normalEffect];
-						_boostTimeLeft = 0;;
-					}
-				}	
-				
-				if (_illnessTimeLeft > 0){
-					_illnessTimeLeft -= tickTime;
-					if (_illnessTimeLeft <= 0){
-						[self setNormalSpeed];
-						[self normalEffect];
-						_illnessTimeLeft = 0;;
-					}
-				}
-				
-				if (_sizeModTimeLeft > 0){
-					_sizeModTimeLeft -= dt;
-					if (_sizeModTimeLeft <= 0){
-						if (_shrinked){
-							[self shrinkEffectDone];
-						}
-						_illnessTimeLeft = 0;;
-					}
-				}
-         
-				if (_touchEnded){
-					_currentTouch = ccp(_currentTouch.x + _playerAcceleration.x, _currentTouch.y);
-				}
-						
-                /*
-				//parallaxNode
-				CGPoint backgroundScrollVel = ccp(-10, 0);
-				_backGroundNode.position = ccpAdd(_backGroundNode.position, backgroundScrollVel);
-				//ccpMult(backgroundScrollVel, dt));
-                 */
+				}		
+            
 				CGSize screenSize = [[CCDirector sharedDirector] winSize];
 				
 				_player.position = ccpAdd(_player.position, ccp(_playerAcceleration.x * dt * 60, _playerAcceleration.y * dt * 60));
+                _currentTouch = ccp(_currentTouch.x + _playerAcceleration.x * dt * 60, _currentTouch.y);
 
 				[self updateLabels:dt];
 
@@ -1775,7 +1647,6 @@ static bool _evilAppearDone = NO;
 				}
 				
 				//detect the collisions
-				[self detectBox2DCollisions];
 				[self detectGameConditions];
 				_distanceTravelled = _player.position.x /3 ;
 				

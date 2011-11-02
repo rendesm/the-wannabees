@@ -91,8 +91,8 @@
 	[director setDeviceOrientation:kCCDeviceOrientationLandscapeLeft];
 #endif
 	
-	[director setAnimationInterval:1.0/40];
-	[director setDisplayFPS:YES];
+	[director setAnimationInterval:1.0/60];
+	[director setDisplayFPS:NO];
 	[glView setMultipleTouchEnabled:YES];
     glView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 
@@ -116,7 +116,7 @@
 	
 	
 	//authenticate the local user
-	[[GameCenterHelper sharedInstance] authenticateLocalUser];
+//	[[GameCenterHelper sharedInstance] authenticateLocalUser];
     
 	//[GameCenterManager  loadState];
 	

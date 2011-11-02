@@ -16,12 +16,14 @@
 	bool _isHungry;
 	float _stamina;
 	int _type;
+    bool _isOutOfScreen;
 }
 
 @property (nonatomic) float life;
 @property (nonatomic) CGPoint target;
 @property (nonatomic) int type;
 @property (nonatomic) float stamina;
+@property (nonatomic) bool isOutOfScreen;
 
 -(void)update:(ccTime)dt;
 

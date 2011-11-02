@@ -54,7 +54,7 @@
     
 	filter.categoryBits = bullet;
 	//filter.maskBits = 0xFFFF ;
-    filter.maskBits = player | predator;
+    filter.maskBits = player;
 	filter.groupIndex = 0;
 	
 	spriteShapeDef.filter = filter;

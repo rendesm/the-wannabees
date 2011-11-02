@@ -1143,7 +1143,7 @@ static double timeAccumulator = 0;
     
 	_bonusCount = 1;
     _currentDifficulty = 1;
-    _minBirdDistance = 300;
+    _minBirdDistance = 1300;
 	[self unschedule:@selector(loadingTextures)];
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	[[[CCDirector sharedDirector] openGLView] setMultipleTouchEnabled:NO];
@@ -1292,7 +1292,7 @@ static double timeAccumulator = 0;
         Spore* bird = [[Spore alloc] initForSeaNode:_batchNode];
         [bird createBox2dBodyDefinitionsSeaBird:_world];
         [_birds addObject:bird];
-        bird.sprite.position = ccp((i+1) * _minBirdDistance, 240);
+        bird.sprite.position = ccp((i+10) * _minBirdDistance, 240);
     }
 	
 	//init the array for clouds
@@ -1334,12 +1334,12 @@ static double timeAccumulator = 0;
 	_bottomSea = [[[NSMutableArray alloc] init] retain];
 	
     Sea* bottomSea1 = [[Sea alloc] initForNode:_batchNode];
-    CCSprite* topSea1 = [CCSprite spriteWithSpriteFrameName:@"tengerTop.png"];
+    CCSprite* topSea1 = [CCSprite spriteWithSpriteFrameName:@"tengerTop2.png"];
     [bottomSea1.sprite.texture setAliasTexParameters];
     [topSea1.texture setAliasTexParameters];
 
     Sea* bottomSea2 = [[Sea alloc] initForNode:_batchNode];
-    CCSprite* topSea2 = [CCSprite spriteWithSpriteFrameName:@"tengerTop.png"];
+    CCSprite* topSea2 = [CCSprite spriteWithSpriteFrameName:@"tengerTop2.png"];
     [bottomSea2.sprite.texture setAliasTexParameters];
     [topSea2.texture setAliasTexParameters];
 
@@ -1356,9 +1356,10 @@ static double timeAccumulator = 0;
     [_bottomSea addObject:bottomSea1];
     [_bottomSea addObject:bottomSea2];
     
-    self.island = [CCSprite spriteWithSpriteFrameName:@"island.png"];
-    [_batchNode addChild:self.island z:1];
-    self.island.position = ccp(1000,self.island.contentSize.height * 0.6);
+ //   self.island = [CCSprite spriteWithSpriteFrameName:@"island.png"];
+ //   [_batchNode addChild:self.island z:1];
+ //   self.island.scale = 0.8;
+ //   self.island.position = ccp(500,self.island.contentSize.height * 0.6);
     	
 	[self schedule:@selector(loadingSounds)];
 }
@@ -1526,7 +1527,6 @@ static double timeAccumulator = 0;
 		}
 	}
     
-    NSLog(@"playeracc:%f", _playerAcceleration.x);
     if (self.island.position.x + self.island.contentSize.width/2 < _player.position.x - screenSize.width/2){
         self.island.position = ccp(_player.position.x + screenSize.width/2 + self.island.contentSize.width * 3, self.island.position.y);
     }else{
@@ -1764,7 +1764,7 @@ static double timeAccumulator = 0;
             bird.sprite.position = ccp(_player.position.x + screenSize.width/2 + _minBirdDistance, bird.sprite.position.y);
         }else{
             //move the bird
-            bird.sprite.position = ccp(bird.sprite.position.x - dt * 60, bird.sprite.position.y);
+            bird.sprite.position = ccp(bird.sprite.position.x - 2 * dt * 60, bird.sprite.position.y);
         }
     }
 }

@@ -10,7 +10,7 @@
 
 
 @implementation MessageLayer
-@synthesize messageBuffer;
+@synthesize messageBuffer, currentMessage = _currentMessage;
 
 +(id)scene{
 	// 'scene' is an autorelease object.
@@ -28,6 +28,7 @@
 
 -(void) actionMessageFinished:(id)sender{
 	[self removeChild:(CCLabelBMFont*)sender cleanup:YES];
+    self.currentMessage = nil;
     _messageInProgress = NO;
     if (_messageBuffer != nil){
         [self displayMessage:_messageBuffer];
@@ -48,18 +49,18 @@
         }
     }else{
         CGSize screenSize = [[CCDirector sharedDirector] winSize];
-        CCLabelBMFont* renderedMessage = [[CCLabelBMFont alloc]initWithString:message fntFile:@"markerfelt.fnt"];
-        renderedMessage.position = ccp(-screenSize.width/2, screenSize.height/4);
+        self.currentMessage = [[CCLabelBMFont alloc]initWithString:message fntFile:@"markerfelt.fnt"] ;
+        _currentMessage.position = ccp(-screenSize.width/2, screenSize.height/4);
         CCSprite* textSprite = [CCSprite spriteWithFile:@"defaultText.png"];
-        textSprite.position = renderedMessage.position;
+        textSprite.position = _currentMessage.position;
         textSprite.opacity = 180;
         
-        [self addChild:renderedMessage];
+        [self addChild:_currentMessage];
         CCAction *moveIn = [CCMoveTo actionWithDuration:0.2 position:ccp(textSprite.contentSize.width/2, screenSize.height/4 - 3)];
         CCAction *fadeOut = [CCFadeOut actionWithDuration:1];
         CCAction *messageDone = [CCCallFunc actionWithTarget:self selector:@selector(actionMessageFinished:)];
-        renderedMessage.scale = 0.3;
-        [renderedMessage runAction:[CCSequence actions:moveIn, fadeOut, messageDone,nil]];
+        _currentMessage.scale = 0.3;
+        [_currentMessage runAction:[CCSequence actions:moveIn, fadeOut, messageDone,nil]];
         _messageInProgress = YES;
         
        

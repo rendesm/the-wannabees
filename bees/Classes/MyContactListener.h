@@ -1,10 +1,3 @@
-//
-//  MyContactListener.h
-//  Box2DPong
-//
-//  Created by Ray Wenderlich on 2/18/10.
-//  Copyright 2010 Ray Wenderlich. All rights reserved.
-//
 
 #import "Box2D.h"
 #import <vector>

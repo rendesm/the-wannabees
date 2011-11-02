@@ -43,7 +43,7 @@
         self.backHills = [[NSMutableArray alloc] init];
         self.trees = [[NSMutableArray alloc] init];
         self.backTrees = [[NSMutableArray alloc] init];
-        self.clouds = [[NSMutableArray alloc] init];
+     //   self.clouds = [[NSMutableArray alloc] init];
         self.cloudSpeeds = [[NSMutableArray alloc] init];
         self.fish = [[NSMutableArray alloc] init];
         _maxFishJump = screenSize.height/3;
@@ -171,6 +171,7 @@
     }
     */
    
+    /*
 	for (int i= 0; i <1; i++){
         CCSprite* bgCloud = [CCSprite spriteWithSpriteFrameName:@"cloud.png"];
 		bgCloud.opacity = 200;
@@ -187,7 +188,7 @@
         CGSize screenSize = [[CCDirector sharedDirector] winSize];
 		bgCloud.position = ccp(screenSize.width + bgCloud.contentSize.width * i * bgCloud.scale, 
 											 screenSize.height - bgCloud.contentSize.height * bgCloud.scale);
-	}
+	}*/
     
     self.jumpSpeed = 3.5f;
     self.minFishDistance = 0;
@@ -212,11 +213,6 @@
         hill.position = ccpAdd(hill.position, ccp(_forSpeed/7 , 0));
     }
     
-    for (int i = 0; i < [self.clouds count]; i++) {
-        CCSprite* cloud = [self.clouds objectAtIndex:i];
-        float cloudSpeed = [[self.cloudSpeeds objectAtIndex:i] floatValue];
-          cloud.position = ccpAdd(cloud.position, ccp(_forSpeed * cloudSpeed /3, 0));
-    }
     
     for (CCSprite* tree in self.trees){
         tree.position = ccpAdd(tree.position, ccp(_forSpeed / 3.5  * (dt*60), 0));
@@ -286,15 +282,14 @@
     
     for (CCSprite* tree in self.trees){
         if (tree.position.x + tree.contentSize.width/2 * tree.scale < 0){
-            tree.position = ccpAdd(tree.position, ccp(screenSize.width * 1.5,0));
+            tree.position = ccp(screenSize.width + tree.contentSize.width , tree.position.y );
         }
     }
     
     for (int i = 0; i < [self.backTrees count]; i++){
         CCSprite* backTree = [self.backTrees objectAtIndex:i];
         if (backTree.position.x + backTree.contentSize.width/2 * backTree.scale < 0){
-            float rand =CCRANDOM_0_1() * 0.5;
-            backTree.position = ccpAdd(backTree.position, ccp(screenSize.width * (1.5 + rand),0));
+            backTree.position = ccpAdd(backTree.position, ccp(screenSize.width * 1.5,0));
             for (int j = 0; j < [self.backTrees count]-1; j++) {
                 CCSprite* backTreePrevious = [self.backTrees objectAtIndex:i];
                 if (backTreePrevious.position.x - backTreePrevious.contentSize.width/2 * backTreePrevious.scale >  screenSize.width){
@@ -308,10 +303,11 @@
 -(void) genBackground{
     CCSprite* backGround = [CCSprite spriteWithSpriteFrameName:@"green.png"];
 
-    ccColor4F bgColor = [self randomBrightColor];
+    ccColor4F bgColor = ccc4FFromccc4B(ccc4(153, 0, 51, 255));
+    //[self randomBrightColor];
 	
     CGSize winSize = [CCDirector sharedDirector].winSize;
-    _overLaySprite = [self spriteWithColor:bgColor textureSize:512 withNoise:@"green.png" withGradientAlpha:0.3f];
+    _overLaySprite = [self spriteWithColor:bgColor textureSize:512 withNoise:@"green.png" withGradientAlpha:0.7f];
    // _overLaySprite = [CCSprite spriteWithSpriteFrameName:@"green.png"];
     ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT};
     [_overLaySprite.texture setTexParameters:&tp];
@@ -326,7 +322,8 @@
 }
 
 -(void) fadeInOverlay{
-    [_overLaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:250]];
+    [_overLaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:255]];
+    NSLog(@"fadeinoverlay");
 }
 
 

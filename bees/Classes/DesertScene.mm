@@ -26,11 +26,13 @@
 @synthesize messageLayer = _messageLayer, harvesterLayer = _harvesterLayer, pauseLayer = _pauseLayer, hudLayer = _hudLayer, bgLayer = _bgLayer;
 @synthesize level = _level;
 @synthesize currentTouch = _currentTouch;
+@synthesize enemy1 = _enemy1;
+@synthesize scarabs = _scarabs;
 
 static double UPDATE_INTERVAL = 1.0f/30.0f;
-static double MAX_CYCLES_PER_FRAME = 2;
+static double MAX_CYCLES_PER_FRAME = 1;
 static double timeAccumulator = 0;
-
+static bool   box2dRunning = NO;
 +(id)scene{
 	// 'scene' is an autorelease object.
 	CCScene *scene = [CCScene node];
@@ -61,6 +63,32 @@ static double timeAccumulator = 0;
 	return scene;
 }
 
+-(void)generateEnemy{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    for (int i = 0; i < 6; i++){
+        Predator* predator = [Predator spriteWithSpriteFrameName:@"skarabeus.png"];
+        predator.doRotation = YES; 
+        predator.isOutOfScreen = NO;
+        float predatorSpeed = 1.2;
+        _predatorCurrentSpeed = predatorSpeed;
+        
+        [predator setSpeedMax:predatorSpeed withRandomRangeOf:0.2f andSteeringForceMax:1 withRandomRangeOf:0.15f];
+        [predator setWanderingRadius: 16.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.2f];
+        [predator setEdgeBehavior: EDGE_NONE];
+        [predator setOpacity:250];
+        [_batchNode addChild:predator z:101 tag:1];
+        
+        float randY = randRange(1, 4);
+        [predator setPos:ccp(_player.position.x + screenSize.width, randY * screenSize.height/5)];
+        predator.life = 1;
+        predator.stamina = 800;
+        predator.doRotation = YES;
+        predator.scale = 0.5;
+        [predator createBox2dBodyDefinitions:_world];
+        [_scarabs addObject:predator];
+    }
+}
+
 
 
 -(void)setViewpointCenter:(CGPoint) position{
@@ -86,6 +114,42 @@ static double timeAccumulator = 0;
 	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
 	_lastPointLocation = point.sprite.position;
+}
+
+-(void) updateEnemy:(ccTime)dt{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    if ([_scarabs count] > 0){
+        for (Predator* scarab in _scarabs){
+            [scarab wander: 0.15f];
+            [self separateScarab:scarab withSeparationDistance:40.0f usingMultiplier:0.2f];
+            [self alignScarab:scarab withAlignmentDistance:30.0f usingMultiplier:0.4f];
+            [self cohesionScarab:scarab withNeighborDistance:40.0f usingMultiplier:0.2f];
+            if (scarab.position.x < _player.position.x - screenSize.width/4 || [_scarabs count] < 6){
+                scarab.target = ccp(_player.position.x - screenSize.width, _player.position.y);
+            }else{
+                scarab.target = _slowestBoid.position;
+            }
+            [scarab update:dt];
+            if (scarab.position.x + scarab.contentSize.width/2 * scarab.scale < _player.position.x - screenSize.width/2 && scarab.isOutOfScreen == NO){
+                scarab.isOutOfScreen = YES;
+            }
+        }
+    }else{
+        _timeUntilScarabs += dt;
+        if (_timeUntilScarabs > 2){
+            _timeUntilScarabs = 0;
+            [self generateEnemy];
+        }
+    }
+    
+    if (_enemy2 == nil){
+        if (_timeSinceEnemy2 >= _timeUntilEnemy2){
+            _timeSinceEnemy2 = 0;
+            //generate enemy2
+        }else{
+            _timeSinceEnemy2 += dt;
+        }
+    }
 }
 
 
@@ -234,6 +298,7 @@ static double timeAccumulator = 0;
     
 	_bonusCount = 1;
     _currentDifficulty = 1;
+    _timeUntilScarabs = 0;
     
     _bees = [[[NSMutableArray alloc] init] retain];
 	_deadBees = [[[NSMutableArray alloc] init] retain];
@@ -253,9 +318,9 @@ static double timeAccumulator = 0;
 	[[[CCDirector sharedDirector] openGLView] setMultipleTouchEnabled:NO];
 	self.isTouchEnabled = YES;
 	
-	_batchNode = [CCSpriteBatchNode batchNodeWithFile:@"beeSprites2_high.pvr.ccz"]; // 1
+	_batchNode = [CCSpriteBatchNode batchNodeWithFile:@"beeSpritesDesert_high.pvr.ccz"]; // 1
 	[self addChild:_batchNode z:500 tag:500]; // 2
-	[[CCSpriteFrameCache sharedSpriteFrameCache] addSpriteFramesWithFile:@"beeSprites2_high.plist" textureFile:@"beeSprites2_high.pvr.ccz"];
+	[[CCSpriteFrameCache sharedSpriteFrameCache] addSpriteFramesWithFile:@"beeSpritesDesert_high.plist" textureFile:@"beeSpritesDesert_high.pvr.ccz"];
     
 	//init the box2d world
 	b2Vec2 gravity = b2Vec2(0.0f, 0.0f);
@@ -309,6 +374,8 @@ static double timeAccumulator = 0;
 		[self generateNextPoint: (i % 3)+1];
 	}
     
+    self.scarabs = [[NSMutableArray alloc] init];
+    [self generateEnemy];
     
 	_playerAcceleration = ccp(1.5,0);
 	_pointsGathered = 0;
@@ -427,8 +494,8 @@ static double timeAccumulator = 0;
             if (_touchEnded){
                 _currentTouch = ccp(_currentTouch.x + _playerAcceleration.x, _currentTouch.y);
             }
-            
             _player.position = ccpAdd(_player.position, _playerAcceleration);
+            [self detectGameConditions];
             [self updateLabels];
             [self beeMovement:dt];
             [self updatePoints];
@@ -436,18 +503,21 @@ static double timeAccumulator = 0;
             [self.bgLayer updateBackground:dt];
             [self.bgLayer respawnContinuosBackGround];
             [self.harvesterLayer update:dt];
-            [self updateBox2DWorld:dt];
+            [self updateEnemy:dt];
+            if (box2dRunning == NO){
+                box2dRunning = YES;
+                [self updateBox2DWorld:dt];
+                box2dRunning = NO;
+            }
             [self detectBox2DCollisions];
             [self detectGameConditions];
         }
     }
 }
 
-
 -(void) updateBox2DWorld:(ccTime)dt{
     CGSize screenSize = [[CCDirector sharedDirector] winSize];
     std::vector<b2Body *>toDestroy; 
-    
     timeAccumulator+=dt;
     if (timeAccumulator > (MAX_CYCLES_PER_FRAME * UPDATE_INTERVAL)){
         timeAccumulator = UPDATE_INTERVAL;
@@ -471,12 +541,6 @@ static double timeAccumulator = 0;
                     [point release];
                     toDestroy.push_back(b);
                 }
-            }if ([b->GetUserData() isKindOfClass:[Fish class]]){
-                Points *point = (Points *)b->GetUserData();
-                b2Vec2 b2Position = b2Vec2(point.sprite.position.x/PTM_RATIO,
-                                           point.sprite.position.y/PTM_RATIO);
-                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(point.sprite.rotation);
-                b->SetTransform(b2Position, b2Angle);
             }else if ([b->GetUserData() isKindOfClass:[Bullet class]]){
                 Bullet *bullet = (Bullet *)b->GetUserData();
                 CGPoint location = [self convertToNodeSpace:bullet.sprite.position ];
@@ -498,7 +562,18 @@ static double timeAccumulator = 0;
                                            point.y/PTM_RATIO);
                 float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sprite.rotation);
                 b->SetTransform(b2Position, b2Angle);
-            }else if ([b->GetUserData() isKindOfClass:[CCSprite class]]){
+            }else if ([b->GetUserData() isKindOfClass:[Predator class]]){
+                Predator *sprite = (Predator *)b->GetUserData();
+                b2Vec2 b2Position = b2Vec2(sprite.position.x/PTM_RATIO,
+                                               sprite.position.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+                if (sprite.isOutOfScreen){
+                    toDestroy.push_back(b);
+                    [_batchNode removeChild:sprite cleanup:YES];
+                    [self.scarabs removeObject:sprite];
+                }
+            }else if ([b->GetUserData() isKindOfClass:[Boid class]] && ![b->GetUserData() isKindOfClass:[Predator class]]){
                 CCSprite *sprite = (CCSprite *)b->GetUserData();
                 b2Vec2 b2Position = b2Vec2(sprite.position.x/PTM_RATIO,
                                            sprite.position.y/PTM_RATIO);
@@ -507,13 +582,13 @@ static double timeAccumulator = 0;
                 i++;
             }
         }	
-        
+       
         std::vector<b2Body *>::iterator pos2;
         for(pos2 = toDestroy.begin(); pos2 != toDestroy.end(); ++pos2) {
             b2Body *body = *pos2;     
             _world->DestroyBody(body);
         }
-        
+       //  toDestroy.clear();
         _world->Step(UPDATE_INTERVAL, 0, 2);
     }
 }
@@ -526,6 +601,7 @@ static double timeAccumulator = 0;
     ConfigManager* sharedManager = [ConfigManager sharedManager];
 	_takenPoints = [[NSMutableArray alloc] init];
     _deadBees = [[NSMutableArray alloc] init];
+    NSMutableArray* _deadPredators = [[NSMutableArray alloc] init];
     CCSprite* deadSprite = nil;
 	for(pos = _contactListener->_contacts.begin(); 
 		pos != _contactListener->_contacts.end(); ++pos) {
@@ -533,6 +609,41 @@ static double timeAccumulator = 0;
 		b2Body *bodyA = contact.fixtureA->GetBody();
 		b2Body *bodyB = contact.fixtureB->GetBody();
 		if (bodyA->GetUserData() != NULL && bodyB->GetUserData() != NULL) {
+            if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Predator class]] ){
+				Boid *boid = (Boid *) bodyA->GetUserData();
+				if ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO){
+					Predator *predator = (Predator *) bodyB->GetUserData();
+					//if it is dead already dont do anything with it
+					if (predator.life > 0 && ![_deadBees containsObject:boid] && ![_deadPredators containsObject:predator]){
+						[self playDeadBeeSound];
+                        [_deadBees addObject:boid];
+                        toDestroy.push_back(bodyA);
+                        --predator.life;
+						//if it is dead, do not iterate over this
+						if (predator.life <= 0){
+                            [_deadPredators addObject:predator];
+                            toDestroy.push_back(bodyB);
+						}
+					}
+				}
+			}else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Predator class]] ){
+				Boid *boid = (Boid *) bodyB->GetUserData();
+				if ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO){
+					Predator *predator = (Predator *) bodyA->GetUserData();
+					//if it is dead already dont do anything with it
+					if (predator.life > 0 && ![_deadBees containsObject:boid] && ![_deadPredators containsObject:predator]){
+						[self playDeadBeeSound];
+                        [_deadBees addObject:boid];
+                        toDestroy.push_back(bodyA);
+						//if it is dead, do not iterate over this
+                        --predator.life;
+						if (predator.life <= 0){
+                            [_deadPredators addObject:predator];
+                            toDestroy.push_back(bodyB);
+						}
+					}
+				}
+			}
 			if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Points class]]){
 				Points* point = (Points*) bodyB->GetUserData();
                 if (point.taken == NO){
@@ -563,7 +674,21 @@ static double timeAccumulator = 0;
                 [self playDeadBeeSound];
                 [_deadBees addObject:boid];
                 toDestroy.push_back(bodyA);
-            }
+            } //Bullet
+			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Bullet class]]
+					 && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+				Boid *boid = (Boid *) bodyB->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                toDestroy.push_back(bodyB);
+			}
+			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Bullet class]]
+					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
+				Boid *boid = (Boid *) bodyA->GetUserData();
+				[self playDeadBeeSound];
+				[_deadBees addObject:boid];
+                toDestroy.push_back(bodyA);
+			}
         }
         //bullet
     }
@@ -618,28 +743,52 @@ static double timeAccumulator = 0;
             [_batchNode removeChild:point.sprite cleanup:YES];
             [point release];
         }
-    //    [_takenPoints removeAllObjects];
         [_takenPoints release];
     }
     
-    for (Boid* boid in _deadBees){
+    for (Boid* predator in _deadBees) {
         CCAction* actionScaleIn = [CCScaleTo actionWithDuration:0.3f scale:1.0] ;
-		CCAction* actionScaleDone = [CCCallFuncN actionWithTarget:self 
-														 selector:@selector(actionMoveFinished:)];
-        [self.bees removeObject:boid];
-        [_batchNode removeChild:boid cleanup:YES];
+        CCAction* actionScaleDone = [CCCallFuncN actionWithTarget:self 
+                                                         selector:@selector(actionMoveFinished:)];
+        [_bees removeObject:predator];
+        if ([_bees count] == 0){
+            [self detectGameConditions];
+        }
+		if ([_slowestBoid isEqual:predator]){
+			_slowestBoid = nil;
+		}
+
         CCSprite* deadSprite = [CCSprite spriteWithSpriteFrameName:@"beeDies.png"];
-		deadSprite.position = boid.position;
-		deadSprite.scale = 0.3;
-		[_batchNode addChild:deadSprite z:300 tag:boid.tag-1];
-		[deadSprite runAction:[CCSequence actions:actionScaleIn, actionScaleDone, nil]];	
+        deadSprite.position = predator.position;
+        deadSprite.scale = 0.3;
+        [_batchNode addChild:deadSprite z:300 tag:predator.tag];
+        [deadSprite runAction:[CCSequence actions:actionScaleIn, actionScaleDone, nil]];	
+        [_batchNode removeChild:predator cleanup:YES];
     }
 
+    for (Predator* predator in _deadPredators) {
+        CCAction* actionScaleIn = [CCScaleTo actionWithDuration:0.3f scale:1.0] ;
+        CCAction* actionScaleDone = [CCCallFuncN actionWithTarget:self 
+                                                         selector:@selector(actionMoveFinished:)];
+        [_scarabs removeObject:predator];
+        CCSprite* deadSprite = [CCSprite spriteWithSpriteFrameName:@"beeDies.png"];
+        deadSprite.position = predator.position;
+        deadSprite.scale = 0.3;
+        [_batchNode addChild:deadSprite z:300 tag:predator.tag];
+        [deadSprite runAction:[CCSequence actions:actionScaleIn, actionScaleDone, nil]];	
+        [_batchNode removeChild:predator cleanup:YES];
+    }
+    
+    
     std::vector<b2Body *>::iterator pos2;
     for(pos2 = toDestroy.begin(); pos2 != toDestroy.end(); ++pos2) {
         b2Body *body = *pos2;     
         _world->DestroyBody(body);
     }
+    [_deadBees removeAllObjects];
+    [_deadPredators removeAllObjects];
+    toDestroy.clear();
+     _contactListener->_contacts.clear();
 }
 
 
@@ -656,6 +805,12 @@ static double timeAccumulator = 0;
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	bool tmpSick = NO;
 	for (Boid* bee in _bees){
+        //detect the slowest boid
+        if (_slowestBoid == nil){
+            _slowestBoid = bee;
+        }else if (bee.maxSpeed < _slowestBoid.maxSpeed){
+          _slowestBoid = bee;
+        }
 		bee.leftEdgePosition = ccp(_player.position.x - screenSize.width/2 + 10, _player.position.y);
 		[self beeDefaultMovement:bee withDt:dt];
 		if (!CGPointEqualToPoint(_currentTouch , CGPointZero)){
@@ -885,6 +1040,123 @@ inline float randRange(float min,float max)
 }
 
 
+/// scarab boid
+
+
+-(void) separateScarab:(Predator*)bee withSeparationDistance:(float)separationDistance usingMultiplier:(float)multiplier
+{
+	CGPoint		force = CGPointZero;
+	CGPoint		difference = CGPointZero;
+	int			count = 0;
+	float		distance;
+	float		distanceSQ;
+	float		separationDistanceSQ = separationDistance * separationDistance;
+	
+	for(Predator* otherBee in _scarabs)
+	{
+		if (otherBee != bee){
+			distanceSQ = getDistanceSquared(bee->_internalPosition, otherBee->_internalPosition);
+			
+			if(distanceSQ > 0.1f && distanceSQ < separationDistanceSQ)
+			{
+				distance = sqrtf(distanceSQ);
+				
+				difference = ccpSub(bee->_internalPosition, otherBee->_internalPosition);
+				difference = normalize(difference);
+				difference = ccpMult(difference, 1.0f / distance );
+				
+				force = ccpAdd(force, difference);
+				count++;
+			}
+		}
+	}
+	
+	// Average
+	if(count > 0)
+		force = ccpMult(force, 1.0f / (float) count);
+	
+	// apply 
+	if(multiplier != IGNORE)
+		force = ccpMult(force, multiplier);
+	
+	bee.acceleration = ccpAdd(bee.acceleration, force);
+}
+
+-(void) alignScarab:(Predator*)bee withAlignmentDistance:(float)neighborDistance usingMultiplier:(float)multiplier
+{
+	CGPoint		force = CGPointZero;
+	int			count = 0;
+	float		distanceSQ;
+	float		neighborDistanceSQ = neighborDistance * neighborDistance;
+	
+	for(Boid* otherBee in _scarabs)
+	{
+		if (otherBee != bee){
+			distanceSQ = getDistance(bee->_internalPosition, otherBee->_internalPosition);
+			if(distanceSQ > 0.1f && distanceSQ < neighborDistanceSQ)
+			{			
+				force = ccpAdd(force, otherBee->_velocity);
+				count++;
+			}	
+		}
+	}
+	
+	if(count > 0)
+	{
+		force = ccpMult(force, 1.0f / (float)count );
+		float forceLengthSquared = ccpLengthSQ(force);
+		
+		if(forceLengthSquared > bee->_maxForceSQ)
+		{
+			force = normalize(force);
+			force = ccpMult(force, bee->_maxForce);
+		}
+	}
+	
+	if(multiplier != IGNORE)
+		force = ccpMult(force, multiplier);
+	
+	bee.acceleration = ccpAdd(bee.acceleration, force);
+}
+
+
+
+
+-(void) cohesionScarab:(Predator*)bee withNeighborDistance:(float)neighborDistance usingMultiplier:(float)multiplier
+{
+	CGPoint		force = CGPointZero;
+	int			count = 0;
+	float		distanceSQ;
+	float		neighborDistanceSQ = neighborDistance * neighborDistance;
+	
+	for(Boid* otherBee in _scarabs)
+	{	
+		if (otherBee != bee){
+			distanceSQ = getDistanceSquared(bee->_internalPosition, otherBee->_internalPosition);
+			if(distanceSQ > 0.1f && distanceSQ < neighborDistanceSQ)
+			{			
+				force = ccpAdd(force, otherBee->_internalPosition);
+				count++;
+			}	
+		}
+	}
+	
+	if(count > 0)
+	{
+		force = ccpMult(force, (1.0f / (float) count));
+		force = [bee steer:force easeAsApproaching:NO withEaseDistance:IGNORE];
+	}
+	
+	if(multiplier != IGNORE)
+		force = ccpMult(force, multiplier);
+	
+	bee.acceleration = ccpAdd(bee.acceleration, force);
+}
+
+
+///
+
+
 -(void) actionMoveFinished:(id)sender{
 	[_batchNode removeChild:(CCSprite*)sender cleanup:YES];
 }
@@ -894,7 +1166,7 @@ inline float randRange(float min,float max)
 	[self removeChild:(CCLabelTTF*)sender cleanup:YES];
 }
 
-
+/*
 -(void) removeDeadItems{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	
@@ -917,7 +1189,7 @@ inline float randRange(float min,float max)
 	}
 	[_deadBees removeAllObjects];
 }
-
+*/
 
 #pragma mark goals 
 

@@ -12,9 +12,11 @@
 @interface MessageLayer : CCLayer {
     bool _messageInProgress;
     NSString* _messageBuffer;
+    CCLabelBMFont* _currentMessage;
 }
 
 -(void) displayMessage:(NSString*)message;
 -(void) displayWarning:(NSString*)message;
 @property (nonatomic, retain) NSString* messageBuffer;
+@property (nonatomic, retain) CCLabelBMFont* currentMessage;
 @end

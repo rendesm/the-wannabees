@@ -206,6 +206,8 @@ static LevelManager *sharedManager = nil;
         self.world = 3;
     }else if ([name isEqualToString:@"GreenHills"]){
         self.world = 1;
+    }else if ([name isEqualToString:@"Desert"]){
+        self.world = 4;
     }
 }
 

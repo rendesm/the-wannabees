@@ -12,6 +12,7 @@
 @implementation Predator
 @synthesize life = _life, target = _target;
 @synthesize type = _type, stamina = _stamina;
+@synthesize isOutOfScreen = _isOutOfScreen;
 
 
 -(void) update:(ccTime) dt{
@@ -90,7 +91,7 @@
     enum CollideBits { none = 0, player = 0x0001, predator = 0x0002, harvester = 0x0004, point = 0x0008, bird = 0x0010, bullet = 0x0020 };    b2Filter filter;
 	filter.categoryBits = predator;
 	//filter.maskBits = 0xFFFF ;
-    filter.maskBits = player | harvester | bird | bullet;
+    filter.maskBits = player;
     filter.groupIndex = 0;
 	
 	spriteShapeDef.filter = filter;

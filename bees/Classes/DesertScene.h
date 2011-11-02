@@ -41,8 +41,14 @@
     int _currentDifficulty;
     bool _newHighScore;
     CCMenuItemImage* _pauseButton;
-	
     
+    Predator* _enemy1;
+    id* _enemy2;
+	ccTime _timeSinceEnemy2;
+    ccTime _timeUntilEnemy2;
+    float _predatorCurrentSpeed;
+    
+    NSMutableArray* _scarabs;
 	NSMutableArray* _bees;
 	NSMutableArray* _deadBees;
     NSMutableArray* _points;
@@ -68,6 +74,7 @@
     
     CGPoint _lastPointLocation;
     Alchemy* _alchemy;
+    ccTime _timeUntilScarabs;
 }
 
 -(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer message:(MessageLayer *)messageLayer harvester:(HarvesterLayer*)harvesterLayer background:(HillsBackgroundLayer*) background;
@@ -81,13 +88,18 @@
 -(void) cohesion:(Boid*)bee withNeighborDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
 -(void) align:(Boid*)bee withAlignmentDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
 -(void) separate:(Boid*)bee withSeparationDistance:(float)separationDistance usingMultiplier:(float)multiplier;
+
+-(void) separateScarab:(Predator*)bee withSeparationDistance:(float)separationDistance usingMultiplier:(float)multiplier;
+-(void) alignScarab:(Predator*)bee withAlignmentDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
+-(void) cohesionScarab:(Predator*)bee withNeighborDistance:(float)neighborDistance usingMultiplier:(float)multiplier;
+
 -(bool) addItemValue:(int)value;
 -(void) saveLevelPerformance;
 
-@property (nonatomic, retain) NSMutableArray* bees;
-@property (nonatomic, retain) NSMutableArray* deadBees;
-@property (nonatomic, retain) NSMutableArray* points;
-@property (nonatomic, retain) NSMutableArray* takenPoints;
+@property (nonatomic, retain) NSMutableArray*           bees;
+@property (nonatomic, retain) NSMutableArray*           deadBees;
+@property (nonatomic, retain) NSMutableArray*           points;
+@property (nonatomic, retain) NSMutableArray*           takenPoints;
 @property (nonatomic, retain) PauseLayer*               pauseLayer;
 @property (nonatomic, retain) HUDLayer*                 hudLayer;
 @property (nonatomic, retain) MessageLayer*             messageLayer;
@@ -95,5 +107,7 @@
 @property (nonatomic, retain) HillsBackgroundLayer*     bgLayer;
 @property (nonatomic, retain) Level*                    level;
 @property (nonatomic) CGPoint                           currentTouch;
+@property (nonatomic, retain) Predator*                 enemy1;
+@property (nonatomic, retain) NSMutableArray*           scarabs;
 
 @end

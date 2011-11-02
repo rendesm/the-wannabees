@@ -12,7 +12,7 @@ typedef enum ParticleTypes{
 	RAIN = 1
 };
 
-#define PTM_RATIO 1/300
+#define PTM_RATIO 1.0f/300.0f
 
 typedef enum PointTypes{
 	ATTACK_BOOST = 1,

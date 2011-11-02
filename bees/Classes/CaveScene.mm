@@ -37,7 +37,7 @@
 @synthesize backgroundLayer = _backgroundLayer;
 @synthesize harvesterLayer = _harvesterLayer;
 
-static double UPDATE_INTERVAL = 1/30.0f;
+static double UPDATE_INTERVAL = 1/20.0f;
 static double MAX_CYCLES_PER_FRAME = 1;
 static double timeAccumulator = 0;
 
@@ -135,13 +135,11 @@ static double timeAccumulator = 0;
 }
 
 -(void) addRockHitEmitter:(CGPoint)location{
-    if (_emitter == nil){
-        _emitter = [CCParticleSystemQuad particleWithFile:@"rockHit.plist"];
-        _emitter.position = location;
-        _emitter.scale = 0.3;
-        [self addChild:_emitter z:600 tag:600];
-        _emitter.autoRemoveOnFinish = YES;
-    }
+    _emitter = [CCParticleSystemQuad particleWithFile:@"rockHit.plist"];
+    _emitter.position = location;
+    _emitter.scale = 0.3;
+    [self addChild:_emitter z:600 tag:600];
+    _emitter.autoRemoveOnFinish = YES;
 }
 
 /*
@@ -242,12 +240,30 @@ static double timeAccumulator = 0;
 	}
 }
 
--(void) checkPointRockCollision:(Points*)point{
+-(void) checkPointTopRockCollision:(Points*)point{
     for (Rock* rock in _topRocks){
 		if (CGRectIntersectsRect(rock.sprite.boundingBox, point.sprite.boundingBox)){
-            NSLog(@"point moved");
-			point.sprite.position = ccpAdd(ccp(rock.sprite.contentSize.width, 0), point.sprite.position);
-            [self checkPointRockCollision:point];
+			point.sprite.position = ccpAdd(point.sprite.position, ccp(rock.sprite.contentSize.width, 0));
+            [self checkPointTopRockCollision:point];
+		}
+	}
+}
+
+
+-(void) checkPointBatCollision:(Points*)point{
+    for (Bat* bat in _bats){
+		if (CGRectIntersectsRect(bat.sprite.boundingBox, point.sprite.boundingBox)){
+			point.sprite.position = ccpAdd(point.sprite.position,ccp(bat.sprite.contentSize.width, -30));
+            [self checkPointBatCollision:point];
+		}
+	}
+}
+
+-(void) checkPointBottomRockCollision:(Points*)point{
+    for (Rock* rock in _bottomRocks){
+		if (CGRectIntersectsRect(rock.sprite.boundingBox, point.sprite.boundingBox)){
+			point.sprite.position = ccpAdd(point.sprite.position, ccp(rock.sprite.contentSize.width, 30));
+            [self checkPointBottomRockCollision:point];
 		}
 	}
 }
@@ -667,7 +683,10 @@ static double timeAccumulator = 0;
 	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
     
-  //  [self checkPointRockCollision:point];
+    [self checkPointTopRockCollision:point];
+    [self checkPointBottomRockCollision:point];
+    [self checkPointBatCollision:point];
+
 	_lastPointLocation = point.sprite.position;
 	point.taken = YES;
 }
@@ -1025,6 +1044,8 @@ static double timeAccumulator = 0;
 		_world->DestroyBody(body);
 	}	
 	 */
+    
+    _contactListener->_contacts.clear();
 }
 
 -(void) actionMoveFinished:(id)sender{
@@ -1200,7 +1221,7 @@ static double timeAccumulator = 0;
     
     //position the killer item to the middle of the screen
     _fireBall = [[[Spore alloc] initForCaveNode:_batchNode] retain];
-    _fireBall.sprite.position = ccpAdd(_player.position, ccp(_player.position.x + screenSize.width/2 + screenSize.width * 100, screenSize.height/2));
+    _fireBall.sprite.position = ccpAdd(_player.position, ccp(_player.position.x + screenSize.width/2 + screenSize.width * 40, screenSize.height/2));
     [_fireBall createBox2dBodyDefinitions:_world];
     _fireBallSpeed = -1;
 	
@@ -1450,6 +1471,7 @@ static double timeAccumulator = 0;
             }
         }	
         _world->Step(UPDATE_INTERVAL,0, 2);
+        [self detectBox2DCollisions];
     }
 }
 
@@ -1626,7 +1648,7 @@ static double timeAccumulator = 0;
 
 
 -(void) beeDefaultMovement:(Boid*) bee withDt:(ccTime)dt{
-	[bee wander: 0.05f];
+    [bee wander:0.1];
 	[self separate:bee withSeparationDistance:40.0f usingMultiplier:0.4f];
 	[self align:bee withAlignmentDistance:30.0f usingMultiplier:0.2f];
 	[self cohesion:bee withNeighborDistance:40.0f usingMultiplier:0.1f];	
@@ -1864,15 +1886,8 @@ static double timeAccumulator = 0;
 				[self removeOutOfScreenItems];
 				//update terrain, tell it how far we have proceeded
 				//[_terrain setOffsetX:_playerAcceleration.x];
-				//respawn the clouds if needed
-				if (_updateBox) {
-					_updateBox = NO;
-					[self updateBox2DWorld:dt];
-				}
 				
 				//detect the collisions
-				[self detectBox2DCollisions];
-				[self setViewpointCenter:_player.position];
                 [self updateLabels:dt];
 				_distanceTravelled = _player.position.x /3 ;
                 [self.backgroundLayer update:dt];
@@ -1881,7 +1896,9 @@ static double timeAccumulator = 0;
 				[self updatePoints];
 				[self updateCave];
 				[self updateSounds:dt];
+                [self updateBox2DWorld:dt];
                 [self detectGameConditions];
+                [self setViewpointCenter:_player.position];
 			}
 		}
 	}
@@ -2151,8 +2168,6 @@ inline float randRange(float min,float max)
 	}
 	sharedManager.selectedLevel.completed = YES;
 	[sharedManager saveSelectedLevel];
-    [[GameCenterHelper sharedInstance] reportScore:12 forCategory:@"PointsHills"];
-    [[GameCenterHelper sharedInstance] showLeaderboardForCategory:@"PointsHills"];
 }
 
 

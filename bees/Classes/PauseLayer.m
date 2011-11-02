@@ -7,7 +7,6 @@
 //
 
 #import "PauseLayer.h"
-
 @implementation PauseLayer
 @synthesize paused = _paused;
 @synthesize pausedMenu = _pausedMenu;
@@ -84,8 +83,10 @@
         [[CCDirector sharedDirector] replaceScene:[CampaignScene scene]];
     }else if ([[LevelManager sharedManager] world] == 2){
         [[CCDirector sharedDirector] replaceScene:[CaveScene scene]];
-    }if ([[LevelManager sharedManager] world] == 3){
+    }else if ([[LevelManager sharedManager] world] == 3){
         [[CCDirector sharedDirector] replaceScene:[SeaScene scene]];
+    }else if ([[LevelManager sharedManager] world] == 4){
+        [[CCDirector sharedDirector] replaceScene:[DesertScene scene]];
     }
 }
 

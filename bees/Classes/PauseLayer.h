@@ -10,6 +10,8 @@
 #import "cocos2d.h"
 #import "LevelSelectScene.h"
 #import "LevelManager.h"
+
+@class DesertScene;
 @class SeaScene;
 @interface PauseLayer : CCLayer {
     bool _paused;

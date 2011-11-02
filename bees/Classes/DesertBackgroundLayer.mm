@@ -18,6 +18,7 @@
 @synthesize jumpSpeed = _jumpSpeed;
 @synthesize maxFishJump = _maxFishJump;
 @synthesize palm = _palm;
+@synthesize szfinx = _szfinx;
 
 +(id)scene{
 	// 'scene' is an autorelease object.
@@ -140,8 +141,12 @@
     backTreeWidth = backTree.contentSize.width;
     [self.backTrees addObject:backTree];
     [self.batchnode addChild:backTree z:2 tag:1];
+    
+    self.szfinx = [CCSprite spriteWithSpriteFrameName:@"szfinx2.png"];
+    [self.batchnode addChild:self.szfinx z:2 tag:2];
+    self.szfinx.position = ccp(backTree.position.x + screenSize.width, backTree.position.y );
    
-	for (int i= 0; i < 4; i++){
+	for (int i= 0; i < 3; i++){
         CCSprite* bgCloud = [CCSprite spriteWithSpriteFrameName:@"cloud.png"];
 		bgCloud.opacity = 200;
 		[_clouds addObject:bgCloud];
@@ -165,13 +170,20 @@
 }
 
 -(void) updateBackground:(ccTime)dt{
-    int backItemOn = 0;
-    int forItemOn = 0;
     CGSize screenSize = [[CCDirector sharedDirector] winSize];
     for (CCSprite* backTree in self.backTrees){
-        backTree.position = ccpAdd(backTree.position, ccp(_forSpeed/9 * (dt*60), 0));
-    //    backTree.position = ccpAdd(backTree.position, ccp(-0.25, 0));
+        if (backTree.position.x + backTree.contentSize.width/2 * backTree.scale < 0){
+             backTree.position = ccpAdd(backTree.position, ccp(screenSize.width * 2,0));
+        }else{
+             backTree.position = ccpAdd(backTree.position, ccp(_forSpeed/9 * dt * 60,0));
+        }
     }
+    
+    if (self.szfinx.position.x + self.szfinx.contentSize.width/2 < 0){
+        self.szfinx.position = ccpAdd(self.szfinx.position, ccp(screenSize.width * 2, 0));
+    }
+    self.szfinx.position = ccpAdd(self.szfinx.position, ccp(_forSpeed/9 * dt * 60,0));
+    
     for (CCSprite* hill in self.backHills){
         hill.position = ccpAdd(hill.position, ccp(_forSpeed/7 , 0));
     }

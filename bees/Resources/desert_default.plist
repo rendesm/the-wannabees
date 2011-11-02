@@ -4,10 +4,13 @@
 <dict>
 	<key>frames</key>
 	<dict>
+		
 		<key>cloud.png</key>
 		<dict>
 			<key>aliases</key>
-			<array/>
+			<array>
+			
+			</array>
 			<key>spriteColorRect</key>
 			<string>{{0, 3}, {200, 137}}</string>
 			<key>spriteOffset</key>
@@ -19,14 +22,17 @@
 			<key>spriteTrimmed</key>
 			<true/>
 			<key>textureRect</key>
-			<string>{{820, 224}, {200, 137}}</string>
+			<string>{{0, 421}, {200, 137}}</string>
 			<key>textureRotated</key>
 			<false/>
 		</dict>
+		
 		<key>palma.png</key>
 		<dict>
 			<key>aliases</key>
-			<array/>
+			<array>
+			
+			</array>
 			<key>spriteColorRect</key>
 			<string>{{16, 0}, {216, 196}}</string>
 			<key>spriteOffset</key>
@@ -38,14 +44,17 @@
 			<key>spriteTrimmed</key>
 			<true/>
 			<key>textureRect</key>
-			<string>{{602, 224}, {216, 196}}</string>
+			<string>{{482, 99}, {216, 196}}</string>
 			<key>textureRotated</key>
 			<false/>
 		</dict>
+		
 		<key>piramis_only.png</key>
 		<dict>
 			<key>aliases</key>
-			<array/>
+			<array>
+			
+			</array>
 			<key>spriteColorRect</key>
 			<string>{{0, 0}, {480, 222}}</string>
 			<key>spriteOffset</key>
@@ -57,14 +66,17 @@
 			<key>spriteTrimmed</key>
 			<true/>
 			<key>textureRect</key>
-			<string>{{482, 0}, {480, 222}}</string>
+			<string>{{482, 297}, {480, 222}}</string>
 			<key>textureRotated</key>
 			<false/>
 		</dict>
+		
 		<key>sivatag_only.png</key>
 		<dict>
 			<key>aliases</key>
-			<array/>
+			<array>
+			
+			</array>
 			<key>spriteColorRect</key>
 			<string>{{0, 4}, {600, 97}}</string>
 			<key>spriteOffset</key>
@@ -76,14 +88,17 @@
 			<key>spriteTrimmed</key>
 			<true/>
 			<key>textureRect</key>
-			<string>{{0, 322}, {600, 97}}</string>
+			<string>{{0, 0}, {600, 97}}</string>
 			<key>textureRotated</key>
 			<false/>
 		</dict>
+		
 		<key>sky.png</key>
 		<dict>
 			<key>aliases</key>
-			<array/>
+			<array>
+			
+			</array>
 			<key>spriteColorRect</key>
 			<string>{{0, 0}, {480, 320}}</string>
 			<key>spriteOffset</key>
@@ -95,10 +110,33 @@
 			<key>spriteTrimmed</key>
 			<true/>
 			<key>textureRect</key>
-			<string>{{0, 0}, {480, 320}}</string>
+			<string>{{0, 99}, {480, 320}}</string>
 			<key>textureRotated</key>
 			<false/>
 		</dict>
+		
+		<key>szfinx2.png</key>
+		<dict>
+			<key>aliases</key>
+			<array>
+			
+			</array>
+			<key>spriteColorRect</key>
+			<string>{{1, 6}, {298, 171}}</string>
+			<key>spriteOffset</key>
+			<string>{0, -3}</string>
+			<key>spriteSize</key>
+			<string>{298, 171}</string>
+			<key>spriteSourceSize</key>
+			<string>{300, 177}</string>
+			<key>spriteTrimmed</key>
+			<true/>
+			<key>textureRect</key>
+			<string>{{700, 0}, {298, 171}}</string>
+			<key>textureRotated</key>
+			<false/>
+		</dict>
+		
 	</dict>
 	<key>metadata</key>
 	<dict>
@@ -107,7 +145,7 @@
 		<key>format</key>
 		<integer>3</integer>
 		<key>size</key>
-		<string>{1024, 512}</string>
+		<string>{1024, 1024}</string>
 		<key>name</key>
 		<string>desert.zwd</string>
 		<key>premultipliedAlpha</key>

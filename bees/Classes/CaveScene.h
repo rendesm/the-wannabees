@@ -227,6 +227,11 @@
 -(void) generateNextPoint:(int)types;
 -(void) presentGameCenter;
 
+-(void) checkPointTopRockCollision:(Points*)point;
+-(void) checkPointBottomRockCollision:(Points*)point;
+-(void) checkPointBatCollision:(Points*)point;
+
+
 @property(nonatomic, assign) CGPoint currentTouch;
 @property(nonatomic) bool paused;
 @property(nonatomic, retain) NSMutableArray* backgrounds;

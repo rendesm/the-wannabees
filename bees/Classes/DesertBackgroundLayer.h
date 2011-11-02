@@ -18,6 +18,7 @@
     NSMutableArray* _clouds;
     NSMutableArray* _buildings;
     NSMutableArray* _cloudSpeeds;
+    CCSprite* _szfinx;
     bool _backItemOn;
     bool _forItemOn;
     float _forSpeed;
@@ -43,6 +44,7 @@
 @property (nonatomic) float jumpSpeed;
 @property (nonatomic) float maxFishJump;
 @property (nonatomic, retain) CCSprite* palm;
+@property (nonatomic, retain) CCSprite* szfinx;
 
 -(void) createBackground;
 -(void) fadeInOverlay;
