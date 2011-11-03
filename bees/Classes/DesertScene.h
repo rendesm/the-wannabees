@@ -42,8 +42,7 @@
     bool _newHighScore;
     CCMenuItemImage* _pauseButton;
     
-    Predator* _enemy1;
-    id* _enemy2;
+    Snake* _snake;
 	ccTime _timeSinceEnemy2;
     ccTime _timeUntilEnemy2;
     float _predatorCurrentSpeed;
@@ -107,7 +106,7 @@
 @property (nonatomic, retain) HillsBackgroundLayer*     bgLayer;
 @property (nonatomic, retain) Level*                    level;
 @property (nonatomic) CGPoint                           currentTouch;
-@property (nonatomic, retain) Predator*                 enemy1;
+@property (nonatomic, retain) Snake*                    snake;
 @property (nonatomic, retain) NSMutableArray*           scarabs;
 
 @end

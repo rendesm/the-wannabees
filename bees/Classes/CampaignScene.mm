@@ -345,7 +345,7 @@ static bool _evilAppearDone = NO;
 		_currentDifficulty++;
 		//increase the playeracceleration if it is not at the maximum
 				
-        if (_normalSpeed.x <= 3.0){
+        if (_normalSpeed.x <= 2.2){
             _normalSpeed.x += 0.05;
             _sickSpeed.x += 0.025;
             _boostSpeed.x += 0.1;
@@ -354,7 +354,7 @@ static bool _evilAppearDone = NO;
         }
         
         //increase the boid speed, if it is not at the maximum
-        if (_boidCurrentSpeed < 4.0f){
+        if (_boidCurrentSpeed < 3.2f){
             _boidCurrentSpeed+=0.05;
             for (Boid* bee in _bees){
                 [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:(_boidCurrentSpeed / 2.5) * 1.8f * 1.5f withRandomRangeOf:0.25f];
@@ -362,7 +362,7 @@ static bool _evilAppearDone = NO;
             }
         }
         
-        if (_predatorCurrentSpeed < 3.0){
+        if (_predatorCurrentSpeed < 2.5){
             _predatorCurrentSpeed += 0.025;
             for (Predator* predator in _predators){
                 [predator setSpeedMax:_predatorCurrentSpeed andSteeringForceMax:1.0f];     

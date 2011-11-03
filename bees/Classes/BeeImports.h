@@ -37,3 +37,4 @@
 #import "GameCenterHelper.h"
 #import "DesertBackgroundLayer.h"
 #import "Fish.h"
+#import "Snake.h"

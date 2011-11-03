@@ -26,13 +26,16 @@
 @synthesize messageLayer = _messageLayer, harvesterLayer = _harvesterLayer, pauseLayer = _pauseLayer, hudLayer = _hudLayer, bgLayer = _bgLayer;
 @synthesize level = _level;
 @synthesize currentTouch = _currentTouch;
-@synthesize enemy1 = _enemy1;
+@synthesize snake = _snake;
 @synthesize scarabs = _scarabs;
 
 static double UPDATE_INTERVAL = 1.0f/30.0f;
 static double MAX_CYCLES_PER_FRAME = 1;
 static double timeAccumulator = 0;
 static bool   box2dRunning = NO;
+static bool   _evilAppearDone = NO;
+
+
 +(id)scene{
 	// 'scene' is an autorelease object.
 	CCScene *scene = [CCScene node];
@@ -86,6 +89,13 @@ static bool   box2dRunning = NO;
         predator.scale = 0.5;
         [predator createBox2dBodyDefinitions:_world];
         [_scarabs addObject:predator];
+    }
+    
+    if (self.snake == nil && _timeSinceEnemy2 >= _timeUntilEnemy2){
+        _timeSinceEnemy2 = 0;
+        self.snake = [[Snake alloc] initForDesertNode:_batchNode];
+        self.snake.sprite.position = ccp (_player.position.x + screenSize.width, 60);
+        [self.snake createBox2dBodyDefinitions:_world];
     }
 }
 
@@ -142,12 +152,18 @@ static bool   box2dRunning = NO;
         }
     }
     
-    if (_enemy2 == nil){
+    if (self.snake == nil){
         if (_timeSinceEnemy2 >= _timeUntilEnemy2){
             _timeSinceEnemy2 = 0;
             //generate enemy2
         }else{
             _timeSinceEnemy2 += dt;
+        }
+    }else{
+        if (self.snake.sprite.position.x + self.snake.sprite.contentSize.width/2 * self.snake.sprite.scale < _player.position.x - screenSize.width/2){
+            self.snake.isOnScreen = NO;
+        }else if (self.snake.sprite.position.x - self.snake.sprite.contentSize.width/2 * self.snake.sprite.scale < _player.position.x + screenSize.width/2){
+            self.snake.isOnScreen = YES;
         }
     }
 }
@@ -420,6 +436,37 @@ static bool   box2dRunning = NO;
 }
 
 
+-(void) updateCurrentDifficulty{
+	if (_totalTimeElapsed - 10 * _currentDifficulty >= 10) {
+        CGSize screenSize = [[CCDirector sharedDirector] winSize];
+        //time to increase the difficulty
+		_currentDifficulty++;
+		//increase the playeracceleration if it is not at the maximum
+        if (_playerAcceleration.x <= 3.0){
+            _playerAcceleration.x += 0.05;
+            self.bgLayer.forSpeed = -_playerAcceleration.x;
+        }
+        
+        //increase the boid speed, if it is not at the maximum
+        if (_boidCurrentSpeed < 4.0f){
+            _boidCurrentSpeed+=0.05;
+            for (Boid* bee in _bees){
+                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:(_boidCurrentSpeed / 2.5) * 1.8f * 1.5f withRandomRangeOf:0.25f];
+                bee.startMaxSpeed = _boidCurrentSpeed;
+            }
+        }
+        
+        if (_predatorCurrentSpeed < 3.0){
+            _predatorCurrentSpeed += 0.025;
+            for (Predator* predator in _scarabs){
+                [predator setSpeedMax:_predatorCurrentSpeed andSteeringForceMax:1.0f];     
+            }
+        }
+	}
+}
+
+
+
 
 -(void) updatePoints{
     CGSize screenSize = [[CCDirector sharedDirector] winSize];
@@ -504,11 +551,22 @@ static bool   box2dRunning = NO;
             [self.bgLayer respawnContinuosBackGround];
             [self.harvesterLayer update:dt];
             [self updateEnemy:dt];
+            
+            if (self.harvesterLayer.moveInParticle && !_evilAppearDone){
+                [self.messageLayer displayWarning:@"It is coming"];
+                _evilAppearDone = YES;
+                [self.bgLayer fadeInOverlay];
+            }else if (self.harvesterLayer.moveOutParticle && _evilAppearDone){
+                _evilAppearDone = NO;
+                [self.bgLayer fadeOutOverlay];
+            }
+            
             if (box2dRunning == NO){
                 box2dRunning = YES;
                 [self updateBox2DWorld:dt];
                 box2dRunning = NO;
             }
+            [self updateCurrentDifficulty];
             [self detectBox2DCollisions];
             [self detectGameConditions];
         }
@@ -554,6 +612,24 @@ static bool   box2dRunning = NO;
                 b2Vec2 b2Position = b2Vec2(location.x/PTM_RATIO,
                                            location.y/PTM_RATIO);
                 float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(bullet.sprite.rotation);
+                b->SetTransform(b2Position, b2Angle);
+            }else if ([b->GetUserData() isKindOfClass:[Snake class]]){
+                Snake *snake = (Snake *)b->GetUserData();
+                if (snake.isOnScreen){
+                    b->SetAwake(true);
+                    b->SetActive(true);
+                }else if (self.snake.sprite.position.x + self.snake.sprite.contentSize.width/2 * self.snake.sprite.scale < _player.position.x - screenSize.width/2){
+                    NSLog(@"removing snake body");
+                    [_batchNode removeChild:self.snake.sprite cleanup:YES];
+                    toDestroy.push_back(b);
+                    self.snake = nil;
+                }else{
+                    b->SetAwake(false);
+                    b->SetActive(false);
+                }
+                b2Vec2 b2Position = b2Vec2(snake.sprite.position.x/PTM_RATIO,
+                                           snake.sprite.position.y/PTM_RATIO);
+                float32 b2Angle = -1 * CC_DEGREES_TO_RADIANS(snake.sprite.rotation);
                 b->SetTransform(b2Position, b2Angle);
             }else if ([b->GetUserData() isKindOfClass:[NSString class]]){
                 CCSprite *sprite = self.harvesterLayer.harvesterSprite;
@@ -675,14 +751,14 @@ static bool   box2dRunning = NO;
                 [_deadBees addObject:boid];
                 toDestroy.push_back(bodyA);
             } //Bullet
-			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Bullet class]]
+			else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && ([bodyA->GetUserData() isKindOfClass:[Bullet class]] || [bodyA->GetUserData() isKindOfClass:[Snake class]] )
 					 && ([bodyB->GetUserData() isKindOfClass:[Predator class]] == NO)) {
 				Boid *boid = (Boid *) bodyB->GetUserData();
 				[self playDeadBeeSound];
 				[_deadBees addObject:boid];
                 toDestroy.push_back(bodyB);
 			}
-			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Bullet class]]
+			else if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && ([bodyB->GetUserData() isKindOfClass:[Bullet class]] || [bodyB->GetUserData() isKindOfClass:[Snake class]]) 
 					 && ([bodyA->GetUserData() isKindOfClass:[Predator class]] == NO)) {
 				Boid *boid = (Boid *) bodyA->GetUserData();
 				[self playDeadBeeSound];
