@@ -7,7 +7,7 @@
 //
 
 #import "HarvesterLayer.h"
-
+#import "ConfigManager.h"
 @implementation HarvesterLayer
 @synthesize harvesterSprite = _harvesterSprite, batchnode = _batchnode, canShoot = _canShoot, bullets = _bullets;
 @synthesize comboToFinish = _comboFinished;
@@ -18,6 +18,7 @@
 @synthesize eyes = _eyes;
 @synthesize timeElapsed = _timeElapsed;
 @synthesize isIn = _isIn;
+@synthesize emitter = _emitter;
 
 
 -(void) shoot{
@@ -43,7 +44,7 @@
 -(void) initWithWorld:(b2World*)world{
         CGSize screenSize = [[CCDirector sharedDirector] winSize];
         _world = world;
-        _timeLeftTillNextAppearance = 50;
+        _timeLeftTillNextAppearance = 90;
         // init the batchnode for the harvester
       //  [CCTexture2D setDefaultAlphaPixelFormat:kCCTexture2DPixelFormat_RGB5A1];
         self.batchnode = [CCSpriteBatchNode batchNodeWithFile:@"harvester_default.pvr.ccz"]; // 1
@@ -53,6 +54,7 @@
         //set the combo properties
         self.comboToFinish = 2;
         _comboFinished = 0;
+        self.emitter = nil;
 
         //create the harvestersprite
         self.harvesterSprite = [CCSprite spriteWithSpriteFrameName:@"harvester.png"];
@@ -195,9 +197,6 @@
  }
   }
  }
-
- 
- 
  */
 
 -(void)moveInDone{
@@ -215,6 +214,10 @@
     self.moveInParticle = NO;
     _timeElapsed = 0;
     _comboFinished = 0;
+    if (self.emitter != nil){
+        [self removeChild:self.emitter cleanup:YES];
+        self.emitter = nil;
+    }
 }
 
 -(void) update:(ccTime)dt{
@@ -230,6 +233,16 @@
         CCAction* moveIn = [CCMoveTo actionWithDuration:2 position:ccp(self.harvesterSprite.contentSize.width/3, self.harvesterSprite.position.y)];
         CCCallFunc* moveInDone = [CCCallFunc actionWithTarget:self selector:@selector(moveInDone)];
         [self.harvesterSprite runAction:[CCSequence actions:moveIn, moveInDone,nil]];
+        
+        if (self.emitter == nil && [[ConfigManager sharedManager] particles]){
+            self.emitter = [CCParticleSystemQuad particleWithFile:@"mist2.plist"];
+            self.emitter.position = ccp(_harvesterSprite.position.x -_harvesterSprite.contentSize.width, 0);
+            self.emitter.scale = 0.5;
+            self.emitter.rotation = 180;
+            [self addChild:self.emitter z: 3200 tag: 200];
+            CCAction* moveIn2 = [CCMoveTo actionWithDuration:2 position:ccp(self.harvesterSprite.contentSize.width/3, 0)];
+            [self.emitter runAction:moveIn2];
+        }
     }
     
     if (_isIn){
@@ -254,6 +267,11 @@
             CCAction* moveOut = [CCMoveTo actionWithDuration:1.5 position:ccp(-self.harvesterSprite.contentSize.width, self.harvesterSprite.position.y)];
             CCCallFunc* moveOutDone = [CCCallFunc actionWithTarget:self selector:@selector(moveOutDone)];
             [self.harvesterSprite runAction:[CCSequence actions:moveOut, moveOutDone, nil]];
+            
+            if (self.emitter != nil){
+                CCAction* moveOut2 = [CCMoveTo actionWithDuration:1.5 position:ccp(-self.harvesterSprite.contentSize.width * 2, self.harvesterSprite.position.y)];
+                [self.emitter runAction:moveOut2];
+            }
             
             for (Bullet* bullet in self.bullets){
                 [bullet.sprite stopAllActions];

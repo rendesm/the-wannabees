@@ -94,6 +94,7 @@
 
 -(bool) addItemValue:(int)value;
 -(void) saveLevelPerformance;
+-(void) updateSounds:(ccTime)dt;
 
 @property (nonatomic, retain) NSMutableArray*           bees;
 @property (nonatomic, retain) NSMutableArray*           deadBees;

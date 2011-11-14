@@ -235,5 +235,6 @@
 @property(nonatomic, retain) HarvesterLayer* harvesterLayer;
 @property(nonatomic, retain) HillsBackgroundLayer* bgLayer;
 @property(nonatomic, retain) NSMutableArray* fish;
+@property(nonatomic, retain) CCParticleSystemQuad* emitter;
 @end
 

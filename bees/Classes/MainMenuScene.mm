@@ -15,6 +15,9 @@
 @synthesize selectedLevel = _selectedLevel;
 @synthesize campaignLevels = _campaignLevels, survivalLevels = _survivalLevels, timeRaceLevels = _timeRaceLevels;
 @synthesize emitter = _emitter;
+@synthesize aboutMenu = _aboutMenu;
+
+static int messageNumber = 1;
 
 +(id)scene{
 	// 'scene' is an autorelease object.
@@ -75,6 +78,7 @@
 		
 		[self createAlternativeOptionsMenu];
 		[self createPlayMenu];
+        [self createAboutMenu];
 		
 		
 		
@@ -83,10 +87,10 @@
 		}
         
         [[SimpleAudioEngine sharedEngine] setEffectsVolume:0.8];
-		[[SimpleAudioEngine sharedEngine] preloadEffect:@"menuMusic.caf"];
+		[[SimpleAudioEngine sharedEngine] preloadEffect:@"Wannabeesmenu.caf"];
         [[SimpleAudioEngine sharedEngine] setBackgroundMusicVolume:0.7];
 		if (_configManager.music && ![[SimpleAudioEngine sharedEngine] isBackgroundMusicPlaying]){
-			[[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"menuMusic.caf" loop:YES];
+			[[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"Wannabeesmenu.caf" loop:YES];
 			_backGroundMusicStarted = YES;
 		}
 	}
@@ -94,36 +98,45 @@
 	return self; 
 }
 
+-(void) createAboutMenu{
+    CCMenuItemImage *backButton = [CCMenuItemImage 
+								   itemFromNormalImage:@"back.png" selectedImage:@"backTapped.png" 
+								   target:self selector:@selector(aboutBackButtonTapped)];
+    self.aboutMenu = [CCMenu menuWithItems:backButton,nil];
+	[self addChild:self.aboutMenu z:201 tag:3];
+	
+	CGSize size = [[CCDirector sharedDirector] winSize];
+	
+	self.aboutMenu.position =  ccp( size.width /4 * 3 + size.width, 60 + backButton.contentSize.height/2);
+	[self.aboutMenu alignItemsVerticallyWithPadding:20];
+}
 
 #pragma mark create menus
 
--(void) createPlayMenu{
-	CCMenuItemImage *campaignButton = [CCMenuItemImage 
-								   itemFromNormalImage:@"campaign.png" selectedImage:@"campaignTapped.png" 
-								   target:self selector:@selector(campaignButtonTapped)];
-	
-	
+-(void) helpButtonTapped{
+    
+}
+
+-(void) createPlayMenu{	
 	CCMenuItemImage *survivalButton = [CCMenuItemImage 
 								   itemFromNormalImage:@"survival.png" selectedImage:@"survivalTapped.png" 
 								   target:self selector:@selector(survivalButtonTapped)];
-	
-	
-	CCMenuItemImage *timeRaceButton = [CCMenuItemImage 
-								   itemFromNormalImage:@"timeRace.png" selectedImage:@"timeRaceTapped.png" 
-								   target:self selector:@selector(timeRaceButtonTapped)];
-	
+
+    CCMenuItemImage *help = [CCMenuItemImage 
+                                itemFromNormalImage:@"help.png" selectedImage:@"helpTapped.png" 
+                                target:self selector:@selector(helpButtonTapped)];
 	
 	CCMenuItemImage *backButton = [CCMenuItemImage 
 								   itemFromNormalImage:@"back.png" selectedImage:@"backTapped.png" 
 								   target:self selector:@selector(playBackButtonTapped)];
 	
 	//_playMenu = [CCMenu menuWithItems:campaignButton, survivalButton, timeRaceButton, backButton,nil];
-    _playMenu = [CCMenu menuWithItems:survivalButton, backButton,nil];
+    _playMenu = [CCMenu menuWithItems:survivalButton, help, backButton,nil];
 	[self addChild:_playMenu z:201 tag:3];
 	
 	CGSize size = [[CCDirector sharedDirector] winSize];
 	
-	_playMenu.position =  ccp( size.width /4 * 3 + size.width, size.height - 60 - campaignButton.contentSize.height - survivalButton.contentSize.height);
+	_playMenu.position =  ccp( size.width /4 * 3 + size.width, size.height - 60 - survivalButton.contentSize.height - survivalButton.contentSize.height);
 	[_playMenu alignItemsVerticallyWithPadding:20];
 }
 
@@ -180,13 +193,10 @@
 	if (!_configManager.sounds){
 		[soundsLabel activate];
 	}
-	
+   [self loadParticles];
 	if (!_configManager.particles){
 		[tutorialsLabel activate];
-	}else {
-		[self loadParticles];
 	}
-
 	_init = NO;
 }
 
@@ -230,7 +240,95 @@
 //	self.timeRaceLevels = [[NSMutableDictionary alloc] initWithDictionary: (NSDictionary*)[temp objectForKey:@"TimeRace"]];
 
 }
+#pragma mark aboutmenu button 
 
+- (void) aboutBackButtonTapped{
+    messageNumber = 0;
+    
+    CGSize size = [[CCDirector sharedDirector] winSize];
+    if (_configManager.sounds && !_init){
+		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
+	}
+    CCAction* moveOut = [CCMoveTo actionWithDuration:0.5f position:ccp(size.width + _buttonWidth.x/2, _aboutMenu.position.y)] ;
+    _aboutMenu.isTouchEnabled = NO;
+    [_aboutMenu runAction:moveOut];
+	[_menu runAction:[CCSequence actions:_actionMoveIn, _actionMoveDone, nil]];
+}
+
+-(void) showCredits{
+    [self createMessage:@"Created by" scale:0.6];
+}
+
+
+-(void) messageDone:(id)sender{
+    switch (messageNumber) {
+        case 0:
+            messageNumber = 1;
+            break;
+        case 1:
+            messageNumber = 2;
+            [self createMessage:@"Mihaly Rendes" scale:0.4];
+            break;
+        
+        case 2:
+            messageNumber = 3;
+            [self createMessage:@"Artwork by" scale:0.6];
+            break;
+            
+        case 3:
+            messageNumber = 4;
+            [self createMessage:@"Katalin Balogh" scale:0.4];
+            break;
+            
+        case 4:
+            messageNumber = 5;
+            [self createMessage:@"Music by" scale:0.6];
+            break;
+            
+        case 5:
+            messageNumber = 6;
+            [self createMessage:@"Peter Rendes" scale:0.4];
+            break;
+            
+        case 6:
+            messageNumber = 7;
+            [self createMessage:@"Boids based on the work of" scale:0.25];
+            break;
+        case 7:
+            messageNumber = 8;
+            [self createMessage:@"Mario Gonzalez" scale:0.4];
+            break;
+            
+        case 8:
+            messageNumber = 9;
+            [self createMessage:@"Justin Windle" scale:0.4];
+            break;
+            
+        case 9:
+            messageNumber = 10;
+            [self createMessage:@"Special thanks to" scale:0.4];
+            break;
+            
+        case 10:
+            messageNumber = 11;
+            [self createMessage:@"Ray Wenderlich" scale:0.4];
+            break;
+        default:
+            break;
+    }
+}
+
+-(void) createMessage:(NSString*)message scale:(float)scale{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    CCLabelBMFont* renderedMessage = [[CCLabelBMFont alloc] initWithString:message fntFile:@"markerfelt.fnt"];
+    renderedMessage.position = ccp(screenSize.width/2, screenSize.height * 0.75);
+    renderedMessage.scale = 0;
+    [self addChild:renderedMessage];
+    CCAction* scaleIn = [CCScaleTo actionWithDuration:0.5 scale:scale];
+    CCAction *fadeOut = [CCFadeOut actionWithDuration:1.5];
+    CCAction *callback = [CCCallFunc actionWithTarget:self selector:@selector(messageDone:)];
+    [renderedMessage runAction:[CCSequence actions:scaleIn, fadeOut, callback, nil]];
+}
 
 #pragma mark playmenu buttons functions
 -(void)playBackButtonTapped{
@@ -242,6 +340,7 @@
 	[_playMenu runAction:_actionMoveOut];
 	[_menu runAction:[CCSequence actions:_actionMoveIn, _actionMoveDone, nil]];
 }
+
 
 -(void)campaignButtonTapped{
 	if (_configManager.sounds  && !_init){
@@ -291,11 +390,17 @@
 }
 
 -(void)storeButtonTapped{
+    messageNumber = 1;
+    CGSize size = [[CCDirector sharedDirector] winSize];
 	if (_configManager.sounds && !_init){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
-	
-	[[CCDirector sharedDirector] replaceScene: [LevelSelectScene scene]];
+    _menu.isTouchEnabled = NO;
+	[_menu runAction:_actionMoveOut];
+    CCAction* moveIn = [CCMoveTo actionWithDuration:0.5f
+                                         position: ccp( size.width - _buttonWidth.x/2, _aboutMenu.position.y)];
+    [self.aboutMenu runAction:[CCSequence actions:moveIn, _actionMoveDone, nil]];
+    [self showCredits];
 }
 
 #pragma mark menu actions
@@ -338,7 +443,7 @@
 		}
 	}else{
 		if (!_init){
-			[[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"menuMusic.caf"] ;
+			[[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"Wannabeesmenu.caf"] ;
 			_backGroundMusicStarted = YES;
 			[[ConfigManager sharedManager] setMusic:YES];
 		}
@@ -365,11 +470,15 @@
 	
 	if (!_init){
 		[[ConfigManager sharedManager] switchParticles];
-		if (_configManager.particles && _emitter == nil){
-			[self loadParticles];
-		}else if (_emitter != nil){
-			[self unloadParticles];
-		}
+        if ([[ConfigManager sharedManager] particles]){
+            UIAlertView* dialog = [[UIAlertView alloc] init];
+            [dialog setDelegate:self];
+            [dialog setTitle:@"Particles"];
+            [dialog setMessage:@"For perfect performance, ingame particles require Iphone4S device"];
+            [dialog addButtonWithTitle:@"Understood"];
+            [dialog show];
+            [dialog release];
+        }
 	}
 }
 

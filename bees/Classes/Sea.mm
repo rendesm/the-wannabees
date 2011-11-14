@@ -14,7 +14,7 @@
 
 -(id) initForNode:(CCNode*)node{
 	if ((self = [super init])){
-		self.sprite = [CCSprite spriteWithSpriteFrameName:@"bottomSea.png"];
+		self.sprite = [CCSprite spriteWithSpriteFrameName:@"bootmSea.png"];
         self.sprite.scale = 0.7;
 		[node addChild:self.sprite z:4 tag:200];
 	}
@@ -31,6 +31,9 @@
 	bodyDef.fixedRotation = true;
 	bodyDef.allowSleep = false;
 	bodyDef.awake = true;
+    bodyDef.bullet = true;
+    
+
 	b2Body* body;
 	body = world->CreateBody(&bodyDef);
 	

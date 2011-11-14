@@ -24,6 +24,7 @@
 	CCMenu* _optionsMenu;
 	CCMenu* _playMenu;
 	CCMenu* _labelMenu;
+    CCMenu* _aboutMenu;
 	CCAction* _actionMoveIn;
 	CCAction* _actionMoveOut;
 	CCAction* _actionMoveDone;
@@ -55,6 +56,9 @@
 -(void) storeButtonTapped;
 -(void) optionsButtonTapped;
 -(void) createOptionsMenu;
+-(void) createAboutMenu;
+-(void) createPlayMenu;
+-(void)createAlternativeOptionsMenu;
 
 -(void) musicButtonTapped;
 -(void) soundButtonTapped;
@@ -77,10 +81,13 @@
 -(void) loadParticles;
 -(void) unloadParticles;
 
+-(void) createMessage:(NSString*)message scale:(float)scale;
+
 @property (nonatomic, retain) NSString* selectedLevel;
 @property (nonatomic, retain) NSMutableDictionary* campaignLevels;
 @property (nonatomic, retain) NSMutableDictionary* survivalLevels;
 @property (nonatomic, retain) NSMutableDictionary* timeRaceLevels;
 @property (nonatomic, retain) CCParticleSystemQuad *emitter;
+@property (nonatomic, retain) CCMenu* aboutMenu;
 
 @end

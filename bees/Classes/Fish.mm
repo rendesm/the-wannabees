@@ -78,6 +78,9 @@
 	bodyDef.fixedRotation = true;
 	bodyDef.allowSleep = true;
 	bodyDef.awake = true;
+    bodyDef.bullet = true;
+    
+
 	b2Body* body;
 	body = world->CreateBody(&bodyDef);
 	

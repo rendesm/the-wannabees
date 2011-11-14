@@ -155,14 +155,12 @@ static int _type;
 		[self addChild:_planet z:601 tag:601];
 		
 		ConfigManager* sharedManager = [ConfigManager sharedManager];
-		if (sharedManager.particles){
-			[self loadParticles];
-		}
+        [self loadParticles];
 	}	
 	return self; 
 }
 
--(id) initMenus{
+-(void) initMenus{
 	[self unschedule:@selector(delay:)];
 	CGSize size = [[CCDirector sharedDirector] winSize];
 	CCAction* actionMoveInRight = [CCMoveTo actionWithDuration:0.5f
@@ -175,12 +173,29 @@ static int _type;
 }
 
 
+-(void) messageDone:(id)sender{
+    
+}
+
+-(void) createMessage:(NSString*)message scale:(float)scale{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    CCLabelBMFont* renderedMessage = [[CCLabelBMFont alloc] initWithString:message fntFile:@"markerfelt.fnt"];
+    renderedMessage.position = ccp(screenSize.width/4, screenSize.height * 0.25);
+    renderedMessage.scale = 0;
+    [self addChild:renderedMessage];
+    CCAction* scaleIn = [CCScaleTo actionWithDuration:0.5 scale:scale];
+    CCAction *fadeOut = [CCFadeOut actionWithDuration:5.5];
+    CCAction *callback = [CCCallFunc actionWithTarget:self selector:@selector(messageDone:)];
+    [renderedMessage runAction:[CCSequence actions:scaleIn, fadeOut, callback, nil]];
+}
+
 
 #pragma mark menu actions
 
 -(void)menuMoveFinished:(id)sender{
 	CCMenu *moveInFinished = (CCMenu *)sender;
 	moveInFinished.isTouchEnabled = YES;
+    [self createMessage:@"Swipe on the planet \nto choose between worlds" scale:0.25];
 }
 
 #pragma mark options buttons tapped
@@ -197,6 +212,14 @@ static int _type;
 	}  else if (toggleItem.selectedItem == _hard) {
 		[[ConfigManager sharedManager] setDifficulty:HARD];
 	}
+}
+
+-(void) createToolTip{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    CCLabelBMFont* renderedMessage = [[CCLabelBMFont alloc] initWithString:@"Swipe the planet to select world" fntFile:@"markerfelt.fnt"];
+    renderedMessage.position = ccp(screenSize.width/2, screenSize.height * 0.75);
+    renderedMessage.scale = 0;
+    [self addChild:renderedMessage];
 }
 
 -(void) backButtonTapped:(id)sender{

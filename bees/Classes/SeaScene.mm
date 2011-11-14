@@ -39,6 +39,8 @@
 @synthesize updateBox = _updateBox;
 @synthesize harvesterLayer = _harvesterLayer;
 @synthesize island = _island;
+@synthesize clouds = _clouds;
+@synthesize rain = _rain;
 
 static double UPDATE_INTERVAL = 1/30.0f;
 static double MAX_CYCLES_PER_FRAME = 1;
@@ -204,11 +206,34 @@ static double timeAccumulator = 0;
 	[_pausedMenu runAction:[CCFadeIn actionWithDuration:0.3]];
 }
 
-- (void)genBackground {
-	CGSize winSize = [CCDirector sharedDirector].winSize;
-	_backGround = [CCSprite spriteWithFile:@"blue.png"];
-	_backGround.position = _player.position;
-	[self addChild:_backGround z:-1 tag:1];
+
+-(void) fadeInOverlay{
+    [_overlaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:255]];
+}
+
+
+-(void) fadeOutOverlay{
+    [_overlaySprite runAction:[CCFadeOut actionWithDuration:1]];
+}
+
+
+-(void) genBackground{
+    _backGround = [CCSprite spriteWithFile:@"purple.png"];
+    
+    ccColor4F bgColor = [self randomGreenColor];
+	
+    CGSize winSize = [CCDirector sharedDirector].winSize;
+    _overlaySprite = [self spriteWithColor:bgColor textureSize:512 withNoise:@"purple.png" withGradientAlpha:0.9f];
+    ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT};
+    [_overlaySprite.texture setTexParameters:&tp];
+    
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    
+    [self addChild:_overlaySprite z:-1 tag:-1];
+    _overlaySprite.opacity = 0;
+    _backGround.position = ccp(screenSize.width/2, screenSize.height/2);
+    [self addChild:_backGround z:-2 tag:1];
+    _overlaySprite.position = _backGround.position;
 }
 
 
@@ -452,6 +477,8 @@ static double timeAccumulator = 0;
 
 -(void) updateLabels:(ccTime)dt{
 	_backGround.position = ccp(_backGround.position.x + _playerAcceleration.x * dt * 60, _backGround.position.y);	
+    _overlaySprite.position = ccp(_backGround.position.x + _playerAcceleration.x * dt * 60, _backGround.position.y);	
+
 	_pauseButton.position = ccp(_pauseButton.position.x + _playerAcceleration.x * dt * 60, _pauseButton.position.y);	
     [self.hudLayer updatePoints:_pointsGathered];
 }
@@ -1292,19 +1319,8 @@ static double timeAccumulator = 0;
         Spore* bird = [[Spore alloc] initForSeaNode:_batchNode];
         [bird createBox2dBodyDefinitionsSeaBird:_world];
         [_birds addObject:bird];
-        bird.sprite.position = ccp((i+10) * _minBirdDistance, 240);
+        bird.sprite.position = ccp((i+20) * _minBirdDistance, 240);
     }
-	
-	//init the array for clouds
-	_clouds = [[NSMutableArray alloc] init];
-	//init the clouds
-	CCSprite* bgCloud;
-	for (int i= 0; i <3; i++){
-		bgCloud = [CCSprite spriteWithSpriteFrameName:@"cloudsmall.png"];
-		bgCloud.scale = randRange(0.2, 0.5);
-		bgCloud.opacity = 220;
-		[_clouds addObject:bgCloud];
-	}
 	
 	// init the parallax node 
 	_backGroundNode = [CCParallaxNode node];
@@ -1315,13 +1331,6 @@ static double timeAccumulator = 0;
 	// init the background
 	[self genBackground];
 	
-	for (CCSprite* cloud in _clouds) {
-		float rnd = randRange(0.1, 1.0);
-		float rndOffset = randRange(400, 1000);
-		CGPoint positionOffsetForCloud = ccp(screenSize.width - cloud.contentSize.width * cloud.scale + rndOffset, 
-											 screenSize.height - cloud.contentSize.height * cloud.scale);
-		[_backGroundNode addChild:cloud z:2 parallaxRatio:ccp(rnd*0.5/4,0) positionOffset:positionOffsetForCloud];
-	}
 	[self initLabels];	
 	[self schedule:@selector(loadingTerrain)];
 }
@@ -1330,6 +1339,7 @@ static double timeAccumulator = 0;
 -(void) loadingTerrain{
 	[self unschedule:@selector(loadingTerrain)];
     [self.harvesterLayer initWithWorld:_world];
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	_topSea = [[[NSMutableArray alloc] init] retain];
 	_bottomSea = [[[NSMutableArray alloc] init] retain];
 	
@@ -1342,6 +1352,12 @@ static double timeAccumulator = 0;
     CCSprite* topSea2 = [CCSprite spriteWithSpriteFrameName:@"tengerTop2.png"];
     [bottomSea2.sprite.texture setAliasTexParameters];
     [topSea2.texture setAliasTexParameters];
+    
+    
+    self.island = [CCSprite spriteWithSpriteFrameName:@"lighthouse.png"];
+    [_batchNode addChild:self.island z: 1 tag:1];
+    self.island.position = ccp(screenSize.width/2, self.island.contentSize.height/2 + 30);
+    
 
     bottomSea1.sprite.position = ccp(bottomSea1.sprite.contentSize.width/2 * bottomSea1.sprite.scale, bottomSea1.sprite.contentSize.height/2 * bottomSea1.sprite.scale - 30);
     bottomSea2.sprite.position = ccp(bottomSea2.sprite.contentSize.width/2 * bottomSea2.sprite.scale * 3 - 3, bottomSea2.sprite.contentSize.height/2 * bottomSea2.sprite.scale - 30);
@@ -1356,18 +1372,28 @@ static double timeAccumulator = 0;
     [_bottomSea addObject:bottomSea1];
     [_bottomSea addObject:bottomSea2];
     
- //   self.island = [CCSprite spriteWithSpriteFrameName:@"island.png"];
- //   [_batchNode addChild:self.island z:1];
- //   self.island.scale = 0.8;
- //   self.island.position = ccp(500,self.island.contentSize.height * 0.6);
     	
+    self.clouds = [[NSMutableArray alloc] init];
+    for (int i = 0; i < 2; i++){
+        CCSprite* cloud = [CCSprite spriteWithSpriteFrameName:@"cloud.png"];
+        [_batchNode addChild:cloud z:2 tag: 2];
+//        cloud.scale = 0.75;
+        [cloud.texture setAliasTexParameters];
+        cloud.position = ccp(cloud.contentSize.width/2 * cloud.scale + i * cloud.contentSize.width * cloud.scale - 1, screenSize.height - cloud.contentSize.height/3 * cloud.scale);
+        [self.clouds addObject:cloud];
+    }
+    
 	[self schedule:@selector(loadingSounds)];
+//    self.rain = [CCParticleSystemQuad particleWithFile:@"tinyRain.plist"];
+//    self.rain.position = ccp(screenSize.width/2, screenSize.height);
+//    [self addChild:self.rain z :500 tag: 500];
 }
 
 -(void) loadingSounds{
 	[self unschedule:@selector(loadingSounds)];
 	_auEffectLeft = 0;
 	ConfigManager* sharedManager = [ConfigManager sharedManager];
+
 	if (sharedManager.sounds){
 		[[SimpleAudioEngine sharedEngine] preloadEffect:@"au.wav"];
 		[[SimpleAudioEngine sharedEngine] preloadEffect:@"woohoo.wav"];
@@ -1499,17 +1525,6 @@ static double timeAccumulator = 0;
     }
 }
 
-
--(void)respawnCloud{
-	CGSize screenSize = [[CCDirector sharedDirector] winSize];
-	for (CCSprite *background in _clouds) {
-		if ([_backGroundNode convertToWorldSpace:background.position].x < -background.contentSize.width) {
-			[_backGroundNode incrementOffset:ccp(screenSize.width + background.contentSize.width * 2,0) forChild:background];
-			background.scale = randRange(0.1, 0.8);
-		}
-	}
-}
-
 -(void) updateTerrain{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	float moveX = _playerAcceleration.x * 0.4;
@@ -1530,8 +1545,17 @@ static double timeAccumulator = 0;
     if (self.island.position.x + self.island.contentSize.width/2 < _player.position.x - screenSize.width/2){
         self.island.position = ccp(_player.position.x + screenSize.width/2 + self.island.contentSize.width * 3, self.island.position.y);
     }else{
-        self.island.position = ccpAdd(self.island.position, ccp(_playerAcceleration.x - 0.05, 0));
+        self.island.position = ccpAdd(self.island.position, ccp(_playerAcceleration.x - 1, 0));
     }
+    
+    for (CCSprite* cloud in self.clouds){
+        if (cloud.position.x + cloud.contentSize.width/2 < _player.position.x - screenSize.width/2){
+            cloud.position = ccp(cloud.position.x + cloud.contentSize.width * 2 * cloud.scale - 1, cloud.position.y);
+        }else{
+            cloud.position = ccp(cloud.position.x + 1, cloud.position.y);
+        }
+    }
+ //   self.rain.position = ccpAdd(self.rain.position, ccp(_playerAcceleration.x,0)); // * dt, 0));
 }
 
 -(void)selectTarget:(Predator*)predator{
@@ -1678,7 +1702,7 @@ static double timeAccumulator = 0;
             changeWasEnough = YES;
             _boidCurrentSpeed+=0.05;
             for (Boid* bee in _bees){
-                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 2.5f withRandomRangeOf:0.25f];
                 bee.startMaxSpeed = _boidCurrentSpeed;
             }
         }
@@ -1761,10 +1785,11 @@ static double timeAccumulator = 0;
     for (Spore* bird in _birds){
         if (bird.sprite.position.x + bird.sprite.contentSize.width * bird.sprite.scale < _player.position.x - screenSize.width){
             //respawn the bird
-            bird.sprite.position = ccp(_player.position.x + screenSize.width/2 + _minBirdDistance, bird.sprite.position.y);
+            float rndY = randRange(2, 4);
+            bird.sprite.position = ccp(_player.position.x + screenSize.width/2 + _minBirdDistance, screenSize.height/5 * rndY);
         }else{
             //move the bird
-            bird.sprite.position = ccp(bird.sprite.position.x - 2 * dt * 60, bird.sprite.position.y);
+            bird.sprite.position = ccp(bird.sprite.position.x - dt * 60, bird.sprite.position.y);
         }
     }
 }
@@ -1837,12 +1862,17 @@ static double timeAccumulator = 0;
 						}
 					}
 				}
+
                 
                 if (self.harvesterLayer.moveInParticle && !_evilAppearDone){
+          //          [self.rain stopSystem];
                     [self.messageLayer displayWarning:@"It is coming"];
+                    [self fadeInOverlay];
                     _evilAppearDone = YES;
                 }else if (self.harvesterLayer.moveOutParticle && _evilAppearDone){
                     _evilAppearDone = NO;
+                    [self fadeOutOverlay];
+            //        [self.rain resetSystem];
                 }
 				
 				[self beeMovement:dt];
@@ -1852,8 +1882,7 @@ static double timeAccumulator = 0;
                 [self updateTerrain];
 				//update terrain, tell it how far we have proceeded
 				//[_terrain setOffsetX:_playerAcceleration.x];
-				//respawn the clouds if needed
-				[self respawnCloud];
+
 				if (_updateBox) {
 					_updateBox = NO;
 					[self updateBox2DWorld:dt];
@@ -1986,18 +2015,27 @@ static double timeAccumulator = 0;
 }
 
 -(void) switchPause:(id)sender{
+    // [self presentGameCenter];
+    
 	if (_paused == NO){
+        _pauseMenu.isTouchEnabled = NO;
+        _pauseButton.isEnabled = NO;
 		[self unschedule:@selector(update:)];
         [self.pauseLayer switchPause];
+        [[CCActionManager sharedManager] pauseTarget:self.parent];
 		_paused = YES;
 	}else{
 		_paused = NO;
-        [self.pauseLayer switchPause];
-        self.updateBox = 0;
+        _pauseButton.isEnabled = YES;
+        //    [self.pauseLayer switchPause];
 		[self schedule: @selector(update:)];
+        [[CCActionManager sharedManager] pauseTarget:self.parent];
+        
         _pausedMenu = nil;
+        _pauseMenu.isTouchEnabled = YES;
 	}
 }
+
 
 - (void)onEnter
 {
@@ -2019,7 +2057,7 @@ static double timeAccumulator = 0;
         [self.pauseLayer startGame];
         _gameStarted = YES;
         if ([[ConfigManager sharedManager] music]){
-            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"seamusic.mp3" loop:YES];
+            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"Sailorshornpipe.mp3" loop:YES];
         }
 		[self schedule: @selector(update:)];
 		[self generateGoals];
@@ -2133,8 +2171,6 @@ inline float randRange(float min,float max)
 }
 
 
-
-
 -(void) dealloc{	
 	[super dealloc];
     self.messageLayer = nil;
@@ -2146,15 +2182,13 @@ inline float randRange(float min,float max)
     [_deadFish removeAllObjects];
     _deadFish = nil;
 	_fish = nil;
-	[_clouds release];
-	_clouds = nil;
 	[_level release];
 	_level = nil;
 	_fireBall = nil;
 	_atka = nil;
 	[_alchemy release];
 	_alchemy = nil;
-	
+	self.clouds = nil;
 	_pointsSprite = nil;
 	_batchNode = nil;
 	_loadingScreen = nil;

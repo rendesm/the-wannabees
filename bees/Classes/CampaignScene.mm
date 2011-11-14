@@ -39,6 +39,7 @@
 @synthesize harvesterLayer = _harvesterLayer;
 @synthesize bgLayer = _bgLayer;
 @synthesize fish = _fish;
+@synthesize emitter = _emitter;
 
 static bool _removeRunning = NO;
 static double UPDATE_INTERVAL = 1/20.0f;
@@ -357,7 +358,7 @@ static bool _evilAppearDone = NO;
         if (_boidCurrentSpeed < 3.2f){
             _boidCurrentSpeed+=0.05;
             for (Boid* bee in _bees){
-                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:(_boidCurrentSpeed / 2.5) * 1.8f * 1.5f withRandomRangeOf:0.25f];
+                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:(_boidCurrentSpeed / 2) * 1.8f * 1.5f withRandomRangeOf:0.25f];
                 bee.startMaxSpeed = _boidCurrentSpeed;
             }
         }
@@ -1020,7 +1021,6 @@ static bool _evilAppearDone = NO;
 	_atkaOutOfScreen = YES;
 	_sporeOutOfScreen = YES;
     
-	
 	//box2d end
 	_maxPredatorLife = 1;
     _minPredatorDistance =  screenSize.width * 1.25;
@@ -1778,12 +1778,13 @@ static bool _evilAppearDone = NO;
     
 	if (_paused == NO){
         _pauseMenu.isTouchEnabled = NO;
+        _pauseButton.isEnabled = NO;      
 		[self unschedule:@selector(update:)];
         [self.pauseLayer switchPause];
 		_paused = YES;
 	}else{
 		_paused = NO;
-        [self.pauseLayer switchPause];
+        _pauseButton.isEnabled = YES;
 		[self schedule: @selector(update:)];
 		 _pausedMenu = nil;
         _pauseMenu.isTouchEnabled = YES;

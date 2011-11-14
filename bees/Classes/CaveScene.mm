@@ -1338,7 +1338,7 @@ static double timeAccumulator = 0;
 		[[SimpleAudioEngine sharedEngine] preloadEffect:@"woohoo.wav"];
 	}
     if (sharedManager.music){
-        [[SimpleAudioEngine sharedEngine] preloadBackgroundMusic:@"cave.mp3"];
+        [[SimpleAudioEngine sharedEngine] preloadBackgroundMusic:@"StonedCaveman.mp3"];
     }
 	[self schedule:@selector(loadingDone)];
 }
@@ -1684,17 +1684,10 @@ static double timeAccumulator = 0;
             point.sprite.position.x < _lastPointLocation.x){
 			point.taken = NO;
 		}
-        if (_currentDifficulty > 10 && point.sprite.position.x < _player.position.x + screenSize.width/2 && point.moving == NO){
+        if (_currentDifficulty > 0 && point.sprite.position.x < _player.position.x + screenSize.width/2 && point.moving == NO){
             [point update];
         }
 	}
-    
-    /*
-     for (ComboFinisher* point in _comboFinishers){
-     if (![self isOnScreen:point.sprite]){
-     point.taken = NO;
-     }
-     }*/
 }
 
 
@@ -2016,15 +2009,24 @@ static double timeAccumulator = 0;
 }
 
 -(void) switchPause:(id)sender{
+    // [self presentGameCenter];
+    
 	if (_paused == NO){
+        _pauseMenu.isTouchEnabled = NO;
+        _pauseButton.isEnabled = NO;
 		[self unschedule:@selector(update:)];
         [self.pauseLayer switchPause];
+        [[CCActionManager sharedManager] pauseTarget:self.parent];
 		_paused = YES;
 	}else{
 		_paused = NO;
-        [self.pauseLayer switchPause];
+        _pauseButton.isEnabled = YES;
+        //    [self.pauseLayer switchPause];
 		[self schedule: @selector(update:)];
+        [[CCActionManager sharedManager] pauseTarget:self.parent];
+        
         _pausedMenu = nil;
+        _pauseMenu.isTouchEnabled = YES;
 	}
 }
 
@@ -2050,7 +2052,7 @@ static double timeAccumulator = 0;
         [self.pauseLayer startGame];
         _gameStarted = YES;
         if ([[ConfigManager sharedManager] music]){
-            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"cave.mp3" loop:YES];
+            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"StonedCaveman.mp3" loop:YES];
         }
 		[self schedule: @selector(update:)];
 		[self generateGoals];

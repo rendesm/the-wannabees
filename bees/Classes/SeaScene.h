@@ -10,7 +10,6 @@
 #import "Fish.h"
 
 @interface SeaScene : CCLayer<ADBannerViewDelegate, GKLeaderboardViewControllerDelegate>{
-        
     PauseLayer* _pauseLayer;
     HUDLayer* _hudLayer;
 	Level* _level;
@@ -19,12 +18,14 @@
 	CCMenuItemImage* _resetButton;
 	bool _removeRunning ;
 	CCParticleSystemQuad *_emitter;
+    CCParticleSystemQuad *_rain;
 	b2World *_world;
 	MyContactListener* _contactListener;
 	UITouch* _touch1;
 	NSMutableArray* _clouds;
 	CCSprite* _backGround;
     CCSprite* _island;
+    CCSprite* _overlaySprite;
 	
 	CCLabelBMFont* _goalTimer;
 	ccTime _goalTimeLeft;
@@ -221,6 +222,10 @@
 -(void) generateNextPoint:(int)types;
 -(void) generateNextFinisher:(int) type;
 
+-(void) loadingSounds;
+-(void) loadingTerrain;
+-(void) loadingTextures;
+
 @property(nonatomic, retain)PauseLayer* pauseLayer;
 @property int updateBox;
 @property(nonatomic, retain)HUDLayer* hudLayer;
@@ -236,4 +241,6 @@
 @property(nonatomic, retain) MessageLayer* messageLayer;
 @property(nonatomic, retain) HarvesterLayer* harvesterLayer;
 @property(nonatomic, retain) CCSprite* island;
+@property(nonatomic, retain) NSMutableArray* clouds;
+@property(nonatomic, retain) CCParticleSystemQuad* rain;
 @end

@@ -239,6 +239,15 @@ static bool   _evilAppearDone = NO;
     [self.messageLayer displayMessage:tmpStr];
 }
 
+-(void)updateSounds:(ccTime)dt{
+	if (_auEffectLeft > 0){
+		_auEffectLeft-=dt;
+		if (_auEffectLeft < 0){
+			_auEffectLeft = 0;
+		}
+	}
+}
+
 
 
 #pragma mark sounds
@@ -257,16 +266,30 @@ static bool   _evilAppearDone = NO;
 	}
 }
 
+-(void) playNyamSounds{
+	if ([[ConfigManager sharedManager] sounds]){
+		[[SimpleAudioEngine sharedEngine] playEffect:@"nyam.wav"];
+	}
+}
+
 
 -(void) switchPause:(id)sender{
+    // [self presentGameCenter];
+    
 	if (_paused == NO){
+        _pauseMenu.isTouchEnabled = NO;
+        _pauseButton.isEnabled = NO;
 		[self unschedule:@selector(update:)];
         [self.pauseLayer switchPause];
+        [[CCActionManager sharedManager] pauseTarget:self.parent];
 		_paused = YES;
 	}else{
 		_paused = NO;
-        [self.pauseLayer switchPause];
+        _pauseButton.isEnabled = YES;
+        //    [self.pauseLayer switchPause];
 		[self schedule: @selector(update:)];
+        [[CCActionManager sharedManager] pauseTarget:self.parent];
+        _pauseMenu.isTouchEnabled = YES;
 	}
 }
 
@@ -311,7 +334,7 @@ static bool   _evilAppearDone = NO;
     CGSize screenSize = [[CCDirector sharedDirector] winSize];
     [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
     
-    
+    _evilAppearDone = NO;
 	_bonusCount = 1;
     _currentDifficulty = 1;
     _timeUntilScarabs = 0;
@@ -415,7 +438,16 @@ static bool   _evilAppearDone = NO;
 
 -(void) loadingSounds{
     [self unschedule:@selector(loadingSounds)];
-    
+	_auEffectLeft = 0;
+	ConfigManager* sharedManager = [ConfigManager sharedManager];
+	if (sharedManager.sounds){
+		[[SimpleAudioEngine sharedEngine] preloadEffect:@"au.wav"];
+		[[SimpleAudioEngine sharedEngine] preloadEffect:@"woohoo.wav"];
+	}
+    if (sharedManager.music){
+        NSLog(@"loadingBackground music");
+        [[SimpleAudioEngine sharedEngine] preloadBackgroundMusic:@"DesertDestroy.mp3"];
+    }
     [self schedule:@selector(loadingDone)];
 }
 
@@ -566,6 +598,7 @@ static bool   _evilAppearDone = NO;
                 [self updateBox2DWorld:dt];
                 box2dRunning = NO;
             }
+            [self updateSounds:dt];
             [self updateCurrentDifficulty];
             [self detectBox2DCollisions];
             [self detectGameConditions];
@@ -723,6 +756,7 @@ static bool   _evilAppearDone = NO;
 			if ([bodyA->GetUserData() isKindOfClass:[Boid class]] && [bodyB->GetUserData() isKindOfClass:[Points class]]){
 				Points* point = (Points*) bodyB->GetUserData();
                 if (point.taken == NO){
+                  //  [self playNyamSounds];
                     point.taken = YES;
                     _pointsGathered += point.value * _bonusCount;
 					[_takenPoints addObject:point];
@@ -731,6 +765,7 @@ static bool   _evilAppearDone = NO;
 			}else if ([bodyB->GetUserData() isKindOfClass:[Boid class]] && [bodyA->GetUserData() isKindOfClass:[Points class]]){
 				Points* point = (Points*) bodyA->GetUserData();
                 if (point.taken == NO){
+                  //  [self playNyamSounds];
                     point.taken = YES;
                     _pointsGathered += point.value * _bonusCount;
 					[_takenPoints addObject:point];
@@ -871,10 +906,10 @@ static bool   _evilAppearDone = NO;
 
 
 -(void) beeDefaultMovement:(Boid*) bee withDt:(ccTime)dt{
-	[bee wander: 0.05f];
-	[self separate:bee withSeparationDistance:40.0f usingMultiplier:0.2f];
-	[self align:bee withAlignmentDistance:30.0f usingMultiplier:0.4f];
-	[self cohesion:bee withNeighborDistance:40.0f usingMultiplier:0.2f];	
+    [bee wander:0.1];
+	[self separate:bee withSeparationDistance:40.0f usingMultiplier:0.4f];
+	[self align:bee withAlignmentDistance:30.0f usingMultiplier:0.2f];
+	[self cohesion:bee withNeighborDistance:40.0f usingMultiplier:0.1f];	
 }
 
 -(void) beeMovement:(ccTime)dt{
@@ -925,7 +960,7 @@ static bool   _evilAppearDone = NO;
         [self.pauseLayer startGame];
         _gameStarted = YES;
         if ([[ConfigManager sharedManager] music]){
-          //  [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"cave.mp3" loop:YES];
+            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"DesertDestroy.mp3" loop:YES];
         }
 		[self schedule: @selector(update:)];
 		[self generateGoals];

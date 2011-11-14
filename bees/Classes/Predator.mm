@@ -76,6 +76,9 @@
     bodyDef.userData = self;
 	bodyDef.fixedRotation = false;
     bodyDef.allowSleep = true;
+    bodyDef.bullet = true;
+    
+
 	b2Body* body;
 	body = world->CreateBody(&bodyDef);
 	

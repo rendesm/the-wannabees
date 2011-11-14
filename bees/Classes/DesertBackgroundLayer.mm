@@ -142,7 +142,7 @@
     [self.backTrees addObject:backTree];
     [self.batchnode addChild:backTree z:2 tag:1];
     
-    self.szfinx = [CCSprite spriteWithSpriteFrameName:@"szfinx2.png"];
+    self.szfinx = [CCSprite spriteWithSpriteFrameName:@"szfinx3.png"];
     [self.batchnode addChild:self.szfinx z:2 tag:2];
     self.szfinx.position = ccp(backTree.position.x + screenSize.width, backTree.position.y );
    

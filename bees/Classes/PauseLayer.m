@@ -48,7 +48,7 @@
 		[[[CCDirector sharedDirector] openGLView] addSubview:_activity];
         
 		[self addChild:_loadingScreen z:5000 tag:1000];
-        self.moveUpwards = [CCMoveTo actionWithDuration:0.5f position:ccp(screenSize.width/2, screenSize.height + screenSize.height/2 + 30)];
+        self.moveUpwards = [CCMoveTo actionWithDuration:0.3f position:ccp(screenSize.width/2, screenSize.height + screenSize.height/2 + 30)];
         self.moveDownwards = [CCMoveTo actionWithDuration:0.5f position:ccp(screenSize.width/2, screenSize.height/2)];
     
     }
@@ -65,20 +65,31 @@
 	[_activity removeFromSuperview];
 }
 
+-(void) deleteLoadingScreenStart{
+    [self removeChild:self.loadingScreen cleanup:YES];
+    self.loadingScreen = nil;
+}
+
+
 -(void) deleteLoadingScreen{
     [self removeChild:self.loadingScreen cleanup:YES];
     self.loadingScreen = nil;
+    [self.gameScene switchPause:self];
 }
 
 -(void) startGame{
     [self removeChild:_tapToStartFont cleanup:YES];
     _tapToStartFont = nil;
-    CCAction* callback =  [CCCallFunc actionWithTarget:self selector:@selector(deleteLoadingScreen)];
+    CCAction* callback =  [CCCallFunc actionWithTarget:self selector:@selector(deleteLoadingScreenStart)];
     [self.loadingScreen runAction:[CCSequence actions:self.moveUpwards,callback, nil] ];
 }
 
 
 -(void) restartButtonTapped:(id)sender{
+    if ([ConfigManager sharedManager].sounds){
+		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
+	}
+    [[CCDirector sharedDirector] resume];
     if ([[LevelManager sharedManager] world] == 1){
         [[CCDirector sharedDirector] replaceScene:[CampaignScene scene]];
     }else if ([[LevelManager sharedManager] world] == 2){
@@ -91,8 +102,16 @@
 }
 
 -(void) quitButtonTapped:(id)sender{
+    if ([ConfigManager sharedManager].sounds){
+		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
+	}
+    [[CCDirector sharedDirector] resume];
     [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
     [[CCDirector sharedDirector] replaceScene:[LevelSelectScene scene]];
+}
+
+-(void) pauseDirector:(id)sender{
+    [[CCDirector sharedDirector] pause];
 }
 
 
@@ -101,7 +120,7 @@
 
 	CCMenuItemImage *button1 = [CCMenuItemImage 
 								itemFromNormalImage:@"resumeButton.png" selectedImage:@"resumeButtonTapped.png" 
-								target:self.gameScene selector:@selector(switchPause:)];
+								target:self selector:@selector(switchPause)];
 
 	CCMenuItemImage *button2 = [CCMenuItemImage 
 								itemFromNormalImage:@"restartButton.png" selectedImage:@"restartButtonTapped.png"
@@ -118,11 +137,23 @@
 	[_pausedMenu alignItemsVerticallyWithPadding:20];
     
     CCAction* actionMoveIn = [[CCMoveTo actionWithDuration:0.3f position:ccp(screenSize.width - button1.contentSize.width/2, _pausedMenu.position.y)] retain];
-    
-	[_pausedMenu runAction:actionMoveIn];
+    CCAction* moveInDone = [CCCallFunc actionWithTarget:self selector:@selector(pauseDirector:)];
+	[_pausedMenu runAction:[CCSequence actions:actionMoveIn, moveInDone, nil]];
 }
 
 
+-(void) presentGameCenter{
+    if ([ConfigManager sharedManager].sounds){
+		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
+	}
+    UIAlertView* dialog = [[UIAlertView alloc] init];
+    [dialog setDelegate:self];
+    [dialog setTitle:@"Game Center"];
+    [dialog setMessage:@"Game center is coming soon! Don't forget to check the updates!"];
+    [dialog addButtonWithTitle:@"OK"];
+    [dialog show];
+    [dialog release];
+}
 
 -(void) createGameOverMenu{
 	CGSize screenSize = [CCDirector sharedDirector].winSize;
@@ -130,7 +161,7 @@
     
 	CCMenuItemImage *button1 = [CCMenuItemImage 
 								itemFromNormalImage:@"highscoresButton.png" selectedImage:@"highscoresButtonTapped.png" 
-								target:self.gameScene selector:@selector(presentGameCenter)];    
+								target:self selector:@selector(presentGameCenter)];    
     
 	CCMenuItemImage *button2 = [CCMenuItemImage 
 								itemFromNormalImage:@"restartButton.png" selectedImage:@"restartButtonTapped.png"
@@ -179,8 +210,9 @@
 	}else{
 		_paused = NO;
         CCAction* callback = [CCCallFunc actionWithTarget:self selector:@selector(deleteLoadingScreen)];
+        [[CCDirector sharedDirector] resume];
 		[_loadingScreen runAction:[CCSequence actions:self.moveUpwards,callback, nil]];
-		[_pausedMenu runAction:[CCFadeOut actionWithDuration:0.3]];
+		[_pausedMenu runAction:[CCFadeOut actionWithDuration:0.1]];
 		[self removeChild:_pausedMenu cleanup:YES]; 
         _pausedMenu = nil;
 	}

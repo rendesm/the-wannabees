@@ -58,7 +58,10 @@
     bodyDef.position.Set(_sprite.position.x/PTM_RATIO, _sprite.position.y/PTM_RATIO);
     bodyDef.userData = self;
 	bodyDef.fixedRotation = true;
-	bodyDef.allowSleep = false;
+	bodyDef.allowSleep = true;
+    bodyDef.bullet = true;
+    
+
 	bodyDef.awake = true;
 	b2Body* body;
 	body = world->CreateBody(&bodyDef);

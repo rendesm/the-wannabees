@@ -29,6 +29,7 @@
     bool _moveOutParticle;
     bool _isIn;
     Eyes* _eyes;
+    CCParticleSystemQuad* _emitter;
 }
 
 -(void) update:(ccTime)dt;
@@ -49,4 +50,5 @@
 @property (nonatomic, retain) Eyes* eyes;
 @property (nonatomic) ccTime timeElapsed;
 @property (nonatomic) bool isIn;
+@property (nonatomic, retain) CCParticleSystemQuad* emitter;
 @end

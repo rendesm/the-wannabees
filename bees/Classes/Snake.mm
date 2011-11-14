@@ -25,16 +25,18 @@
 	body = world->CreateBody(&bodyDef);
 	
 	b2PolygonShape spriteShape;
+    //row 1, col 1
     int num = 7;
     b2Vec2 verts[] = {
-        b2Vec2(-38.4f / PTM_RATIO, 25.3f / PTM_RATIO),
-        b2Vec2(-5.8f / PTM_RATIO, 21.0f / PTM_RATIO),
-        b2Vec2(-9.0f / PTM_RATIO, -34.1f / PTM_RATIO),
-        b2Vec2(50.0f / PTM_RATIO, -38.4f / PTM_RATIO),
-        b2Vec2(44.0f / PTM_RATIO, -27.4f / PTM_RATIO),
-        b2Vec2(-3.0f / PTM_RATIO, -20.3f / PTM_RATIO),
-        b2Vec2(8.3f / PTM_RATIO, 39.4f / PTM_RATIO)
+        b2Vec2(47.2f / PTM_RATIO, -29.9f / PTM_RATIO),
+        b2Vec2(-3.4f / PTM_RATIO, -16.8f / PTM_RATIO),
+        b2Vec2(6.9f / PTM_RATIO, 38.7f / PTM_RATIO),
+        b2Vec2(-29.5f / PTM_RATIO, 36.2f / PTM_RATIO),
+        b2Vec2(-38.0f / PTM_RATIO, 26.0f / PTM_RATIO),
+        b2Vec2(-7.6f / PTM_RATIO, 20.7f / PTM_RATIO),
+        b2Vec2(-12.9f / PTM_RATIO, -40.5f / PTM_RATIO)
     };
+
     
 	spriteShape.Set(verts, num);
 	
