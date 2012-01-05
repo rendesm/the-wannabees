@@ -43,7 +43,6 @@
         self.backHills = [[NSMutableArray alloc] init];
         self.trees = [[NSMutableArray alloc] init];
         self.backTrees = [[NSMutableArray alloc] init];
-     //   self.clouds = [[NSMutableArray alloc] init];
         self.cloudSpeeds = [[NSMutableArray alloc] init];
         self.fish = [[NSMutableArray alloc] init];
         _maxFishJump = screenSize.height/3;
@@ -79,10 +78,10 @@
 	
     // 3: Draw into the texture
     // We'll add this later
-	CCSprite *noise = [CCSprite spriteWithSpriteFrameName:@"green.png"];
-    [noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
-	noise.position = ccp(textureSize/2, textureSize/2);
-	[noise visit];
+//	CCSprite *noise = [CCSprite spriteWithSpriteFrameName:@"green.png"];
+//    [noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
+//	noise.position = ccp(textureSize/2, textureSize/2);
+//	[noise visit];
 	
 	glDisable(GL_TEXTURE_2D);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -90,15 +89,15 @@
 	CGPoint vertices[4];
 	ccColor4F colors[4];
 	int nVertices = 0;
-	
 	vertices[nVertices] = CGPointMake(0, 0);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, 0 };
-	vertices[nVertices] = CGPointMake(textureSize, 0);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
-	vertices[nVertices] = CGPointMake(0, textureSize);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
-	vertices[nVertices] = CGPointMake(textureSize, textureSize);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
+    colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha };
+    vertices[nVertices] = CGPointMake(textureSize, gradientAlpha);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    vertices[nVertices] = CGPointMake(0, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    vertices[nVertices] = CGPointMake(textureSize, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    
 	
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glColorPointer(4, GL_FLOAT, 0, colors);
@@ -161,39 +160,11 @@
         [self.batchnode addChild:backTree z:2 tag:1];
     }
     [CCTexture2D setDefaultAlphaPixelFormat:kCCTexture2DPixelFormat_RGBA8888];
-
-    /*
-    for (int i = 0; i < 3; i++){
-        CCSprite* building = [CCSprite spriteWithSpriteFrameName:@"templom.png"];
-        building.position = ccp(4 *backTreeWidth + building.contentSize.width/2,  building.contentSize.height/2);
-        [self.batchnode addChild:building z:3 tag:3];
-        [self.buildings addObject:building];
-    }
-    */
-   
-    /*
-	for (int i= 0; i <1; i++){
-        CCSprite* bgCloud = [CCSprite spriteWithSpriteFrameName:@"cloud.png"];
-		bgCloud.opacity = 200;
-		[_clouds addObject:bgCloud];
-        
-        bgCloud.position = ccp(bgCloud.contentSize.width, bgCloud.contentSize.height);
-        [self.batchnode addChild:bgCloud z:1 tag:1];
-        float rnd = CCRANDOM_0_1()* (1.0 - 0.6) + 0.6;
-        bgCloud.scale = rnd;
-	//	float rndOffset =  CCRANDOM_0_1() * (1000-400) + 400;
-        float cloudSpeed = CCRANDOM_0_1() + 0.5;
-        [self.cloudSpeeds addObject:[NSNumber numberWithFloat:cloudSpeed]];
-
-        CGSize screenSize = [[CCDirector sharedDirector] winSize];
-		bgCloud.position = ccp(screenSize.width + bgCloud.contentSize.width * i * bgCloud.scale, 
-											 screenSize.height - bgCloud.contentSize.height * bgCloud.scale);
-	}*/
     
     self.jumpSpeed = 3.5f;
     self.minFishDistance = 0;
     
-    for (int i = 0; i < 1;i++){
+    for (int i = 0; i < 3;i++){
         Fish* fish  = [[Fish alloc] initForCampaignNode:self.batchnode] ;
         [self moveFishToNewPosition:fish];
         [self.fish addObject:fish];
@@ -206,11 +177,11 @@
     int backItemOn = 0;
     int forItemOn = 0;
     for (CCSprite* backTree in self.backTrees){
-        backTree.position = ccpAdd(backTree.position, ccp(_forSpeed/12 * (dt*60), 0));
+        backTree.position = ccpAdd(backTree.position, ccp(_forSpeed/7 * (dt*60), 0));
     //    backTree.position = ccpAdd(backTree.position, ccp(-0.25, 0));
     }
     for (CCSprite* hill in self.backHills){
-        hill.position = ccpAdd(hill.position, ccp(_forSpeed/7 , 0));
+        hill.position = ccpAdd(hill.position, ccp(_forSpeed/5 , 0));
     }
     
     
@@ -303,8 +274,7 @@
 -(void) genBackground{
     CCSprite* backGround = [CCSprite spriteWithSpriteFrameName:@"green.png"];
 
-    ccColor4F bgColor = ccc4FFromccc4B(ccc4(153, 0, 51, 255));
-    //[self randomBrightColor];
+    ccColor4F bgColor = [self randomBrightColor];
 	
     CGSize winSize = [CCDirector sharedDirector].winSize;
     _overLaySprite = [self spriteWithColor:bgColor textureSize:512 withNoise:@"green.png" withGradientAlpha:0.7f];
@@ -322,13 +292,13 @@
 }
 
 -(void) fadeInOverlay{
-    [_overLaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:255]];
+    [_overLaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:180]];
     NSLog(@"fadeinoverlay");
 }
 
 
 -(void) fadeOutOverlay{
-    [_overLaySprite runAction:[CCFadeOut actionWithDuration:1]];
+    [_overLaySprite runAction:[CCFadeTo actionWithDuration:1 opacity:0]];
 }
 
 -(void) updateFish{
@@ -355,7 +325,7 @@
 -(void) moveFishToNewPosition:(Fish*) predator{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
     if (_minFishDistance == 0){
-        _minFishDistance = 1000;
+        _minFishDistance = 2000;
     }
     predator.sprite.position = ccp(screenSize.width + _minFishDistance, 0);	
     predator.isJumping = NO;

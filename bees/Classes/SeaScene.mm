@@ -41,9 +41,9 @@
 @synthesize island = _island;
 @synthesize clouds = _clouds;
 @synthesize rain = _rain;
-
-static double UPDATE_INTERVAL = 1/30.0f;
-static double MAX_CYCLES_PER_FRAME = 1;
+@synthesize light = _light;
+static double UPDATE_INTERVAL = 1/40.0f;
+static double MAX_CYCLES_PER_FRAME = 3;
 static double timeAccumulator = 0;
 
 +(id)scene{
@@ -132,10 +132,10 @@ static double timeAccumulator = 0;
 	
     // 3: Draw into the texture
     // We'll add this later
-	CCSprite *noise = [CCSprite spriteWithFile:inNoise];
+//	CCSprite *noise = [CCSprite spriteWithFile:inNoise];
 	//	[noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
-	noise.position = ccp(textureSize/2, textureSize/2);
-	[noise visit];
+//	noise.position = ccp(textureSize/2, textureSize/2);
+//	[noise visit];
 	
 	glDisable(GL_TEXTURE_2D);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -143,15 +143,14 @@ static double timeAccumulator = 0;
 	CGPoint vertices[4];
 	ccColor4F colors[4];
 	int nVertices = 0;
-	
 	vertices[nVertices] = CGPointMake(0, 0);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, 0 };
-	vertices[nVertices] = CGPointMake(textureSize, 0);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
-	vertices[nVertices] = CGPointMake(0, textureSize);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
-	vertices[nVertices] = CGPointMake(textureSize, textureSize);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
+    colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha };
+    vertices[nVertices] = CGPointMake(textureSize, gradientAlpha);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    vertices[nVertices] = CGPointMake(0, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    vertices[nVertices] = CGPointMake(textureSize, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
 	
 	glVertexPointer(2, GL_FLOAT, 0, vertices);
 	glColorPointer(4, GL_FLOAT, 0, colors);
@@ -208,12 +207,12 @@ static double timeAccumulator = 0;
 
 
 -(void) fadeInOverlay{
-    [_overlaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:255]];
+    [_overlaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:170]];
 }
 
 
 -(void) fadeOutOverlay{
-    [_overlaySprite runAction:[CCFadeOut actionWithDuration:1]];
+    [_overlaySprite runAction:[CCFadeTo actionWithDuration:1 opacity:0]];
 }
 
 
@@ -496,7 +495,7 @@ static double timeAccumulator = 0;
 	
 	
 	CCMenu* _pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
-	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height);
+	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height + 32);
 	[self addChild:_pauseMenu z:502 tag:100];	
 }
 
@@ -749,9 +748,8 @@ static double timeAccumulator = 0;
 	if (_lastPointLocation.x  < _player.position.x + screenSize.width/2){
 		_lastPointLocation = ccp(_player.position.x + screenSize.width/2, 0);
 	}
-	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
+	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/6 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
-    
 	_lastPointLocation = point.sprite.position;
 	point.taken = YES;
 }
@@ -763,7 +761,7 @@ static double timeAccumulator = 0;
 	if (_lastPredatorLocation.x  < _player.position.x + screenSize.width/2){
 		_lastPredatorLocation = ccp(_player.position.x + screenSize.width/2, 10);
 	}
-    predator.sprite.position = ccp(_lastPredatorLocation.x + screenSize.width *randRange(0.5, 1),10);	
+    predator.sprite.position = ccp(_lastPredatorLocation.x + screenSize.width *randRange(0.2, 0.5),10);	
 	_lastPredatorLocation = predator.sprite.position;
     predator.isJumping = NO;
     predator.isDead = NO;
@@ -1167,7 +1165,8 @@ static double timeAccumulator = 0;
 -(void) loadingTextures{
     //fist stop the music and load some ambience
     [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
-    
+    [[CCTextureCache sharedTextureCache] removeUnusedTextures];
+
 	_bonusCount = 1;
     _currentDifficulty = 1;
     _minBirdDistance = 1300;
@@ -1267,19 +1266,10 @@ static double timeAccumulator = 0;
 		boid.startMaxForce = 0;
 		boid.startMaxSpeed = 0;
 		
-		if (_level.difficulty == EASY){
-			[boid setSpeedMax:2.5f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f  withRandomRangeOf:0.25f];
-			_boidCurrentSpeed = 2.5f;
-			_boidCurrentTurn = 1.8f;
-		}else if (_level.difficulty == NORMAL){
-			[boid setSpeedMax:3.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-			_boidCurrentSpeed = 3.0f;
-			_boidCurrentTurn = 2.7f;
-		}else if (_level.difficulty == HARD) {
-			[boid setSpeedMax:4.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-			_boidCurrentSpeed = 4.0f;
-			_boidCurrentTurn = 2.7f;
-		} 		
+        [boid setSpeedMax:3.0f  withRandomRangeOf:0.2f andSteeringForceMax:3.0f  withRandomRangeOf:0.25f];
+        _boidCurrentSpeed = 3.0f;
+        _boidCurrentTurn = 3.0f;
+	
 		
 		[boid setWanderingRadius: 20.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.3f];
 		[boid setEdgeBehavior: EDGE_WRAP];
@@ -1335,6 +1325,17 @@ static double timeAccumulator = 0;
 	[self schedule:@selector(loadingTerrain)];
 }
 
+-(void) lightFadeOutDone:(id)sender{
+    CCAction* fadeIn = [CCFadeIn actionWithDuration:1];
+    CCAction* callback = [CCCallFunc actionWithTarget:self  selector:@selector(lightFadeInDone:)];
+    [self.light runAction:[CCSequence actions:fadeIn, callback, nil]];
+}
+
+-(void) lightFadeInDone:(id)sender{
+    CCAction* fadeOut = [CCFadeOut actionWithDuration:1];
+    CCAction* callback = [CCCallFunc actionWithTarget:self  selector:@selector(lightFadeOutDone:)];
+    [self.light runAction:[CCSequence actions:fadeOut, callback, nil]];
+}
 
 -(void) loadingTerrain{
 	[self unschedule:@selector(loadingTerrain)];
@@ -1344,25 +1345,35 @@ static double timeAccumulator = 0;
 	_bottomSea = [[[NSMutableArray alloc] init] retain];
 	
     Sea* bottomSea1 = [[Sea alloc] initForNode:_batchNode];
-    CCSprite* topSea1 = [CCSprite spriteWithSpriteFrameName:@"tengerTop2.png"];
+    CCSprite* topSea1 = [CCSprite spriteWithSpriteFrameName:@"tengerTop2-1.png"];
     [bottomSea1.sprite.texture setAliasTexParameters];
     [topSea1.texture setAliasTexParameters];
 
     Sea* bottomSea2 = [[Sea alloc] initForNode:_batchNode];
-    CCSprite* topSea2 = [CCSprite spriteWithSpriteFrameName:@"tengerTop2.png"];
+    CCSprite* topSea2 = [CCSprite spriteWithSpriteFrameName:@"tengerTop2-1.png"];
+    topSea1.opacity = 180;
+    topSea2.opacity = 180;
     [bottomSea2.sprite.texture setAliasTexParameters];
     [topSea2.texture setAliasTexParameters];
     
     
     self.island = [CCSprite spriteWithSpriteFrameName:@"lighthouse.png"];
     [_batchNode addChild:self.island z: 1 tag:1];
-    self.island.position = ccp(screenSize.width/2, self.island.contentSize.height/2 + 30);
+ //   self.island.scale = 0.7;
+    self.island.position = ccp(screenSize.width * 2, self.island.contentSize.height * self.island.scale * 0.5 + 30);    
+    self.light = [CCSprite spriteWithSpriteFrameName:@"light.png"];
+    self.light.position = ccp(self.island.position.x - 5, self.island.position.y + self.island.contentSize.height/4);
+    self.light.opacity = 0;
+    CCAction* fadeIn = [CCFadeIn actionWithDuration:1];
+    CCAction* callback = [CCCallFunc actionWithTarget:self  selector:@selector(lightFadeInDone:)];
+    [self.light runAction:[CCSequence actions:fadeIn, callback, nil]];
+    [_batchNode addChild:self.light z:1];
     
 
     bottomSea1.sprite.position = ccp(bottomSea1.sprite.contentSize.width/2 * bottomSea1.sprite.scale, bottomSea1.sprite.contentSize.height/2 * bottomSea1.sprite.scale - 30);
     bottomSea2.sprite.position = ccp(bottomSea2.sprite.contentSize.width/2 * bottomSea2.sprite.scale * 3 - 3, bottomSea2.sprite.contentSize.height/2 * bottomSea2.sprite.scale - 30);
     topSea1.position = ccp(topSea1.contentSize.width/2, topSea1.contentSize.height/2 + bottomSea1.sprite.contentSize.height/3 * bottomSea1.sprite.scale - 70);
-    topSea2.position = ccp(topSea2.contentSize.width/2 * 3 - 3, topSea2.contentSize.height/2 + bottomSea2.sprite.contentSize.height/3 * bottomSea2.sprite.scale - 70);
+    topSea2.position = ccp(topSea2.contentSize.width/2 * 3 , topSea2.contentSize.height/2 + bottomSea2.sprite.contentSize.height/3 * bottomSea2.sprite.scale - 70);
     [bottomSea1 createBox2dBodyDefinitions:_world];
     [bottomSea2 createBox2dBodyDefinitions:_world];
     [_batchNode addChild:topSea1 z:2 tag:50];
@@ -1378,16 +1389,31 @@ static double timeAccumulator = 0;
         CCSprite* cloud = [CCSprite spriteWithSpriteFrameName:@"cloud.png"];
         [_batchNode addChild:cloud z:2 tag: 2];
 //        cloud.scale = 0.75;
-        [cloud.texture setAliasTexParameters];
-        cloud.position = ccp(cloud.contentSize.width/2 * cloud.scale + i * cloud.contentSize.width * cloud.scale - 1, screenSize.height - cloud.contentSize.height/3 * cloud.scale);
+   
+        cloud.opacity = 255;
+         [cloud.texture setAliasTexParameters];
+        cloud.position = ccp(cloud.contentSize.width/2 * cloud.scale + i * cloud.contentSize.width * cloud.scale , screenSize.height - cloud.contentSize.height/3 * cloud.scale);
         [self.clouds addObject:cloud];
     }
     
 	[self schedule:@selector(loadingSounds)];
-//    self.rain = [CCParticleSystemQuad particleWithFile:@"tinyRain.plist"];
-//    self.rain.position = ccp(screenSize.width/2, screenSize.height);
-//    [self addChild:self.rain z :500 tag: 500];
+    if ([ConfigManager sharedManager].particles){
+        self.rain = [CCParticleSystemQuad particleWithFile:@"tinyRain.plist"];
+        self.rain.position = ccp(screenSize.width/2, screenSize.height);
+        [self addChild:self.rain z :500 tag: 500];
+    }
 }
+
+
+-(void) loadingDone{
+	[self unschedule:@selector(loadingDone)];
+    [self.pauseLayer loadingFinished];
+	_gameIsReady = YES;
+	//add some tap to start
+	_alchemy = [[[Alchemy alloc]init] retain];
+	_alchemy.world = self;
+}
+
 
 -(void) loadingSounds{
 	[self unschedule:@selector(loadingSounds)];
@@ -1399,18 +1425,9 @@ static double timeAccumulator = 0;
 		[[SimpleAudioEngine sharedEngine] preloadEffect:@"woohoo.wav"];
 	}
     if (sharedManager.music){
-        [[SimpleAudioEngine sharedEngine] preloadBackgroundMusic:@"seamusic.mp3"];
+        [[SimpleAudioEngine sharedEngine] preloadBackgroundMusic:@"sailormoons.mp3"];
     }
 	[self schedule:@selector(loadingDone)];
-}
-
--(void) loadingDone{
-	[self unschedule:@selector(loadingDone)];
-    [self.pauseLayer loadingFinished];
-	_gameIsReady = YES;
-	//add some tap to start
-	_alchemy = [[[Alchemy alloc]init] retain];
-	_alchemy.world = self;
 }
 
 -(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer message:(MessageLayer *)messageLayer harvester:(HarvesterLayer*)harvesterLayer{
@@ -1419,6 +1436,7 @@ static double timeAccumulator = 0;
         self.pauseLayer = pauseLayer;
         self.messageLayer = messageLayer;
         self.harvesterLayer = harvesterLayer;
+        harvesterLayer.useMist = NO;
         pauseLayer.gameScene = self;
 		self.level = (Level*)[[LevelManager sharedManager] selectedLevel];
 		_distanceToGoal = _level.distanceToGoal;
@@ -1525,13 +1543,13 @@ static double timeAccumulator = 0;
     }
 }
 
--(void) updateTerrain{
+-(void) updateTerrain:(ccTime)dt{
 	CGSize screenSize = [[CCDirector sharedDirector] winSize];
 	float moveX = _playerAcceleration.x * 0.4;
 	for (CCSprite* sea in _topSea) {
 		sea.position = ccpAdd(sea.position, ccp(-moveX * 0.1, 0));
 		if (sea.position.x + sea.contentSize.width/2 * sea.scale < _player.position.x - screenSize.width/2){
-			sea.position = ccp(sea.position.x + sea.contentSize.width * ([_bottomSea count]) - 6, sea.position.y);
+			sea.position = ccp(sea.position.x + sea.contentSize.width * ([_bottomSea count]) , sea.position.y);
 		}
 	}
 	
@@ -1543,19 +1561,21 @@ static double timeAccumulator = 0;
 	}
     
     if (self.island.position.x + self.island.contentSize.width/2 < _player.position.x - screenSize.width/2){
-        self.island.position = ccp(_player.position.x + screenSize.width/2 + self.island.contentSize.width * 3, self.island.position.y);
+        self.island.position = ccp(_player.position.x + screenSize.width * 4 + self.island.contentSize.width * 3, self.island.position.y);
     }else{
-        self.island.position = ccpAdd(self.island.position, ccp(_playerAcceleration.x - 1, 0));
+        self.island.position = ccpAdd(self.island.position, ccp((_playerAcceleration.x - 1) * dt * 60, 0));
     }
     
     for (CCSprite* cloud in self.clouds){
         if (cloud.position.x + cloud.contentSize.width/2 < _player.position.x - screenSize.width/2){
-            cloud.position = ccp(cloud.position.x + cloud.contentSize.width * 2 * cloud.scale - 1, cloud.position.y);
+            cloud.position = ccp(cloud.position.x + cloud.contentSize.width * 2 * cloud.scale , cloud.position.y);
+            [cloud.texture setAliasTexParameters];
         }else{
             cloud.position = ccp(cloud.position.x + 1, cloud.position.y);
         }
     }
- //   self.rain.position = ccpAdd(self.rain.position, ccp(_playerAcceleration.x,0)); // * dt, 0));
+    self.rain.position = ccpAdd(self.rain.position, ccp(_playerAcceleration.x * dt * 60, 0));
+    self.light.position = ccp(self.island.position.x - 5, self.island.position.y + self.island.contentSize.height/4);
 }
 
 -(void)selectTarget:(Predator*)predator{
@@ -1683,26 +1703,15 @@ static double timeAccumulator = 0;
             _normalSpeed.x += 0.05;
             _sickSpeed.x += 0.025;
             _boostSpeed.x += 0.1;
-            
-            if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
-                _level.difficulty = NORMAL;
-            }else if (_normalSpeed.x > 3.0f){
-                _level.difficulty = HARD;
-            }
-            
-            //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
-            //		_playerAcceleration.x += 0.05;
-            //	}else {
             _playerAcceleration.x += 0.05;
-            //	}
         }
         
         //increase the boid speed, if it is not at the maximum
-        if (_boidCurrentSpeed < 4.0f){
+        if (_boidCurrentSpeed < 4.2f){
             changeWasEnough = YES;
             _boidCurrentSpeed+=0.05;
             for (Boid* bee in _bees){
-                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 2.5f withRandomRangeOf:0.25f];
+                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:(_boidCurrentSpeed / 2) * 1.8f * 1.5f withRandomRangeOf:0.25f];
                 bee.startMaxSpeed = _boidCurrentSpeed;
             }
         }
@@ -1716,15 +1725,7 @@ static double timeAccumulator = 0;
             if (_fishJumpTime < 1.0f){
                 _fishJumpTime -= 0.1;
             }
-        }
-
-		//increase the chance of spore if it is not at the maximum
-		
-		//increase the chance of atka if it is not at the maximum
-		
-		//decrease the distance between the predators if it is not at the minimum
-		
-		
+        }		
 	}
 }
 
@@ -1865,21 +1866,19 @@ static double timeAccumulator = 0;
 
                 
                 if (self.harvesterLayer.moveInParticle && !_evilAppearDone){
-          //          [self.rain stopSystem];
                     [self.messageLayer displayWarning:@"It is coming"];
                     [self fadeInOverlay];
                     _evilAppearDone = YES;
                 }else if (self.harvesterLayer.moveOutParticle && _evilAppearDone){
                     _evilAppearDone = NO;
                     [self fadeOutOverlay];
-            //        [self.rain resetSystem];
                 }
 				
 				[self beeMovement:dt];
                 [self updateFish];	
                 [self updateBird:dt];
 				[self removeOutOfScreenItems];
-                [self updateTerrain];
+                [self updateTerrain:dt];
 				//update terrain, tell it how far we have proceeded
 				//[_terrain setOffsetX:_playerAcceleration.x];
 
@@ -2018,6 +2017,7 @@ static double timeAccumulator = 0;
     // [self presentGameCenter];
     
 	if (_paused == NO){
+        _bannerView.hidden = YES;
         _pauseMenu.isTouchEnabled = NO;
         _pauseButton.isEnabled = NO;
 		[self unschedule:@selector(update:)];
@@ -2030,7 +2030,7 @@ static double timeAccumulator = 0;
         //    [self.pauseLayer switchPause];
 		[self schedule: @selector(update:)];
         [[CCActionManager sharedManager] pauseTarget:self.parent];
-        
+        _bannerView.hidden = NO;
         _pausedMenu = nil;
         _pauseMenu.isTouchEnabled = YES;
 	}
@@ -2041,13 +2041,45 @@ static double timeAccumulator = 0;
 {
 	[[CCTouchDispatcher sharedDispatcher] addTargetedDelegate:self priority:0 swallowsTouches:YES];
 	[super onEnter];
+    _bannerView = [[[ADBannerView alloc] initWithFrame:CGRectZero] retain];
+    _bannerView.delegate = self;
+    _bannerView.requiredContentSizeIdentifiers = [NSSet setWithObjects:ADBannerContentSizeIdentifierPortrait,
+                                                  ADBannerContentSizeIdentifierLandscape,nil];
+    _bannerView.currentContentSizeIdentifier = ADBannerContentSizeIdentifierLandscape;
+    [[[CCDirector sharedDirector] openGLView] addSubview:_bannerView];
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    _bannerView.center = ccp(_bannerView.frame.size.width/2, screenSize.height/2+145);
+    _bannerView.hidden = YES;
 }
 
-- (void)onExit
-{
+- (void)onExit{
+	_bannerView.delegate = nil;
+    [_bannerView removeFromSuperview];
+    [_bannerView release];
+    _bannerView = nil;
 	[[CCTouchDispatcher sharedDispatcher] removeDelegate:self];
 	[super onExit];
-	
+}
+
+
+-(void)bannerViewDidLoadAd:(ADBannerView *)banner{
+    NSLog(@"bannerViewDidLoadAd");
+    _bannerView.hidden = NO;
+}
+
+-(void)bannerView:(ADBannerView *)banner didFailToReceiveAdWithError:(NSError *)error{
+    NSLog(@"bannerViewFailed");
+    _bannerView.hidden = YES;
+}
+
+-(void)bannerViewActionDidFinish:(ADBannerView *)banner{
+    [[CCDirector sharedDirector] resume];    
+    [[UIApplication sharedApplication] setStatusBarOrientation:(UIInterfaceOrientation)[[CCDirector sharedDirector] deviceOrientation]];
+}
+
+-(BOOL)bannerViewActionShouldBegin:(ADBannerView *)banner willLeaveApplication:(BOOL)willLeave{
+    [[CCDirector sharedDirector] pause];
+    return YES;
 }
 
 - (BOOL)ccTouchBegan:(UITouch *)touch withEvent:(UIEvent *)event
@@ -2057,7 +2089,7 @@ static double timeAccumulator = 0;
         [self.pauseLayer startGame];
         _gameStarted = YES;
         if ([[ConfigManager sharedManager] music]){
-            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"Sailorshornpipe.mp3" loop:YES];
+            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"sailormoons.mp3" loop:YES];
         }
 		[self schedule: @selector(update:)];
 		[self generateGoals];
@@ -2172,10 +2204,10 @@ inline float randRange(float min,float max)
 
 
 -(void) dealloc{	
-	[super dealloc];
     self.messageLayer = nil;
     self.pauseLayer = nil;
     self.hudLayer = nil;
+    self.harvesterLayer = nil;
 	[_bees release];
 	_bees = nil;
 	[_fish removeAllObjects];
@@ -2200,7 +2232,12 @@ inline float randRange(float min,float max)
 	_backGround = nil;
 	[_cemeteryBees release];
 	_cemeteryBees = nil;
-    _harvesterLayer = nil;
+    self.light = nil;
+    self.island = nil;
+    [self removeChild:self.rain cleanup:YES];
+    self.rain = nil;
+    NSLog(@"cleanup");
+    [super dealloc];
 //	[_comboFinishers release];
 //	_comboFinishers = nil;
 //	[_comboFinisher release];

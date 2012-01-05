@@ -40,13 +40,13 @@
 @synthesize bgLayer = _bgLayer;
 @synthesize fish = _fish;
 @synthesize emitter = _emitter;
+//@synthesize evilAppearDone = _evilAppearDone;
 
 static bool _removeRunning = NO;
 static double UPDATE_INTERVAL = 1/20.0f;
 static double MAX_CYCLES_PER_FRAME = 3;
 static double timeAccumulator = 0;
 static bool _emitterMoving = NO;
-static bool _evilAppearDone = NO;
 
 +(id)scene{
 	// 'scene' is an autorelease object.
@@ -370,7 +370,6 @@ static bool _evilAppearDone = NO;
             }
         }
 
-    
         //increase the predatorSpeed if it is not at the maximum
         if (_minPredatorDistance > screenSize.width/3 ){
             _minPredatorDistance -= 10;
@@ -389,22 +388,9 @@ static bool _evilAppearDone = NO;
                 self.bgLayer.jumpSpeed -= 0.025;
             }
         }  
-        
-        /*
-        if (_currentDifficulty > 20){
-            if (self.harvesterLayer.timeTillShoot > 1){
-                self.harvesterLayer.timeTillShoot -= 1;
-            }
-            
-            if (self.harvesterLayer.comboToFinish < 3){
-                self.harvesterLayer.comboToFinish++;
-            }
-            
-            if (self.harvesterLayer.timeLeftTillNextAppearance >= 5){
-                self.harvesterLayer.timeLeftTillNextAppearance -= 5;
-            }
+        if (self.bgLayer.minFishDistance > 150){
+            self.bgLayer.minFishDistance -= 50;
         }
-         */
 	}
 }
 
@@ -426,8 +412,6 @@ static bool _evilAppearDone = NO;
 	[self.hudLayer initLabels];
     _pauseButton = [CCMenuItemImage		itemFromNormalImage:@"pauseButton.png" selectedImage:@"pauseButton.png" 
 												  target:self selector:@selector(switchPause:)];
-	
-	
 	_pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
 	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height + 32);
 	[self addChild:_pauseMenu z:100 tag:100];	
@@ -545,12 +529,6 @@ static bool _evilAppearDone = NO;
 				[self speedEffect];
 			}else if (self.comboFinisher.type == REVIVER_SLOT){
 			}
-			
-			/*else if (effect == DISEASE_EFFECT){
-				[self diseaseEffect];
-			}else if (effect == SHRINK_EFFECT){
-				[self shrinkEffect];
-			}*/
 		}
 	}
 	 
@@ -673,18 +651,10 @@ static bool _evilAppearDone = NO;
 	if (_lastPointLocation.x  < _player.position.x + screenSize.width/2){
 		_lastPointLocation = ccp(_player.position.x + screenSize.width/2, 0);
 	}
-	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
+	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/6 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
 	
-    /*
-	//check if it collides with a combo 
-	for(ComboFinisher* comboFinisher in _comboFinishers){
-		if (CGRectIntersectsRect(point.sprite.boundingBox, comboFinisher.sprite.boundingBox)){
-			_lastPointLocation = comboFinisher.sprite.position;
-			[self movePointToNewPosition:point];
-		}
-	}*/
-			
+        
 	_lastPointLocation = point.sprite.position;
 	point.taken = YES;
 }
@@ -869,7 +839,6 @@ static bool _evilAppearDone = NO;
 						[_deadBees addObject:boid];
                         toDestroy.push_back(bodyA);
 						predator.life--;
-                        NSLog(@"%i", predator.life);
 						//if it is dead, do not iterate over this
 						if (predator.life <= 0){
 							[_deadPredators addObject:predator];
@@ -888,7 +857,6 @@ static bool _evilAppearDone = NO;
 						[_deadBees addObject:boid];
 						toDestroy.push_back(bodyB);
                         predator.life--;
-                        NSLog(@"%i", predator.life);
 						//if it is dead, do not iterate over this
 						if (predator.life <= 0){
 							[_deadPredators addObject:predator];
@@ -1015,9 +983,6 @@ static bool _evilAppearDone = NO;
 	//set the contactListener for the world
 	_world->SetContactListener(_contactListener);
 	
-//	_contactFilter = new MyContactFilter();
-//	_world->SetContactFilter(_contactFilter);
-	
 	_atkaOutOfScreen = YES;
 	_sporeOutOfScreen = YES;
     
@@ -1083,9 +1048,9 @@ static bool _evilAppearDone = NO;
 		// You want the flock to behavior basically the same, but have a TINY variation among members
 		boid.startMaxForce = 0;
 		boid.startMaxSpeed = 0;
-        [boid setSpeedMax:2.5f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f  withRandomRangeOf:0.25f];
-        _boidCurrentSpeed = 2.5f;
-        _boidCurrentTurn = 1.8f;
+        [boid setSpeedMax:3.0f  withRandomRangeOf:0.2f andSteeringForceMax:3.0f  withRandomRangeOf:0.25f];
+        _boidCurrentSpeed = 3.0f;
+        _boidCurrentTurn = 3.0f;
 
 		
 		[boid setWanderingRadius: 20.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.3f];
@@ -1101,7 +1066,7 @@ static bool _evilAppearDone = NO;
 		[boid setScale: randRange(0.3,0.5)];
 		[boid setPos: ccp( randRange(0.5, 1.0) * screenSize.width/3,  screenSize.height / 2)];
 		// Color
-		[boid setOpacity:220];
+		[boid setOpacity:250];
 		[boid createBox2dBodyDefinitions:_world];
 		[_batchNode addChild:boid z:100 tag:1];
 		[boid update];
@@ -1113,13 +1078,6 @@ static bool _evilAppearDone = NO;
 	for (int i = 0; i < 12; i++) {
 		[self generateNextPoint: (i % 3)+1];
 	}
-	/*
-	if (_level.distanceToGoal < 0){
-		self.comboFinishers = [[NSMutableArray alloc] init];
-		for (int i = 0; i < 3; i++){
-			[self generateNextFinisher:i];
-		}
-	}*/
 	
 	[self initLabels];
     
@@ -1151,7 +1109,7 @@ static bool _evilAppearDone = NO;
 		[[SimpleAudioEngine sharedEngine] preloadEffect:@"woohoo.wav"];
 	}
     if (sharedManager.music){
-        [[SimpleAudioEngine sharedEngine] preloadBackgroundMusic:@"komaromi.mp3"];
+        [[SimpleAudioEngine sharedEngine] preloadBackgroundMusic:@"Forestersswing.mp3"];
     }
 	[self schedule:@selector(loadingDone)];
 }
@@ -1173,6 +1131,7 @@ static bool _evilAppearDone = NO;
         self.messageLayer = messageLayer;
         self.harvesterLayer = harvesterLayer;
         self.bgLayer = bgLayer;
+        self.harvesterLayer.useMist = YES;
         pauseLayer.gameScene = self;
 		self.level = (Level*)[[LevelManager sharedManager] selectedLevel];
 		_distanceToGoal = _level.distanceToGoal;
@@ -1774,18 +1733,18 @@ static bool _evilAppearDone = NO;
 }
 
 -(void) switchPause:(id)sender{
-   // [self presentGameCenter];
-    
 	if (_paused == NO){
         _pauseMenu.isTouchEnabled = NO;
         _pauseButton.isEnabled = NO;      
 		[self unschedule:@selector(update:)];
+        _bannerView.hidden = YES;
         [self.pauseLayer switchPause];
 		_paused = YES;
 	}else{
 		_paused = NO;
         _pauseButton.isEnabled = YES;
 		[self schedule: @selector(update:)];
+        _bannerView.hidden = NO;
 		 _pausedMenu = nil;
         _pauseMenu.isTouchEnabled = YES;
 	}
@@ -1795,7 +1754,7 @@ static bool _evilAppearDone = NO;
 {
 	[[CCTouchDispatcher sharedDispatcher] addTargetedDelegate:self priority:0 swallowsTouches:YES];
 	[super onEnter];
-    /*
+    
     _bannerView = [[[ADBannerView alloc] initWithFrame:CGRectZero] retain];
     _bannerView.delegate = self;
     _bannerView.requiredContentSizeIdentifiers = [NSSet setWithObjects:ADBannerContentSizeIdentifierPortrait,
@@ -1805,7 +1764,6 @@ static bool _evilAppearDone = NO;
     CGSize screenSize = [[CCDirector sharedDirector] winSize];
     _bannerView.center = ccp(_bannerView.frame.size.width/2, screenSize.height/2+145);
     _bannerView.hidden = YES;
-     */
 }
 
 - (void)onExit
@@ -1821,7 +1779,6 @@ static bool _evilAppearDone = NO;
 -(void)bannerViewDidLoadAd:(ADBannerView *)banner{
     NSLog(@"bannerViewDidLoadAd");
     _bannerView.hidden = NO;
-    [_pausedMenu runAction:[CCMoveBy actionWithDuration:0.5 position:ccp(0,32)]];
 }
 
 -(void)bannerView:(ADBannerView *)banner didFailToReceiveAdWithError:(NSError *)error{
@@ -1830,10 +1787,12 @@ static bool _evilAppearDone = NO;
 }
 
 -(void)bannerViewActionDidFinish:(ADBannerView *)banner{
+    [[CCDirector sharedDirector] resume];    
    [[UIApplication sharedApplication] setStatusBarOrientation:(UIInterfaceOrientation)[[CCDirector sharedDirector] deviceOrientation]];
 }
     
 -(BOOL)bannerViewActionShouldBegin:(ADBannerView *)banner willLeaveApplication:(BOOL)willLeave{
+    [[CCDirector sharedDirector] pause];
     return YES;
 }
 
@@ -1844,7 +1803,7 @@ static bool _evilAppearDone = NO;
         [self.pauseLayer startGame];
         _gameStarted = YES;
         if ([[ConfigManager sharedManager] music]){
-            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"komaromi.mp3" loop:YES];
+            [[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"Forestersswing.mp3" loop:YES];
         }
 		[self schedule: @selector(update:)];
 		[self generateGoals];
@@ -1960,20 +1919,17 @@ inline float randRange(float min,float max)
 	LevelManager* sharedManager = [LevelManager sharedManager];
 	if (_newHighScore){
 		sharedManager.selectedLevel.highScorePoints = _pointsGathered;
-        [[GameCenterHelper sharedInstance] reportScore:_pointsGathered forCategory:@"PointsHills"];
+   //     [[GameCenterHelper sharedInstance] reportScore:_pointsGathered forCategory:@"PointsHills"];
      //   [[GameCenterHelper sharedInstance] showLeaderboardForCategory:@"PointsHills"];
 	}
 	sharedManager.selectedLevel.completed = YES;
-	
 	[sharedManager saveSelectedLevel];
-	
 }
 
 
 
 
 -(void) dealloc{	
-	[super dealloc];
     self.messageLayer = nil;
     self.pauseLayer = nil;
     self.hudLayer = nil;
@@ -2008,9 +1964,8 @@ inline float randRange(float min,float max)
 	_hills2 = nil;
 	[_cemeteryBees release];
 	_cemeteryBees = nil;
-//	[_comboFinishers release];
-//	_comboFinishers = nil;
-//	[_comboFinisher release];
+    NSLog(@"dealloc");
+    [super dealloc];
 }	
 
 

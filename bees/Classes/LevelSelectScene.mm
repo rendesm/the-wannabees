@@ -156,6 +156,10 @@ static int _type;
 		
 		ConfigManager* sharedManager = [ConfigManager sharedManager];
         [self loadParticles];
+        if (sharedManager.music && ![[SimpleAudioEngine sharedEngine] isBackgroundMusicPlaying]){
+			[[SimpleAudioEngine sharedEngine] playBackgroundMusic:@"Wannabeesmenu.caf" loop:YES];
+		}
+
 	}	
 	return self; 
 }
@@ -179,23 +183,39 @@ static int _type;
 
 -(void) createMessage:(NSString*)message scale:(float)scale{
     CGSize screenSize = [[CCDirector sharedDirector] winSize];
-    CCLabelBMFont* renderedMessage = [[CCLabelBMFont alloc] initWithString:message fntFile:@"markerfelt.fnt"];
+//    CCLabelBMFont* renderedMessage = [[CCLabelBMFont alloc] initWithString:message fntFile:@"markerfelt.fnt"];
+    CCLabelTTF* renderedMessage = [[CCLabelTTF alloc] initWithString:message fontName:@"Marker Felt" fontSize:18];
     renderedMessage.position = ccp(screenSize.width/4, screenSize.height * 0.25);
     renderedMessage.scale = 0;
+    renderedMessage.color = ccWHITE;
     [self addChild:renderedMessage];
-    CCAction* scaleIn = [CCScaleTo actionWithDuration:0.5 scale:scale];
+    CCAction* scaleIn = [CCScaleTo actionWithDuration:0.5 scale:1];
     CCAction *fadeOut = [CCFadeOut actionWithDuration:5.5];
     CCAction *callback = [CCCallFunc actionWithTarget:self selector:@selector(messageDone:)];
     [renderedMessage runAction:[CCSequence actions:scaleIn, fadeOut, callback, nil]];
 }
 
+-(void) createUnderMessage:(NSString*)message scale:(float)scale{
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    //    CCLabelBMFont* renderedMessage = [[CCLabelBMFont alloc] initWithString:message fntFile:@"markerfelt.fnt"];
+    CCLabelTTF* renderedMessage = [[CCLabelTTF alloc] initWithString:message fontName:@"Marker Felt" fontSize:18];
+    renderedMessage.position = ccp(screenSize.width/4, screenSize.height * 0.25 - 30);
+    renderedMessage.scale = 0;
+    renderedMessage.color = ccWHITE;
+    [self addChild:renderedMessage];
+    CCAction* scaleIn = [CCScaleTo actionWithDuration:0.5 scale:1];
+    CCAction *fadeOut = [CCFadeOut actionWithDuration:5.5];
+    CCAction *callback = [CCCallFunc actionWithTarget:self selector:@selector(messageDone:)];
+    [renderedMessage runAction:[CCSequence actions:scaleIn, fadeOut, callback, nil]];
+}
 
 #pragma mark menu actions
 
 -(void)menuMoveFinished:(id)sender{
 	CCMenu *moveInFinished = (CCMenu *)sender;
 	moveInFinished.isTouchEnabled = YES;
-    [self createMessage:@"Swipe on the planet \nto choose between worlds" scale:0.25];
+    [self createMessage:@"Swipe on the planet" scale:0.25];
+    [self createUnderMessage:@"to select world" scale:0.25];
 }
 
 #pragma mark options buttons tapped
@@ -216,7 +236,8 @@ static int _type;
 
 -(void) createToolTip{
     CGSize screenSize = [[CCDirector sharedDirector] winSize];
-    CCLabelBMFont* renderedMessage = [[CCLabelBMFont alloc] initWithString:@"Swipe the planet to select world" fntFile:@"markerfelt.fnt"];
+    CCLabelTTF* renderedMessage = [[CCLabelTTF alloc] initWithString:@"Swipe on the planet to select world" fontName:@"marker felt" fontSize:16];
+    //initWithString:@"Swipe the planet to select world" fntFile:@"markerfelt.fnt"];
     renderedMessage.position = ccp(screenSize.width/2, screenSize.height * 0.75);
     renderedMessage.scale = 0;
     [self addChild:renderedMessage];
@@ -415,7 +436,7 @@ static int _type;
 }
 
 -(void) dealloc{
-	_emitter = nil;
+	self.emitter = nil;
 	_planet = nil;
 	 _bgPicture = nil;
 	_difficultyMenu = nil;

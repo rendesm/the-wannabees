@@ -10,6 +10,7 @@
 #import "LevelSelectScene.h"
 #import "ConfigManager.h"
 #import "GameCenterHelper.h"
+#import "HelpScene.h"
 
 @implementation MainMenuScene
 @synthesize selectedLevel = _selectedLevel;
@@ -45,13 +46,11 @@ static int messageNumber = 1;
 							itemFromNormalImage:@"play.png" selectedImage:@"playTapped.png" 
 							target:self selector:@selector(gameButtonTapped)];
 		
-	
-		
 		CCMenuItemImage *button2 = [CCMenuItemImage 
 									itemFromNormalImage:@"options.png" selectedImage:@"optionsTapped.png" 
 									target:self selector:@selector(optionsButtonTapped)];
 		CCMenuItemImage *button3 = [CCMenuItemImage 
-									itemFromNormalImage:@"help.png" selectedImage:@"helpTapped.png" 
+									itemFromNormalImage:@"credits.png" selectedImage:@"creditsTapped.png" 
 									target:self selector:@selector(storeButtonTapped)];
 		
 		_buttonWidth = ccp(button1.contentSize.width, button1.contentSize.height);
@@ -114,7 +113,10 @@ static int messageNumber = 1;
 #pragma mark create menus
 
 -(void) helpButtonTapped{
-    
+    if (_configManager.sounds && !_init){
+		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
+	}
+    [[CCDirector sharedDirector] replaceScene:[HelpScene scene]];
 }
 
 -(void) createPlayMenu{	

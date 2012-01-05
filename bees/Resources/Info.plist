@@ -10,6 +10,20 @@
 	<string>${EXECUTABLE_NAME}</string>
 	<key>CFBundleIconFile</key>
 	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>com.mihalyrendes.wannabees.ad</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>${PRODUCT_NAME}</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>1.0</string>
 	<key>Icon files</key>
 	<array>
 		<string>Icon.png</string>
@@ -19,24 +33,10 @@
 		<string>Icon-Small.png</string>
 		<string>Icon-Small@2x.png</string>
 	</array>
-	<key>CFBundleIdentifier</key>
-	<string>com.mihalyrendes.thewannabees</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>${PRODUCT_NAME}</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>1.0</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIPrerenderedIcon</key>
-	<true/>
-	<key>UIStatusBarHidden</key>
-	<true/>
+	<false/>
 	<key>UIRequiredDeviceCapabilities</key>
 	<dict>
 		<key>accelerometer</key>
@@ -44,5 +44,7 @@
 		<key>opengles-1</key>
 		<true/>
 	</dict>
+	<key>UIStatusBarHidden</key>
+	<true/>
 </dict>
 </plist>

@@ -15,6 +15,7 @@
 #import "MainMenuScene.h"
 #import "GameCenterHelper.h"
 #import "GameCenterManager.h"
+#import "IntroScene.h"
 @implementation beesAppDelegate
 
 @synthesize window, viewController;
@@ -112,8 +113,11 @@
 
 	
 	// Removes the startup flicker
-	[self removeStartupFlicker];
+//	[self removeStartupFlicker];
 	
+    
+   
+   
 	
 	//authenticate the local user
 //	[[GameCenterHelper sharedInstance] authenticateLocalUser];
@@ -121,7 +125,7 @@
 	//[GameCenterManager  loadState];
 	
 	// Run the intro Scene
-	[[CCDirector sharedDirector] runWithScene: [MainMenuScene scene]];		
+	[[CCDirector sharedDirector] runWithScene:[CCTransitionFade transitionWithDuration:1.0f scene:[MainMenuScene scene] withColor:ccWHITE]];		
 }
 
 

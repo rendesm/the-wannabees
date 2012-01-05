@@ -96,7 +96,7 @@
 
 -(void) dealloc{
 	[super dealloc];
-	self.sprite = nil;
+//	self.sprite = nil;
     self.moveAction = nil;
 }
 

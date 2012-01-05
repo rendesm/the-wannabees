@@ -21,9 +21,7 @@
 	Level* _level;
     CCMenu* _pauseMenu;
 	bool _updateBox;
-	CCProgressTimer* _distanceLeft;
 	bool _newHighScore;
-	CCMenuItemImage* _resetButton;
 	//bool _removeRunning ;
 	CCParticleSystemQuad *_emitter;
 	b2World *_world;
@@ -42,7 +40,6 @@
 	int _goal2;
 	int _goal3;
 	
-	CCSprite* _rightOrnament;
 	CCMenuItemImage* _pauseButton;
 	
 	NSMutableArray* _bees;
@@ -147,6 +144,7 @@
     float _lastFishLocation;
     float _maxFishJump;
     NSMutableArray* _fish;
+    bool _evilAppearDone;
 }
 
 // returns a Scene that contains the HelloWorld as the only child
@@ -221,6 +219,7 @@
 -(void) presentGameCenter;
 
 @property(nonatomic, assign) CGPoint currentTouch;
+//@property(nonatomic) bool evilAppearDone;
 @property(nonatomic) bool attackEnabled;
 @property(nonatomic) bool evadeEnabled;
 @property(nonatomic) bool paused;

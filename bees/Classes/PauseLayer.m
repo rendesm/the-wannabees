@@ -89,6 +89,7 @@
     if ([ConfigManager sharedManager].sounds){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
+//    self.gameScene.evilAppearDone = NO;
     [[CCDirector sharedDirector] resume];
     if ([[LevelManager sharedManager] world] == 1){
         [[CCDirector sharedDirector] replaceScene:[CampaignScene scene]];
@@ -107,6 +108,10 @@
 	}
     [[CCDirector sharedDirector] resume];
     [[SimpleAudioEngine sharedEngine] stopBackgroundMusic];
+    NSLog(@"retaincount %i", [self.gameScene retainCount]);
+    self.gameScene = nil;
+    NSLog(@"retaincount %i", [self.gameScene retainCount]);
+//    self.gameScene.evilAppearDone = NO;
     [[CCDirector sharedDirector] replaceScene:[LevelSelectScene scene]];
 }
 
@@ -146,6 +151,7 @@
     if ([ConfigManager sharedManager].sounds){
 		[[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
 	}
+   // [self.gameScene presentGameCenter];
     UIAlertView* dialog = [[UIAlertView alloc] init];
     [dialog setDelegate:self];
     [dialog setTitle:@"Game Center"];
@@ -208,6 +214,9 @@
 		[_loadingScreen runAction:[CCSequence actions: _moveDownwards, _moveDone, nil]];
 		_paused = YES;
 	}else{
+        if ([ConfigManager sharedManager].sounds){
+            [[SimpleAudioEngine sharedEngine] playEffect:@"tick.wav"];
+        }
 		_paused = NO;
         CCAction* callback = [CCCallFunc actionWithTarget:self selector:@selector(deleteLoadingScreen)];
         [[CCDirector sharedDirector] resume];

@@ -10,6 +10,7 @@
 #import <iAd/iAd.h>
 
 @interface DesertScene  : CCLayer<ADBannerViewDelegate, GKLeaderboardViewControllerDelegate>{
+    ADBannerView* _bannerView;
     GLESDebugDraw *_debugDraw;
     //layers
     PauseLayer* _pauseLayer;
@@ -74,6 +75,8 @@
     CGPoint _lastPointLocation;
     Alchemy* _alchemy;
     ccTime _timeUntilScarabs;
+    float  _scarabTime;
+    float  _scarabSpeed;
 }
 
 -(id) initWithLayers:(HUDLayer *)hudLayer pause:(PauseLayer *)pauseLayer message:(MessageLayer *)messageLayer harvester:(HarvesterLayer*)harvesterLayer background:(HillsBackgroundLayer*) background;

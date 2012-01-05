@@ -81,33 +81,25 @@
 	
     // 3: Draw into the texture
     // We'll add this later
-	CCSprite *noise = [CCSprite spriteWithSpriteFrameName:@"sky.png"];
-    [noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
-	noise.position = ccp(textureSize/2, textureSize/2);
-	[noise visit];
+//	CCSprite *noise = [CCSprite spriteWithSpriteFrameName:@"sivatagHatter.png"];
+//    [noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
+//	noise.position = ccp(textureSize/2, textureSize/2);
+//	[noise visit];
 	
 	glDisable(GL_TEXTURE_2D);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     
-	CGPoint vertices[4];
+    CGPoint vertices[4];
 	ccColor4F colors[4];
 	int nVertices = 0;
-	
 	vertices[nVertices] = CGPointMake(0, 0);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, 0 };
-	vertices[nVertices] = CGPointMake(textureSize, 0);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
-	vertices[nVertices] = CGPointMake(0, textureSize);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
-	vertices[nVertices] = CGPointMake(textureSize, textureSize);
-	colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
-	
-	glVertexPointer(2, GL_FLOAT, 0, vertices);
-	glColorPointer(4, GL_FLOAT, 0, colors);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)nVertices);
-	
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-	glEnable(GL_TEXTURE_2D);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha };
+    vertices[nVertices] = CGPointMake(textureSize, gradientAlpha);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    vertices[nVertices] = CGPointMake(0, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    vertices[nVertices] = CGPointMake(textureSize, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
 	
 	// 4: Call CCRenderTexture:end
 	[rt end];
@@ -200,7 +192,7 @@
     }
     
     for (CCSprite* hill in self.hills){
-        hill.position = ccpAdd(hill.position, ccp(_forSpeed * (dt*60), 0));
+        hill.position = ccpAdd(hill.position, ccp(_forSpeed/ 1.2 * (dt*60), 0));
     }
     
     if (self.palm.position.x + self.palm.contentSize.width/2 < 0){
@@ -261,12 +253,12 @@
 }
 
 -(void) genBackground{
-    CCSprite* backGround = [CCSprite spriteWithSpriteFrameName:@"sky.png"];
+    CCSprite* backGround = [CCSprite spriteWithSpriteFrameName:@"sivatagHatter.png"];
 
     ccColor4F bgColor = [self randomBrightColor];
 	
     CGSize winSize = [CCDirector sharedDirector].winSize;
-    _overLaySprite = [self spriteWithColor:bgColor textureSize:512 withNoise:@"sky.png" withGradientAlpha:0.3f];
+    _overLaySprite = [self spriteWithColor:bgColor textureSize:512 withNoise:@"sivatagHatter.png" withGradientAlpha:0.3f];
    // _overLaySprite = [CCSprite spriteWithSpriteFrameName:@"green.png"];
     ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT};
     [_overLaySprite.texture setTexParameters:&tp];
@@ -281,12 +273,12 @@
 }
 
 -(void) fadeInOverlay{
-    [_overLaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:250]];
+    [_overLaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:160]];
 }
 
 
 -(void) fadeOutOverlay{
-    [_overLaySprite runAction:[CCFadeOut actionWithDuration:1]];
+    [_overLaySprite runAction:[CCFadeTo actionWithDuration:1 opacity:0]];
 }
 
 -(void) updateFish{

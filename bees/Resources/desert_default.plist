@@ -4,13 +4,10 @@
 <dict>
 	<key>frames</key>
 	<dict>
-		
 		<key>cloud.png</key>
 		<dict>
 			<key>aliases</key>
-			<array>
-			
-			</array>
+			<array/>
 			<key>spriteColorRect</key>
 			<string>{{0, 3}, {200, 137}}</string>
 			<key>spriteOffset</key>
@@ -22,39 +19,33 @@
 			<key>spriteTrimmed</key>
 			<true/>
 			<key>textureRect</key>
-			<string>{{218, 421}, {200, 137}}</string>
+			<string>{{208, 421}, {200, 137}}</string>
 			<key>textureRotated</key>
 			<false/>
 		</dict>
-		
 		<key>palma.png</key>
 		<dict>
 			<key>aliases</key>
-			<array>
-			
-			</array>
+			<array/>
 			<key>spriteColorRect</key>
-			<string>{{16, 0}, {216, 196}}</string>
+			<string>{{14, 0}, {206, 186}}</string>
 			<key>spriteOffset</key>
-			<string>{8, 2}</string>
+			<string>{7, 2}</string>
 			<key>spriteSize</key>
-			<string>{216, 196}</string>
+			<string>{206, 186}</string>
 			<key>spriteSourceSize</key>
-			<string>{232, 200}</string>
+			<string>{220, 190}</string>
 			<key>spriteTrimmed</key>
 			<true/>
 			<key>textureRect</key>
-			<string>{{0, 421}, {216, 196}}</string>
+			<string>{{0, 421}, {206, 186}}</string>
 			<key>textureRotated</key>
 			<false/>
 		</dict>
-		
 		<key>piramis_only.png</key>
 		<dict>
 			<key>aliases</key>
-			<array>
-			
-			</array>
+			<array/>
 			<key>spriteColorRect</key>
 			<string>{{0, 0}, {480, 222}}</string>
 			<key>spriteOffset</key>
@@ -70,35 +61,10 @@
 			<key>textureRotated</key>
 			<false/>
 		</dict>
-		
-		<key>sivatag_only.png</key>
+		<key>sivatagHatter.png</key>
 		<dict>
 			<key>aliases</key>
-			<array>
-			
-			</array>
-			<key>spriteColorRect</key>
-			<string>{{0, 4}, {600, 97}}</string>
-			<key>spriteOffset</key>
-			<string>{0, -2}</string>
-			<key>spriteSize</key>
-			<string>{600, 97}</string>
-			<key>spriteSourceSize</key>
-			<string>{600, 101}</string>
-			<key>spriteTrimmed</key>
-			<true/>
-			<key>textureRect</key>
-			<string>{{0, 0}, {600, 97}}</string>
-			<key>textureRotated</key>
-			<false/>
-		</dict>
-		
-		<key>sky.png</key>
-		<dict>
-			<key>aliases</key>
-			<array>
-			
-			</array>
+			<array/>
 			<key>spriteColorRect</key>
 			<string>{{0, 0}, {480, 320}}</string>
 			<key>spriteOffset</key>
@@ -114,13 +80,29 @@
 			<key>textureRotated</key>
 			<false/>
 		</dict>
-		
+		<key>sivatag_only.png</key>
+		<dict>
+			<key>aliases</key>
+			<array/>
+			<key>spriteColorRect</key>
+			<string>{{0, 4}, {600, 97}}</string>
+			<key>spriteOffset</key>
+			<string>{0, -2}</string>
+			<key>spriteSize</key>
+			<string>{600, 97}</string>
+			<key>spriteSourceSize</key>
+			<string>{600, 101}</string>
+			<key>spriteTrimmed</key>
+			<true/>
+			<key>textureRect</key>
+			<string>{{0, 0}, {600, 97}}</string>
+			<key>textureRotated</key>
+			<false/>
+		</dict>
 		<key>szfinx3.png</key>
 		<dict>
 			<key>aliases</key>
-			<array>
-			
-			</array>
+			<array/>
 			<key>spriteColorRect</key>
 			<string>{{0, 36}, {357, 224}}</string>
 			<key>spriteOffset</key>
@@ -136,7 +118,6 @@
 			<key>textureRotated</key>
 			<false/>
 		</dict>
-		
 	</dict>
 	<key>metadata</key>
 	<dict>

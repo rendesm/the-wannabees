@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>angle</key>
-	<real>253.41999816894531</real>
+	<real>253.4199981689453</real>
 	<key>angleVariance</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>blendFuncDestination</key>
 	<integer>1</integer>
 	<key>blendFuncSource</key>
@@ -13,9 +13,9 @@
 	<key>duration</key>
 	<real>-1</real>
 	<key>emitterType</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>finishColorAlpha</key>
-	<real>0.60000002384185791</real>
+	<real>0.6000000238418579</real>
 	<key>finishColorBlue</key>
 	<real>1</real>
 	<key>finishColorGreen</key>
@@ -23,63 +23,63 @@
 	<key>finishColorRed</key>
 	<real>1</real>
 	<key>finishColorVarianceAlpha</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>finishColorVarianceBlue</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>finishColorVarianceGreen</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>finishColorVarianceRed</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>finishParticleSize</key>
 	<real>16</real>
 	<key>finishParticleSizeVariance</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>gravityx</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>gravityy</key>
-	<real>-162.47000122070312</real>
+	<real>-162.4700012207031</real>
 	<key>maxParticles</key>
 	<real>197</real>
 	<key>maxRadius</key>
 	<real>100</real>
 	<key>maxRadiusVariance</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>minRadius</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>particleLifespan</key>
-	<real>2.0394999980926514</real>
+	<real>2.039499998092651</real>
 	<key>particleLifespanVariance</key>
 	<real>1.118399977684021</real>
 	<key>radialAccelVariance</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>radialAcceleration</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>rotatePerSecond</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>rotatePerSecondVariance</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>rotationEnd</key>
 	<real>-37</real>
 	<key>rotationEndVariance</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>rotationStart</key>
 	<real>-37</real>
 	<key>rotationStartVariance</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>sourcePositionVariancex</key>
 	<real>301.75</real>
 	<key>sourcePositionVariancey</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>sourcePositionx</key>
 	<real>311.25</real>
 	<key>sourcePositiony</key>
 	<real>384</real>
 	<key>speed</key>
-	<real>412.83999633789062</real>
+	<real>412.8399963378906</real>
 	<key>speedVariance</key>
-	<real>45.209999084472656</real>
+	<real>45.20999908447266</real>
 	<key>startColorAlpha</key>
-	<real>0.56000000238418579</real>
+	<real>0.5600000023841858</real>
 	<key>startColorBlue</key>
 	<real>1</real>
 	<key>startColorGreen</key>
@@ -87,23 +87,23 @@
 	<key>startColorRed</key>
 	<real>1</real>
 	<key>startColorVarianceAlpha</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>startColorVarianceBlue</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>startColorVarianceGreen</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>startColorVarianceRed</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>startParticleSize</key>
-	<real>17.105262756347656</real>
+	<real>17.10526275634766</real>
 	<key>startParticleSizeVariance</key>
 	<real>3</real>
 	<key>tangentialAccelVariance</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>tangentialAcceleration</key>
-	<real>0.0</real>
+	<real>0</real>
 	<key>textureFileName</key>
-	<string>particleTexture.png</string>
+	<string>particleTextureRain.png</string>
 	<key>textureImageData</key>
 	<string>H4sIAAAAAAAAA+sM8HPn5ZLiYmBg4PX0cAkC0g4gzMEGJFdlFt5jYGCc5eniGFLB+HbWQU8WRwFX2UBHfTWFjgUP5plJfHxwdnKkRGfkjAZHiQb2fK5d2jtWL+r7f9ikhGVf06q2pDT/0P9f17+SLGsrlDE3Wn/2zKO1exmmME8SXiHmkdcg1XSV6SrTSc4QbhVzh7lMME4D243gdzuTxNcw2rL2qf6JKpwheGCby3ztcyLLJRljvL4cVfmjotyg3Wk3q+V9OovB5BeJQvfWcbC/knBRr/efxXThesM9cQaR+oYnTxsYZn/wviZwkDH+JmNNGsuDfqFb7Zzykow73t8WfqBlzLA7wZfpRtOk/xrrYxMY9h0XK+Wq+PC1mIHZwfJBdNdtnoxwFqanDCElQEMfSN0yvHH98/vvKgzdXxl8fsokfMxrDj/aXR/QXdRQfu89g/dRa9V7lSuDExbeseaKD7bjsPXe8V96R6iN1gbXrQ1v69fvCNyT+GrqjKxG66d1ATYTH82tbrCbbh+Qt591kToD54GdzjpZbC0C75W4HGasbeDSZHd4cHiJLnvLTa4VE4oYWOx8bhVhSthrepiuP6KtmAuMLAZPVz+XdU4JTQBdA+xl0wEAAA==</string>
 </dict>

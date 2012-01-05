@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>Particles</key>
-	<true/>
+	<false/>
 	<key>Gfx</key>
 	<integer>3</integer>
 	<key>Music</key>
-	<false/>
+	<true/>
 	<key>Sounds</key>
 	<true/>
 </dict>

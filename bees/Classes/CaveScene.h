@@ -16,6 +16,7 @@
 // HelloWorld Layer
 @interface CaveScene : CCLayer<ADBannerViewDelegate, GKLeaderboardViewControllerDelegate>
 {	
+    ADBannerView* _bannerView;
     PauseLayer* _pauseLayer;
     HUDLayer* _hudLayer;
 	Level* _level;
@@ -158,6 +159,7 @@
     MessageLayer* _messageLayer;
     HarvesterLayer* _harvesterLayer;
     bool _evilAppearDone;
+    CCSprite* _overlaySprite;
 }
 
 // returns a Scene that contains the HelloWorld as the only child
@@ -244,6 +246,7 @@
 @property(nonatomic, retain) MessageLayer* messageLayer;
 @property(nonatomic, retain) BackgroundLayer* backgroundLayer;
 @property(nonatomic, retain) HarvesterLayer* harvesterLayer;
+@property(nonatomic) bool evilAppearDone;
 
 @end
 

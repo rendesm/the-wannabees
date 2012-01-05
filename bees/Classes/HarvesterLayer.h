@@ -30,6 +30,7 @@
     bool _isIn;
     Eyes* _eyes;
     CCParticleSystemQuad* _emitter;
+    bool _useMist;
 }
 
 -(void) update:(ccTime)dt;
@@ -51,4 +52,5 @@
 @property (nonatomic) ccTime timeElapsed;
 @property (nonatomic) bool isIn;
 @property (nonatomic, retain) CCParticleSystemQuad* emitter;
+@property (nonatomic) bool useMist;
 @end

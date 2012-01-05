@@ -29,8 +29,8 @@
 @synthesize snake = _snake;
 @synthesize scarabs = _scarabs;
 
-static double UPDATE_INTERVAL = 1.0f/30.0f;
-static double MAX_CYCLES_PER_FRAME = 1;
+static double UPDATE_INTERVAL = 1.0f/20.0f;
+static double MAX_CYCLES_PER_FRAME = 3;
 static double timeAccumulator = 0;
 static bool   box2dRunning = NO;
 static bool   _evilAppearDone = NO;
@@ -72,7 +72,7 @@ static bool   _evilAppearDone = NO;
         Predator* predator = [Predator spriteWithSpriteFrameName:@"skarabeus.png"];
         predator.doRotation = YES; 
         predator.isOutOfScreen = NO;
-        float predatorSpeed = 1.2;
+        float predatorSpeed = 1.4;
         _predatorCurrentSpeed = predatorSpeed;
         
         [predator setSpeedMax:predatorSpeed withRandomRangeOf:0.2f andSteeringForceMax:1 withRandomRangeOf:0.15f];
@@ -94,7 +94,7 @@ static bool   _evilAppearDone = NO;
     if (self.snake == nil && _timeSinceEnemy2 >= _timeUntilEnemy2){
         _timeSinceEnemy2 = 0;
         self.snake = [[Snake alloc] initForDesertNode:_batchNode];
-        self.snake.sprite.position = ccp (_player.position.x + screenSize.width, 60);
+        self.snake.sprite.position = ccp (_player.position.x + screenSize.width, 40);
         [self.snake createBox2dBodyDefinitions:_world];
     }
 }
@@ -121,7 +121,7 @@ static bool   _evilAppearDone = NO;
 	if (_lastPointLocation.x  < _player.position.x + screenSize.width/2){
 		_lastPointLocation = ccp(_player.position.x + screenSize.width/2, 0);
 	}
-	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
+	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/6 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
 	_lastPointLocation = point.sprite.position;
 }
@@ -134,7 +134,7 @@ static bool   _evilAppearDone = NO;
             [self separateScarab:scarab withSeparationDistance:40.0f usingMultiplier:0.2f];
             [self alignScarab:scarab withAlignmentDistance:30.0f usingMultiplier:0.4f];
             [self cohesionScarab:scarab withNeighborDistance:40.0f usingMultiplier:0.2f];
-            if (scarab.position.x < _player.position.x - screenSize.width/4 || [_scarabs count] < 6){
+            if (scarab.position.x < _player.position.x - screenSize.width/3 || [_scarabs count] <= 4){
                 scarab.target = ccp(_player.position.x - screenSize.width, _player.position.y);
             }else{
                 scarab.target = _slowestBoid.position;
@@ -146,7 +146,7 @@ static bool   _evilAppearDone = NO;
         }
     }else{
         _timeUntilScarabs += dt;
-        if (_timeUntilScarabs > 2){
+        if (_timeUntilScarabs > _scarabTime){
             _timeUntilScarabs = 0;
             [self generateEnemy];
         }
@@ -277,6 +277,7 @@ static bool   _evilAppearDone = NO;
     // [self presentGameCenter];
     
 	if (_paused == NO){
+        _bannerView.hidden = YES;
         _pauseMenu.isTouchEnabled = NO;
         _pauseButton.isEnabled = NO;
 		[self unschedule:@selector(update:)];
@@ -290,6 +291,7 @@ static bool   _evilAppearDone = NO;
 		[self schedule: @selector(update:)];
         [[CCActionManager sharedManager] pauseTarget:self.parent];
         _pauseMenu.isTouchEnabled = YES;
+        _bannerView.hidden = NO;
 	}
 }
 
@@ -313,6 +315,7 @@ static bool   _evilAppearDone = NO;
         self.messageLayer = messageLayer;
         self.harvesterLayer = harvesterLayer;
         self.bgLayer = background;
+        self.harvesterLayer.useMist = YES;
         pauseLayer.gameScene = self;
 		self.level = (Level*)[[LevelManager sharedManager] selectedLevel];
 		CGSize screenSize = [[CCDirector sharedDirector] winSize];
@@ -338,7 +341,7 @@ static bool   _evilAppearDone = NO;
 	_bonusCount = 1;
     _currentDifficulty = 1;
     _timeUntilScarabs = 0;
-    
+    _scarabTime = 2;
     _bees = [[[NSMutableArray alloc] init] retain];
 	_deadBees = [[[NSMutableArray alloc] init] retain];
     self.points = [[NSMutableArray alloc] init];
@@ -385,9 +388,9 @@ static bool   _evilAppearDone = NO;
 		// You want the flock to behavior basically the same, but have a TINY variation among members
 		boid.startMaxForce = 0;
 		boid.startMaxSpeed = 0;
-        [boid setSpeedMax:2.5f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f  withRandomRangeOf:0.25f];
-        _boidCurrentSpeed = 2.5f;
-        _boidCurrentTurn = 1.8f;
+        [boid setSpeedMax:3.0f  withRandomRangeOf:0.2f andSteeringForceMax:3.0f  withRandomRangeOf:0.25f];
+        _boidCurrentSpeed = 3.0f;
+        _boidCurrentTurn = 3.0f ;
         
 		
 		[boid setWanderingRadius: 20.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.3f];
@@ -480,19 +483,22 @@ static bool   _evilAppearDone = NO;
         }
         
         //increase the boid speed, if it is not at the maximum
-        if (_boidCurrentSpeed < 4.0f){
+        if (_boidCurrentSpeed < 4.2f){
             _boidCurrentSpeed+=0.05;
             for (Boid* bee in _bees){
-                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:(_boidCurrentSpeed / 2.5) * 1.8f * 1.5f withRandomRangeOf:0.25f];
+                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:(_boidCurrentSpeed / 2) * 1.8f * 1.5f withRandomRangeOf:0.25f];
                 bee.startMaxSpeed = _boidCurrentSpeed;
             }
         }
         
-        if (_predatorCurrentSpeed < 3.0){
-            _predatorCurrentSpeed += 0.025;
+        if (_predatorCurrentSpeed < 3.4){
+            _predatorCurrentSpeed += 0.06;
             for (Predator* predator in _scarabs){
                 [predator setSpeedMax:_predatorCurrentSpeed andSteeringForceMax:1.0f];     
             }
+        }
+        if (_scarabTime > 0.5){
+            _scarabTime -= 0.1;
         }
 	}
 }
@@ -942,15 +948,47 @@ static bool   _evilAppearDone = NO;
 {
 	[[CCTouchDispatcher sharedDispatcher] addTargetedDelegate:self priority:0 swallowsTouches:YES];
 	[super onEnter];
+    _bannerView = [[[ADBannerView alloc] initWithFrame:CGRectZero] retain];
+    _bannerView.delegate = self;
+    _bannerView.requiredContentSizeIdentifiers = [NSSet setWithObjects:ADBannerContentSizeIdentifierPortrait,
+                                                  ADBannerContentSizeIdentifierLandscape,nil];
+    _bannerView.currentContentSizeIdentifier = ADBannerContentSizeIdentifierLandscape;
+    [[[CCDirector sharedDirector] openGLView] addSubview:_bannerView];
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    _bannerView.center = ccp(_bannerView.frame.size.width/2, screenSize.height/2+145);
+    _bannerView.hidden = YES;
 }
 
 - (void)onExit
 {
+    _bannerView.delegate = nil;
+    [_bannerView removeFromSuperview];
+    [_bannerView release];
+    _bannerView = nil;
 	[[CCTouchDispatcher sharedDispatcher] removeDelegate:self];
 	[super onExit];
-	
 }
 
+
+-(void)bannerViewDidLoadAd:(ADBannerView *)banner{
+    NSLog(@"bannerViewDidLoadAd");
+    _bannerView.hidden = NO;
+}
+
+-(void)bannerView:(ADBannerView *)banner didFailToReceiveAdWithError:(NSError *)error{
+    NSLog(@"bannerViewFailed");
+    _bannerView.hidden = YES;
+}
+
+-(void)bannerViewActionDidFinish:(ADBannerView *)banner{
+    [[CCDirector sharedDirector] resume];    
+    [[UIApplication sharedApplication] setStatusBarOrientation:(UIInterfaceOrientation)[[CCDirector sharedDirector] deviceOrientation]];
+}
+
+-(BOOL)bannerViewActionShouldBegin:(ADBannerView *)banner willLeaveApplication:(BOOL)willLeave{
+    [[CCDirector sharedDirector] pause];
+    return YES;
+}
 
 
 - (BOOL)ccTouchBegan:(UITouch *)touch withEvent:(UIEvent *)event
@@ -1461,6 +1499,7 @@ inline float randRange(float min,float max)
 
 
 -(void)dealloc{
+    NSLog(@"dealloc");
     self.pauseLayer = nil;
     self.hudLayer = nil;
     self.messageLayer = nil;

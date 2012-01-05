@@ -19,7 +19,7 @@
 @synthesize timeElapsed = _timeElapsed;
 @synthesize isIn = _isIn;
 @synthesize emitter = _emitter;
-
+@synthesize useMist = _useMist;
 
 -(void) shoot{
     //find a bullet out of screen
@@ -44,7 +44,7 @@
 -(void) initWithWorld:(b2World*)world{
         CGSize screenSize = [[CCDirector sharedDirector] winSize];
         _world = world;
-        _timeLeftTillNextAppearance = 90;
+        _timeLeftTillNextAppearance = 40;
         // init the batchnode for the harvester
       //  [CCTexture2D setDefaultAlphaPixelFormat:kCCTexture2DPixelFormat_RGB5A1];
         self.batchnode = [CCSpriteBatchNode batchNodeWithFile:@"harvester_default.pvr.ccz"]; // 1
@@ -63,14 +63,14 @@
         //place it outside of the screen
         _harvesterSprite.position = ccp(-_harvesterSprite.contentSize.width, _harvesterSprite.contentSize.height/2);
         _shootTimer = 0;
-        _timeTillShoot = 3;
+        _timeTillShoot = 1;
         
         self.eyes = [[Eyes alloc] initForNode:_harvesterSprite];
         _eyes.sprite.position = ccp( _harvesterSprite.contentSize.width - _eyes.sprite.contentSize.width + 5, _harvesterSprite.contentSize.height - 1.5 * _eyes.sprite.contentSize.height);
         self.bullets = [[NSMutableArray alloc] init];
 
         //create the bullets and hide them 
-        for (int i = 0; i <= 3;i++){
+        for (int i = 0; i <= 1;i++){
             Bullet* bullet = [[Bullet alloc] init];
             CCSprite* sprite = [CCSprite spriteWithSpriteFrameName:@"bullet.png"];
             bullet.sprite = sprite;
@@ -234,7 +234,7 @@
         CCCallFunc* moveInDone = [CCCallFunc actionWithTarget:self selector:@selector(moveInDone)];
         [self.harvesterSprite runAction:[CCSequence actions:moveIn, moveInDone,nil]];
         
-        if (self.emitter == nil && [[ConfigManager sharedManager] particles]){
+        if (self.emitter == nil && [[ConfigManager sharedManager] particles] && self.useMist){
             self.emitter = [CCParticleSystemQuad particleWithFile:@"mist2.plist"];
             self.emitter.position = ccp(_harvesterSprite.position.x -_harvesterSprite.contentSize.width, 0);
             self.emitter.scale = 0.5;
@@ -291,6 +291,7 @@
     self.bullets = nil;
     [_eyes release];
     self.harvesterSprite = nil;
+    self.emitter = nil;
     [super dealloc];
 }
 

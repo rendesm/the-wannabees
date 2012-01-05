@@ -36,9 +36,9 @@
 @synthesize messageLayer = _messageLayer;
 @synthesize backgroundLayer = _backgroundLayer;
 @synthesize harvesterLayer = _harvesterLayer;
-
+@synthesize evilAppearDone = _evilAppearDone;
 static double UPDATE_INTERVAL = 1/20.0f;
-static double MAX_CYCLES_PER_FRAME = 1;
+static double MAX_CYCLES_PER_FRAME = 3;
 static double timeAccumulator = 0;
 
 
@@ -111,18 +111,95 @@ static double timeAccumulator = 0;
 	[_pausedMenu runAction:[CCFadeIn actionWithDuration:0.3]];
 }
 
+
+- (ccColor4F)randomGreenColor {
+    while (true) {
+        float requiredBrightness = 250;
+		float maxBrightness = 40;
+        ccColor4B randomColor = 
+		ccc4(arc4random() % 255,
+			 arc4random() % 255,
+			 arc4random() % 255, 
+			 255);
+        if (randomColor.r > maxBrightness && 
+            randomColor.b > maxBrightness &&
+            randomColor.g > requiredBrightness) {
+            return ccc4FFromccc4B(randomColor);
+        }        
+    }
+}
+
+
+-(CCSprite *)spriteWithColor:(ccColor4F)bgColor textureSize:(float)textureSize withNoise:(NSString*)inNoise withGradientAlpha:(float)gradientAlpha{
+    // 1: Create new CCRenderTexture
+    CCRenderTexture *rt = [CCRenderTexture renderTextureWithWidth:textureSize height:textureSize];
+	
+    // 2: Call CCRenderTexture:begin
+    [rt beginWithClear:bgColor.r g:bgColor.g b:bgColor.b a:bgColor.a];
+	
+    // 3: Draw into the texture
+    // We'll add this later
+    //	CCSprite *noise = [CCSprite spriteWithFile:inNoise];
+	//	[noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
+    //	noise.position = ccp(textureSize/2, textureSize/2);
+    //	[noise visit];
+	
+	glDisable(GL_TEXTURE_2D);
+	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	
+	CGPoint vertices[4];
+	ccColor4F colors[4];
+	int nVertices = 0;
+	vertices[nVertices] = CGPointMake(0, 0);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha };
+    vertices[nVertices] = CGPointMake(textureSize, gradientAlpha);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    vertices[nVertices] = CGPointMake(0, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    vertices[nVertices] = CGPointMake(textureSize, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+	
+	glVertexPointer(2, GL_FLOAT, 0, vertices);
+	glColorPointer(4, GL_FLOAT, 0, colors);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)nVertices);
+	
+	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+	glEnable(GL_TEXTURE_2D);
+	
+	// 4: Call CCRenderTexture:end
+	[rt end];
+	
+	
+	// 5: Create a new Sprite from the texture
+    return [CCSprite spriteWithTexture:rt.sprite.texture];
+}
+
+
+-(void) fadeInOverlay{
+    [_overlaySprite runAction:[CCFadeTo actionWithDuration:2 opacity:190]];
+}
+
+
+-(void) fadeOutOverlay{
+    [_overlaySprite runAction:[CCFadeTo actionWithDuration:1 opacity:0]];
+}
+
+
 - (void)genBackground {
+    ccColor4F bgColor =  ccc4FFromccc4B(ccc4(0, 0, 0,255));
+    _overlaySprite = [self spriteWithColor:bgColor textureSize:512 withNoise:@"purple.png" withGradientAlpha:0.5f];
+    ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT};
+    [_overlaySprite.texture setTexParameters:&tp];
+    [self addChild:_overlaySprite z:-1 tag:-1];
+    _overlaySprite.opacity = 0;
+    
 	CCSprite* backGround = [CCSprite spriteWithSpriteFrameName:@"barlang_javitott.png"];
 	backGround.position = _player.position;
-//	[self addChild:_backGround z:-1 tag:1];
+    _overlaySprite.position = _backGround.position;
     CCSprite* backGround2 = [CCSprite spriteWithSpriteFrameName:@"barlang_javitott.png"];
 	backGround2.position = ccpAdd(backGround.position, ccp(backGround.contentSize.width - 2,0)) ;
- //   CCSprite* backGround3 = [CCSprite spriteWithFile:@"caveright.png"];
-  //  backGround3.position = ccpAdd(backGround2.position, ccp(backGround.contentSize.width - 1,0)) ;
     NSMutableArray* backgroundsForLayer = [NSMutableArray arrayWithObjects:backGround, backGround2, nil];
     [self.backgroundLayer addBackgrounds:backgroundsForLayer forZ:1];
-//    [self addChild:_backGround2];
-//    [self addChild:_backGround3];
 }
 
 
@@ -399,7 +476,7 @@ static double timeAccumulator = 0;
 	
 	
     _pauseMenu = [CCMenu menuWithItems:_pauseButton, nil];
-	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height);
+	_pauseMenu.position = ccp(screenSize.width - _pauseButton.contentSize.width * 2, _pauseButton.contentSize.height + 32);
 	[self addChild:_pauseMenu z:100 tag:100];	
 }
 
@@ -680,7 +757,7 @@ static double timeAccumulator = 0;
 	if (_lastPointLocation.x  < _player.position.x + screenSize.width/2){
 		_lastPointLocation = ccp(_player.position.x + screenSize.width/2, 0);
 	}
-	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/4 + screenSize.width/4 * rnd/10, 
+	point.sprite.position  = ccp(_lastPointLocation.x + screenSize.width/6 + screenSize.width/4 * rnd/10, 
 								 rnd * screenSize.height/5 );	
     
     [self checkPointTopRockCollision:point];
@@ -1161,21 +1238,12 @@ static double timeAccumulator = 0;
 		// You want the flock to behavior basically the same, but have a TINY variation among members
 		boid.startMaxForce = 0;
 		boid.startMaxSpeed = 0;
-		if (_level.difficulty == EASY){
-			[boid setSpeedMax:2.5f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f  withRandomRangeOf:0.25f];
-			_boidCurrentSpeed = 2.5f;
-			_boidCurrentTurn = 1.8f;
-		}else if (_level.difficulty == NORMAL){
-			[boid setSpeedMax:3.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-			_boidCurrentSpeed = 3.0f;
-			_boidCurrentTurn = 2.7f;
-		}else if (_level.difficulty == HARD) {
-			[boid setSpeedMax:4.0f  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
-			_boidCurrentSpeed = 4.0f;
-			_boidCurrentTurn = 2.7f;
-		} 		
-
-		[boid setWanderingRadius: 20.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.3f];
+		
+        [boid setSpeedMax:3.0f  withRandomRangeOf:0.2f andSteeringForceMax:3.0f withRandomRangeOf:0.25f];
+        _boidCurrentSpeed = 3.0f;
+        _boidCurrentTurn = 3.0f;
+    
+        [boid setWanderingRadius: 20.0f lookAheadDistance: 40.0f andMaxTurningAngle:0.3f];
 		[boid setEdgeBehavior: EDGE_WRAP];
 		
 		if (_slowestBoid == nil){
@@ -1271,15 +1339,7 @@ static double timeAccumulator = 0;
 		[self addChild:bottomx z:2 tag:2];
 	}
 	
-    /*
-	//generate rocks
-	Rock* rock1 = [[Rock alloc] initWithFileName:@"rock1.png"];
-	rock1.sprite.position = ccp (screenSize.width/2, rock1.sprite.contentSize.height/2 - 20);
-	rock1.sprite.position = ccp(bottomx.contentSize.width/2, rock1.sprite.contentSize.height/2);
-	rock1.type = 1;
-	[rock1 createBox2dBodyDefinitions:_world];
-	[_batchNode addChild:rock1.sprite z:1 tag:1];
-	*/
+
 	Rock* rock2 = [[Rock alloc] initWithFileName:@"rock2.png"];
 	rock2.type = 2;
 	[rock2 createBox2dBodyDefinitions:_world];
@@ -1312,7 +1372,8 @@ static double timeAccumulator = 0;
 	Rock* rock5 = [[Rock alloc] initWithFileName:@"toprock2.png"];
 	rock5.type = 4;
 	[rock5 createBox2dBodyDefinitions:_world];
-	rock5.sprite.position = ccp (rock4.sprite.position.x + rock4.sprite.contentSize.width/2 * rock4.sprite.scale + rnd* _minRockDistance , screenSize.height  - rock5.sprite.contentSize.height/2 );
+    float rndBottom = randRange(1, 5);
+	rock5.sprite.position = ccp (rock4.sprite.position.x + rock4.sprite.contentSize.width/2 * rock4.sprite.scale + rndBottom * _minRockDistance , screenSize.height  - rock5.sprite.contentSize.height/2 );
 	[_batchNode addChild:rock5.sprite z:1 tag:1];
 	
 	_lastTopRockLocation = rock4.sprite.position;
@@ -1360,6 +1421,7 @@ static double timeAccumulator = 0;
         self.messageLayer = messageLayer;
         self.backgroundLayer = backgroundLayer;
         self.harvesterLayer = harvesterLayer;
+        self.harvesterLayer.useMist = YES;
         pauseLayer.gameScene = self;
 		self.level = (Level*)[[LevelManager sharedManager] selectedLevel];
 		_distanceToGoal = _level.distanceToGoal;
@@ -1831,7 +1893,7 @@ static double timeAccumulator = 0;
 				}
 				
 				_player.position = ccpAdd(_player.position, ccp(_playerAcceleration.x * dt * 60, _playerAcceleration.y * dt * 60));
-			
+                _overlaySprite.position = _player.position;
 				for (Boid* boid in _bees){
 					if (_slowestBoid == nil){
 						_slowestBoid = boid;
@@ -1867,9 +1929,11 @@ static double timeAccumulator = 0;
 				}
 				
                 if (self.harvesterLayer.moveInParticle && !_evilAppearDone){
+                    [self fadeInOverlay];
                     [self.messageLayer displayWarning:@"It is coming"];
                     _evilAppearDone = YES;
                 }else if (self.harvesterLayer.moveOutParticle && _evilAppearDone){
+                    [self fadeOutOverlay];
                     _evilAppearDone = NO;
                 }
                 
@@ -2014,6 +2078,7 @@ static double timeAccumulator = 0;
 	if (_paused == NO){
         _pauseMenu.isTouchEnabled = NO;
         _pauseButton.isEnabled = NO;
+        _bannerView.hidden = YES;
 		[self unschedule:@selector(update:)];
         [self.pauseLayer switchPause];
         [[CCActionManager sharedManager] pauseTarget:self.parent];
@@ -2024,7 +2089,7 @@ static double timeAccumulator = 0;
         //    [self.pauseLayer switchPause];
 		[self schedule: @selector(update:)];
         [[CCActionManager sharedManager] pauseTarget:self.parent];
-        
+        _bannerView.hidden = NO;
         _pausedMenu = nil;
         _pauseMenu.isTouchEnabled = YES;
 	}
@@ -2035,14 +2100,48 @@ static double timeAccumulator = 0;
 {
 	[[CCTouchDispatcher sharedDispatcher] addTargetedDelegate:self priority:0 swallowsTouches:YES];
 	[super onEnter];
+    _bannerView = [[[ADBannerView alloc] initWithFrame:CGRectZero] retain];
+    _bannerView.delegate = self;
+    _bannerView.requiredContentSizeIdentifiers = [NSSet setWithObjects:ADBannerContentSizeIdentifierPortrait,
+                                                  ADBannerContentSizeIdentifierLandscape,nil];
+    _bannerView.currentContentSizeIdentifier = ADBannerContentSizeIdentifierLandscape;
+    [[[CCDirector sharedDirector] openGLView] addSubview:_bannerView];
+    CGSize screenSize = [[CCDirector sharedDirector] winSize];
+    _bannerView.center = ccp(_bannerView.frame.size.width/2, screenSize.height/2+145);
+    _bannerView.hidden = YES;
 }
 
 - (void)onExit
 {
+    _bannerView.delegate = nil;
+    [_bannerView removeFromSuperview];
+    [_bannerView release];
+    _bannerView = nil;
 	[[CCTouchDispatcher sharedDispatcher] removeDelegate:self];
 	[super onExit];
-	
 }
+
+
+-(void)bannerViewDidLoadAd:(ADBannerView *)banner{
+    NSLog(@"bannerViewDidLoadAd");
+    _bannerView.hidden = NO;
+}
+
+-(void)bannerView:(ADBannerView *)banner didFailToReceiveAdWithError:(NSError *)error{
+    NSLog(@"bannerViewFailed");
+    _bannerView.hidden = YES;
+}
+
+-(void)bannerViewActionDidFinish:(ADBannerView *)banner{
+    [[CCDirector sharedDirector] resume];    
+    [[UIApplication sharedApplication] setStatusBarOrientation:(UIInterfaceOrientation)[[CCDirector sharedDirector] deviceOrientation]];
+}
+
+-(BOOL)bannerViewActionShouldBegin:(ADBannerView *)banner willLeaveApplication:(BOOL)willLeave{
+    [[CCDirector sharedDirector] pause];
+    return YES;
+}
+
 
 
 - (BOOL)ccTouchBegan:(UITouch *)touch withEvent:(UIEvent *)event
@@ -2178,7 +2277,6 @@ inline float randRange(float min,float max)
         CGSize screenSize = [[CCDirector sharedDirector] winSize];
         float rndChange = randRange(1, 6);
         int change = floor(rndChange);
-        bool changeWasEnough = NO;
         //time to increase the difficulty
 		_currentDifficulty++;
 		//increase the playeracceleration if it is not at the maximum
@@ -2188,26 +2286,14 @@ inline float randRange(float min,float max)
             _normalSpeed.x += 0.05;
             _sickSpeed.x += 0.025;
             _boostSpeed.x += 0.1;
-            
-            if (_normalSpeed.x > 2.0f && _normalSpeed.x < 3.0f){
-                _level.difficulty = NORMAL;
-            }else if (_normalSpeed.x > 3.0f){
-                _level.difficulty = HARD;
-            }
-            
-            //	if (_illnessTimeLeft > 0 || _boostTimeLeft > 0){
-            //		_playerAcceleration.x += 0.05;
-            //	}else {
             _playerAcceleration.x += 0.05;
-            //	}
         }
         
         //increase the boid speed, if it is not at the maximum
-        if (_boidCurrentSpeed < 4.0f){
-            changeWasEnough = YES;
+        if (_boidCurrentSpeed < 4.2f){
             _boidCurrentSpeed+=0.05;
             for (Boid* bee in _bees){
-                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:1.8f * 1.5f withRandomRangeOf:0.25f];
+                [bee setSpeedMax:_boidCurrentSpeed  withRandomRangeOf:0.2f andSteeringForceMax:(_boidCurrentSpeed / 2) * 1.8f * 1.5f withRandomRangeOf:0.25f];
                 bee.startMaxSpeed = _boidCurrentSpeed;
             }
         }
@@ -2222,17 +2308,15 @@ inline float randRange(float min,float max)
         if (_minBatDistance.x >   bat.sprite.contentSize.width * 2) {
             _minBatDistance.x -= 10;
         }
-    
+        
 
         if (_guanoTime > 0.5){
-            _guanoTime -= 0.1;
-            changeWasEnough = YES;
+            _guanoTime -= 0.3;
         }
         
         if (_currentDifficulty > 10){
             if (_fireBallChance < 0.3){
                 _fireBallChance += 0.05;
-                changeWasEnough = YES;
             }
         }
 		
@@ -2241,7 +2325,7 @@ inline float randRange(float min,float max)
 
 
 -(void) dealloc{	
-	[super dealloc];
+    NSLog(@"dealloc");
     self.messageLayer = nil;
     self.pauseLayer = nil;
     self.hudLayer = nil;
@@ -2279,6 +2363,7 @@ inline float randRange(float min,float max)
     self.hudLayer = nil;
     self.harvesterLayer = nil;
     self.backgroundLayer = nil;
+    [super dealloc];
 }	
 
 
