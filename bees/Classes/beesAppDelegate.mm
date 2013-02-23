@@ -87,10 +87,12 @@
 	// Edit the RootViewController.m file to edit the supported orientations.
 	//
 #if GAME_AUTOROTATION == kGameAutorotationUIViewController
-	[director setDeviceOrientation:kCCDeviceOrientationPortrait];
+    //	[director setDeviceOrientation:kCCDeviceOrientationLandscapeLeft];
+    [director setDeviceOrientation:kCCDeviceOrientationPortrait];
 #else
-	[director setDeviceOrientation:kCCDeviceOrientationLandscapeLeft];
+	[director setDeviceOrientation:kCCDeviceOrientationPortraitUpsideDown];
 #endif
+
 	
 	[director setAnimationInterval:1.0/45];
 	[director setDisplayFPS:NO];
@@ -102,7 +104,8 @@
 	[viewController setView:glView];
 	
 	// make the View Controller a child of the main window
-	[window addSubview: viewController.view];
+//	[window addSubview: viewController.view];
+    window.rootViewController = viewController;
 	
 	[window makeKeyAndVisible];
 	
